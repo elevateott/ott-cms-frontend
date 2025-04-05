@@ -1,7 +1,7 @@
 {
   "name": "ott-cms-frontend",
   "version": "1.0.0",
-  "description": "Website template for Payload",
+  "description": "A customizable OTT content management and frontend platform built with Payload CMS, Next.js, TailwindCSS, and shadcn/ui — includes admin tools, video catalog management, user authentication, and more.",
   "license": "MIT",
   "type": "module",
   "scripts": {
