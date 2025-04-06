@@ -1,5 +1,6 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import StreamingSources from './globals/streamingSources'
 
 import sharp from 'sharp' // sharp-import
 import path from 'path'
@@ -64,7 +65,7 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, StreamingSources],
   plugins: [
     ...plugins,
     // storage-adapter-placeholder

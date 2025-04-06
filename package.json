@@ -19,6 +19,8 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {
+    "@mux/mux-uploader-react": "^1.2.0",
+    "@mux/mux-video-react": "^0.25.0",
     "@payloadcms/admin-bar": "3.31.0",
     "@payloadcms/db-mongodb": "3.31.0",
     "@payloadcms/live-preview-react": "3.31.0",
