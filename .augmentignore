@@ -1,0 +1,19 @@
+# Ignore problematic API route files
+src/app/(payload)/api/videos/[id]/stats/route.ts
+src/app/(payload)/api/mux/direct-upload/route.ts
+src/app/(payload)/api/mux/webhook/route.ts
+src/app/(payload)/api/videos/batch-upload/route.ts
+
+# Ignore collections with async conditions
+src/collections/Videos/index.ts
+
+# Ignore generated files
+.next/
+node_modules/
+dist/
+build/
+src/payload-types.ts
+
+# Ignore temporary files
+*.tmp
+*.bak
