@@ -10,14 +10,15 @@ const muxClient = new Mux({
 // Access the Video API
 const { video } = muxClient
 
-export const createMuxUpload = async () => {
+export const createMuxUpload = async (options?: { metadata?: Record<string, string> }) => {
   try {
     const upload = await video.uploads.create({
       cors_origin: '*',
       new_asset_settings: {
         playback_policy: ['public'],
-        mp4_support: 'standard',
+        // Remove the deprecated mp4_support parameter
       },
+      ...(options?.metadata ? { metadata: options.metadata } : {}),
     })
 
     return {

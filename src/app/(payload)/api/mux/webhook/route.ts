@@ -3,32 +3,61 @@ import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-// No need for the utility function anymore
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify Mux webhook signature
-    const signature = req.headers.get('mux-signature')
-
-    if (!signature) {
-      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
-    }
-
     // Get request body as text
     const body = await req.text()
 
-    // Verify signature
+    // Log the headers for debugging
+    console.log('Webhook headers:', {
+      signature: req.headers.get('mux-signature'),
+      contentType: req.headers.get('content-type'),
+    })
+
+    // Verify the webhook signature
+    const signature = req.headers.get('mux-signature')
+    if (!signature) {
+      console.error('No signature provided in webhook request')
+      return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
+    }
+
+    // Use the webhook secret from the .env file
     const secret = process.env.MUX_WEBHOOK_SECRET
     const hmac = crypto.createHmac('sha256', secret)
     hmac.update(body)
     const calculatedSignature = hmac.digest('hex')
 
+    // Log signature verification details for debugging
+    console.log('Signature verification:', {
+      receivedSignature: signature.substring(0, 10) + '...',
+      calculatedSignature: calculatedSignature.substring(0, 10) + '...',
+      match: signature === calculatedSignature,
+    })
+
+    // Enforce signature verification
     if (signature !== calculatedSignature) {
+      console.error('Invalid signature in webhook request')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
     // Parse the event
-    const event = JSON.parse(body)
+    let event
+    try {
+      event = JSON.parse(body)
+      const { type, data } = event
+
+      console.log('Received Mux webhook event:', {
+        type,
+        data: JSON.stringify(data).substring(0, 200) + '...',
+        bodyLength: body.length,
+      })
+    } catch (error) {
+      console.error('Error parsing webhook body:', error)
+      console.log('Webhook body:', body.substring(0, 500) + '...')
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+    }
+
     const { type, data } = event
 
     const payload = await getPayload({ config: configPromise })
@@ -72,6 +101,45 @@ export async function POST(req: NextRequest) {
               // Update other metadata as needed
             },
           })
+        }
+
+        break
+      }
+
+      case 'video.asset.created': {
+        // Extract data from the webhook payload
+        const { id: assetId, playback_ids, duration } = data
+
+        // Extract the filename from the asset data
+        // The filename is usually in the asset's metadata or can be derived from the asset ID
+        let title = 'Untitled Video'
+
+        // If there's metadata with a filename, use it as the title
+        if (data.metadata && data.metadata.filename) {
+          // Remove file extension from the filename
+          title = data.metadata.filename.replace(/\.[^/.]+$/, '')
+        }
+
+        // Create a new video document
+        try {
+          const newVideo = await payload.create({
+            collection: 'videos',
+            data: {
+              title,
+              sourceType: 'mux',
+              muxData: {
+                assetId,
+                playbackId: playback_ids?.[0]?.id,
+                status: 'processing',
+              },
+              duration: duration || 0,
+              publishedAt: new Date().toISOString(),
+            },
+          })
+
+          console.log('Created new video from Mux asset:', newVideo.id)
+        } catch (error) {
+          console.error('Error creating video from Mux asset:', error)
         }
 
         break

@@ -19,8 +19,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Create a direct upload URL with Mux
-    const upload = await createMuxUpload()
+    // Get the filename from the request body if available
+    const requestBody = await req.json().catch(() => ({}))
+    const filename = requestBody.filename || 'video-upload'
+
+    // Create a direct upload URL with Mux and include metadata
+    const upload = await createMuxUpload({
+      metadata: {
+        filename,
+        user_id: user.id,
+      },
+    })
+
+    console.log('Created Mux direct upload:', { uploadId: upload.uploadId, filename })
 
     // Return the upload URL and ID to the client
     return NextResponse.json(upload)

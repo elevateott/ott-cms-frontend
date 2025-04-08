@@ -763,10 +763,6 @@ export interface Video {
    * Choose how this video is delivered
    */
   sourceType: 'mux' | 'embedded';
-  /**
-   * Upload your video directly to Mux
-   */
-  muxUploader?: string | null;
   muxData?: {
     /**
      * Mux Upload ID (automatically populated)
@@ -1422,7 +1418,6 @@ export interface VideosSelect<T extends boolean = true> {
   slug?: T;
   slugLock?: T;
   sourceType?: T;
-  muxUploader?: T;
   muxData?:
     | T
     | {

@@ -4,7 +4,6 @@ import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { deleteAssetOnVideoDelete } from '@/hooks/mux/deleteAssetOnVideoDelete'
 import { fetchMuxMetadata } from '@/hooks/mux/updateVideoOnWebhook'
-import { muxUploaderField } from '@/fields/muxUploader'
 
 export const Videos: CollectionConfig = {
   slug: 'videos',
@@ -18,10 +17,8 @@ export const Videos: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'sourceType', 'category', 'publishedAt', 'createdAt'],
     group: 'Media',
-    // We'll add the custom component later after fixing type issues
-    // components: {
-    //   edit: VideoEdit,
-    // },
+    // We'll add a custom button in a different way
+    // For now, let's focus on the webhook handler
   },
   fields: [
     {
@@ -48,7 +45,7 @@ export const Videos: CollectionConfig = {
         description: 'Choose how this video is delivered',
       },
     },
-    muxUploaderField,
+    // We don't need the muxUploaderField anymore
     {
       name: 'muxData',
       type: 'group',
