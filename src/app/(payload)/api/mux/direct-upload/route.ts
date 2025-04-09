@@ -1,31 +1,34 @@
-// src/app/api/mux/direct-upload/route.ts
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
-import { NextRequest, NextResponse } from 'next/server'
-// No need for the utility function anymore
+/**
+ * Mux Direct Upload API
+ *
+ * Creates a direct upload URL for Mux
+ */
 
-// Use the createMuxUpload utility function
-import { createMuxUpload } from '@/utilities/mux'
+import { createPostHandler } from '@/utils/apiHandler'
+import { createApiResponse } from '@/utils/apiResponse'
+import { createMuxService } from '@/services/serviceFactory'
 
-export async function POST(req: NextRequest) {
-  try {
-    // Authenticate the request
-    const payload = await getPayload({ config: configPromise })
+/**
+ * POST /api/mux/direct-upload
+ *
+ * Create a direct upload URL for Mux
+ */
+export const POST = createPostHandler(
+  async (_, body, { user }) => {
+    // Get filename from request body
+    const filename = body.filename || 'video-upload'
 
-    // Check if the user is authenticated
-    const { user } = await payload.auth({ headers: req.headers })
+    // Log the request
+    console.log('Direct upload request with filename:', filename)
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Get the filename from the request body if available
-    const requestBody = await req.json().catch(() => ({}))
-    const filename = requestBody.filename || 'video-upload'
-
-    // Create a direct upload URL with Mux and include metadata
-    const upload = await createMuxUpload({
+    // Create direct upload
+    const muxService = createMuxService()
+    const upload = await muxService.createDirectUpload({
       metadata: {
+        filename,
+        user_id: user.id,
+      },
+      passthrough: {
         filename,
         user_id: user.id,
       },
@@ -33,11 +36,10 @@ export async function POST(req: NextRequest) {
 
     console.log('Created Mux direct upload:', { uploadId: upload.uploadId, filename })
 
-    // Return the upload URL and ID to the client
-    return NextResponse.json(upload)
-  } catch (error: unknown) {
-    console.error('Error creating Mux upload:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: `Failed to create upload: ${errorMessage}` }, { status: 500 })
-  }
-}
+    return createApiResponse(upload)
+  },
+  {
+    requireAuth: true,
+    errorContext: 'MuxDirectUploadAPI',
+  },
+)

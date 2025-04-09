@@ -23,6 +23,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
     try {
       // Get the filename from the file if available
       const filename = file?.name || 'video-upload'
+      console.log('Uploading file:', filename)
 
       const res = await fetch('/api/mux/direct-upload', {
         method: 'POST',
@@ -37,6 +38,30 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
 
       const data = await res.json()
       setUploadStatus('uploading')
+
+      // Create a video document with the uploadId
+      try {
+        const createRes = await fetch('/api/mux/create-video', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uploadId: data.uploadId,
+            filename: filename,
+          }),
+          credentials: 'include',
+        })
+
+        if (!createRes.ok) {
+          throw new Error('Failed to create video document')
+        }
+
+        const createData = await createRes.json()
+        console.log('Created video document:', createData)
+      } catch (createError) {
+        console.error('Error creating video document:', createError)
+      }
 
       return data.url
     } catch (error) {
@@ -53,11 +78,8 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
       const uploader = document.querySelector('mux-uploader')
       if (!uploader) return
 
-      // Handle progress updates
-      uploader.addEventListener('uploadprogress', function (event: Event) {
-        const customEvent = event as any
-        setProgress(customEvent.detail.progress)
-      })
+      // We'll use the onProgress prop instead of this event listener
+      // as it seems more reliable
 
       // Handle successful upload
       uploader.addEventListener('uploadcomplete', function (event: Event) {
@@ -65,6 +87,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
         console.log('Upload complete event:', customEvent.detail)
 
         setUploadStatus('processing')
+        setProgress(100) // Ensure progress shows 100%
 
         // The webhook will handle creating the video document
         // We need to refresh the list after a delay to allow the webhook to process
@@ -72,7 +95,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
         setTimeout(() => {
           console.log('Refreshing video list after upload')
           refreshList()
-        }, 5000) // Increased delay to 5 seconds to give webhook more time
+        }, 2000) // Reduced delay to 2 seconds since we're using server-sent events now
       })
 
       // Handle upload errors
@@ -104,10 +127,28 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
         {uploadStatus === 'idle' && (
           <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center">
             <MuxUploader
-              endpoint={getUploadUrl}
+              endpoint={(file) => getUploadUrl(file)}
               onUploadStart={(file) => {
                 // The file object is available in the onUploadStart callback
                 console.log('Upload started for file:', file.name)
+                setProgress(0)
+              }}
+              onProgress={(progress) => {
+                // This is the direct progress event from the Mux Uploader component
+                console.log('Direct progress event:', progress)
+                // Convert to percentage (0-100)
+                const percentage = progress * 100
+                console.log(`Setting progress to ${percentage}%`)
+                setProgress(percentage)
+              }}
+              onSuccess={() => {
+                console.log('Upload completed successfully')
+                setProgress(100)
+              }}
+              onError={(error) => {
+                console.error('Upload error:', error)
+                setError(error.message || 'Upload failed')
+                setUploadStatus('error')
               }}
             />
           </div>

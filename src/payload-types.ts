@@ -794,9 +794,10 @@ export interface Video {
    */
   aspectRatio?: string | null;
   /**
-   * Video thumbnail image (automatically generated for Mux videos)
+   * Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)
    */
   thumbnail?: (string | null) | Media;
+  muxThumbnailUrl?: string | null;
   category?: (string | null) | Category;
   tags?: (string | Category)[] | null;
   /**
@@ -1430,6 +1431,7 @@ export interface VideosSelect<T extends boolean = true> {
   duration?: T;
   aspectRatio?: T;
   thumbnail?: T;
+  muxThumbnailUrl?: T;
   category?: T;
   tags?: T;
   featured?: T;

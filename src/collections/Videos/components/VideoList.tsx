@@ -1,7 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useEventBusOn } from '@/hooks/useEventBus'
+import { EVENTS } from '@/utilities/eventBus'
 
 type Video = {
   id: string
@@ -10,6 +12,10 @@ type Video = {
     status?: string
     playbackId?: string
   }
+  thumbnail?: {
+    url?: string
+  }
+  muxThumbnailUrl?: string
   createdAt: string
 }
 
@@ -23,36 +29,57 @@ const VideoList: React.FC<VideoListProps> = ({ refreshTrigger }) => {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch('/api/videos?sort=-createdAt&limit=10')
+  // Function to fetch videos
+  const fetchVideos = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/videos?sort=-createdAt&limit=10')
 
-        if (!res.ok) {
-          throw new Error('Failed to fetch videos')
-        }
-
-        const data = await res.json()
-        console.log('Fetched videos:', data) // Log the response for debugging
-        setVideos(data.docs || [])
-      } catch (err) {
-        console.error('Error fetching videos:', err)
-        setError('Failed to load videos')
-      } finally {
-        setLoading(false)
+      if (!res.ok) {
+        throw new Error('Failed to fetch videos')
       }
+
+      const data = await res.json()
+      console.log('Fetched videos:', data) // Log the response for debugging
+      setVideos(data.docs || [])
+    } catch (err) {
+      console.error('Error fetching videos:', err)
+      setError('Failed to load videos')
+    } finally {
+      setLoading(false)
     }
+  }, [])
 
+  // Initial fetch and refresh when the refreshTrigger changes
+  useEffect(() => {
     fetchVideos()
-
-    // Set up an interval to refresh the list every 10 seconds
-    // This helps ensure we catch any videos created by the webhook
-    const intervalId = setInterval(fetchVideos, 10000)
-
-    // Clean up the interval when the component unmounts
-    return () => clearInterval(intervalId)
   }, [refreshTrigger])
+
+  // Listen for video created events from the event bus
+  useEventBusOn(
+    EVENTS.VIDEO_CREATED,
+    (data) => {
+      console.log('Video created event received:', data)
+      // Add a small delay to ensure the database has been updated
+      setTimeout(() => {
+        fetchVideos()
+      }, 500)
+    },
+    [fetchVideos],
+  )
+
+  // Listen for video updated events from the event bus
+  useEventBusOn(
+    EVENTS.VIDEO_UPDATED,
+    (data) => {
+      console.log('Video updated event received:', data)
+      // Add a small delay to ensure the database has been updated
+      setTimeout(() => {
+        fetchVideos()
+      }, 500)
+    },
+    [fetchVideos],
+  )
 
   const handleEditVideo = (id: string) => {
     router.push(`/admin/collections/videos/${id}`)
@@ -91,6 +118,9 @@ const VideoList: React.FC<VideoListProps> = ({ refreshTrigger }) => {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Thumbnail
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Title
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -107,6 +137,31 @@ const VideoList: React.FC<VideoListProps> = ({ refreshTrigger }) => {
         <tbody className="bg-white divide-y divide-gray-200">
           {videos.map((video) => (
             <tr key={video.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap">
+                {video.thumbnail?.url ? (
+                  <img
+                    src={video.thumbnail.url}
+                    alt={video.title}
+                    className="w-32 h-20 object-cover rounded"
+                  />
+                ) : video.muxThumbnailUrl ? (
+                  <img
+                    src={video.muxThumbnailUrl}
+                    alt={video.title}
+                    className="w-32 h-20 object-cover rounded"
+                  />
+                ) : video.muxData?.playbackId ? (
+                  <img
+                    src={`https://image.mux.com/${video.muxData.playbackId}/thumbnail.jpg?width=200&height=120&fit_mode=preserve`}
+                    alt={video.title}
+                    className="w-32 h-20 object-cover rounded"
+                  />
+                ) : (
+                  <div className="w-32 h-20 bg-gray-200 rounded flex items-center justify-center">
+                    <span className="text-xs text-gray-500">No thumbnail</span>
+                  </div>
+                )}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900">{video.title}</div>
               </td>

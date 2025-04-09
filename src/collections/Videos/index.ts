@@ -17,8 +17,6 @@ export const Videos: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'sourceType', 'category', 'publishedAt', 'createdAt'],
     group: 'Media',
-    // We'll add a custom button in a different way
-    // For now, let's focus on the webhook handler
   },
   fields: [
     {
@@ -125,7 +123,32 @@ export const Videos: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       admin: {
-        description: 'Video thumbnail image (automatically generated for Mux videos)',
+        description:
+          'Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)',
+        condition: (data) =>
+          data?.sourceType !== 'mux' ||
+          (data?.sourceType === 'mux' && data?.muxData?.status === 'ready'),
+      },
+    },
+    {
+      name: 'muxThumbnailUrl',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        hidden: true,
+      },
+      hooks: {
+        beforeChange: [
+          ({ siblingData }) => {
+            // Clear this field if it's not a Mux video or if there's no playback ID
+            if (siblingData.sourceType !== 'mux' || !siblingData.muxData?.playbackId) {
+              return null
+            }
+            return siblingData.muxData?.playbackId
+              ? `https://image.mux.com/${siblingData.muxData.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=preserve`
+              : null
+          },
+        ],
       },
     },
     {

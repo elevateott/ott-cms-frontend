@@ -25,6 +25,18 @@ const nextConfig = {
           protocol: url.protocol.replace(':', ''),
         }
       }),
+      // Allow images from Mux
+      {
+        hostname: 'image.mux.com',
+        protocol: 'https',
+        pathname: '/**',
+      },
+      // Allow images from placeholder.com
+      {
+        hostname: 'via.placeholder.com',
+        protocol: 'https',
+        pathname: '/**',
+      },
     ],
   },
   reactStrictMode: true,
