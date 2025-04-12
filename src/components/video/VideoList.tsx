@@ -1,19 +1,25 @@
 'use client'
 
-/**
- * VideoList Component
- *
- * An enhanced component for displaying a list of videos
- */
-
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/utilities/ui'
 import { Button } from '@/components/ui/button'
 import VideoGrid from './VideoGrid'
 import { useEventBusOn } from '@/hooks/useEventBus'
-import { EVENTS } from '@/utilities/eventBus'
-import { API_ENDPOINTS } from '@/constants'
+import { EVENTS } from '@/constants/events'
+import { API_ROUTES } from '@/constants/api'
+
+interface Video {
+  id: string
+  title: string
+  muxData?: {
+    status?: string
+    playbackId?: string
+  }
+  muxThumbnailUrl?: string
+  duration?: number
+  createdAt: string
+}
 
 export interface VideoListProps extends React.HTMLAttributes<HTMLDivElement> {
   refreshTrigger?: number
@@ -31,92 +37,57 @@ export const VideoList: React.FC<VideoListProps> = ({
   ...props
 }) => {
   const router = useRouter()
-  const [videos, setVideos] = useState<any[]>([])
+  const [videos, setVideos] = useState<Video[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch videos from the API
   const fetchVideos = useCallback(async () => {
     try {
       setLoading(true)
+      const res = await fetch(`${API_ROUTES.VIDEOS}?sort=${sort}&limit=${limit}`)
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch videos')
+      }
+
+      const response = await res.json()
+      const videos = Array.isArray(response.data) ? response.data : response.data?.docs || []
+      setVideos(videos)
       setError(null)
-
-      const response = await fetch(`${API_ENDPOINTS.VIDEOS}?limit=${limit}&sort=${sort}`)
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch videos: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json()
-
-      if (data.success && data.data?.docs) {
-        setVideos(data.data.docs)
-      } else {
-        throw new Error('Invalid response format')
-      }
     } catch (err) {
       console.error('Error fetching videos:', err)
-      setError(err instanceof Error ? err.message : 'An unknown error occurred')
+      setError('Failed to load videos')
     } finally {
       setLoading(false)
     }
-  }, [limit, sort])
+  }, [sort, limit])
 
-  // Fetch videos when the component mounts or refreshTrigger changes
   useEffect(() => {
     fetchVideos()
   }, [fetchVideos, refreshTrigger])
 
-  // Listen for video created events from the event bus
-  useEventBusOn(
-    EVENTS.VIDEO_CREATED,
-    (data) => {
-      console.log('Video created event received:', data)
-      // Add a small delay to ensure the database has been updated
-      setTimeout(() => {
-        fetchVideos()
-      }, 500)
-    },
-    [fetchVideos],
-  )
+  useEventBusOn(EVENTS.VIDEO_CREATED, () => {
+    setTimeout(fetchVideos, 500)
+  }, [fetchVideos])
 
-  // Listen for video updated events from the event bus
-  useEventBusOn(
-    EVENTS.VIDEO_UPDATED,
-    (data) => {
-      console.log('Video updated event received:', data)
-      // Add a small delay to ensure the database has been updated
-      setTimeout(() => {
-        fetchVideos()
-      }, 500)
-    },
-    [fetchVideos],
-  )
+  useEventBusOn(EVENTS.VIDEO_UPDATED, () => {
+    setTimeout(fetchVideos, 500)
+  }, [fetchVideos])
 
-  // Handle view button click
-  const handleView = useCallback(
-    (id: string) => {
-      router.push(`/admin/videos/${id}`)
-    },
-    [router],
-  )
+  const handleView = useCallback((id: string) => {
+    router.push(`/admin/videos/${id}`)
+  }, [router])
 
-  // Handle edit button click
-  const handleEdit = useCallback(
-    (id: string) => {
-      router.push(`/admin/videos/${id}/edit`)
-    },
-    [router],
-  )
+  const handleEdit = useCallback((id: string) => {
+    router.push(`/admin/videos/${id}/edit`)
+  }, [router])
 
-  // Handle refresh button click
   const handleRefresh = useCallback(() => {
     fetchVideos()
   }, [fetchVideos])
 
   return (
-    <div className={cn('', className)} {...props}>
-      {/* Header with refresh button */}
+    <div className={cn('space-y-6', className)} {...props}>
       {showRefreshButton && (
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Videos</h2>
@@ -145,12 +116,10 @@ export const VideoList: React.FC<VideoListProps> = ({
         </div>
       )}
 
-      {/* Loading state */}
       {loading && videos.length === 0 && (
         <div className="p-8 text-center text-gray-500">Loading videos...</div>
       )}
 
-      {/* Error state */}
       {error && (
         <div className="p-4 bg-red-50 text-red-700 rounded-lg">
           <p className="font-medium">Error loading videos</p>
@@ -161,15 +130,17 @@ export const VideoList: React.FC<VideoListProps> = ({
         </div>
       )}
 
-      {/* Videos grid */}
       {!loading && !error && (
         <VideoGrid
-          videos={videos.map((video) => ({
+          videos={videos.map(video => ({
             id: video.id,
             title: video.title,
             status: video.muxData?.status,
             playbackId: video.muxData?.playbackId,
-            thumbnailUrl: video.muxThumbnailUrl,
+            thumbnailUrl: video.muxThumbnailUrl ||
+              (video.muxData?.playbackId
+                ? `https://image.mux.com/${video.muxData.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=preserve`
+                : undefined),
             duration: video.duration,
             createdAt: video.createdAt,
           }))}
@@ -182,3 +153,6 @@ export const VideoList: React.FC<VideoListProps> = ({
 }
 
 export default VideoList
+
+
+

@@ -16,17 +16,35 @@ export class MuxService implements IMuxService {
   private video: any
 
   constructor({ tokenId, tokenSecret }: { tokenId: string; tokenSecret: string }) {
-    const muxClient = new Mux({
-      tokenId,
-      tokenSecret,
-    })
+    if (!tokenId || !tokenSecret) {
+      throw new Error('MUX_TOKEN_ID and MUX_TOKEN_SECRET are required')
+    }
 
-    // The Video API is accessed through video (lowercase)
-    this.video = muxClient.video
+    console.log('Initializing Mux client with token ID:', tokenId.substring(0, 8) + '...')
 
-    // Add validation
-    if (!this.video || !this.video.Uploads) {
-      throw new Error('Failed to initialize Mux Video client. Check your credentials.')
+    try {
+      const muxClient = new Mux({
+        tokenId,
+        tokenSecret,
+      })
+
+      this.video = muxClient.video // Note: Changed from lowercase 'video' to 'Video'
+
+      // Add validation with better error messaging
+      if (!this.video) {
+        throw new Error('Mux Video client initialization failed - video object is undefined')
+      }
+
+      if (!this.video.uploads) {
+        throw new Error('Mux Video client initialization failed - uploads API not available')
+      }
+
+      console.log('Mux Video client initialized successfully')
+    } catch (error) {
+      console.error('Error initializing Mux client:', error)
+      throw new Error(
+        `Failed to initialize Mux Video client: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 
@@ -38,7 +56,7 @@ export class MuxService implements IMuxService {
     url: string
   }> {
     try {
-      const upload = await this.video.Uploads.create({
+      const upload = await this.video.uploads.create({
         cors_origin: '*',
         new_asset_settings: {
           playback_policy: ['public'],
@@ -227,19 +245,3 @@ export class MuxService implements IMuxService {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

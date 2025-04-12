@@ -8,7 +8,7 @@ import { NextRequest } from 'next/server'
 import { createGetHandler, createPostHandler } from '@/utils/apiHandler'
 import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
 import { createVideoRepository } from '@/services/serviceFactory'
-import { PAGINATION } from '@/constants'
+import { PAGINATION } from '@/constants/index'
 
 /**
  * GET /api/videos
@@ -95,4 +95,5 @@ export const POST = createPostHandler(
     errorContext: 'VideosAPI.POST',
   },
 )
+
 

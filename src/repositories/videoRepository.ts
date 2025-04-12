@@ -124,15 +124,20 @@ export class VideoRepository {
    */
   async update(id: string, data: Partial<VideoDocument>): Promise<VideoDocument | null> {
     try {
-      const video = await this.payload.update({
+      const result = await this.payload.update({
         collection: 'videos',
         id,
         data,
-      })
-      return video as VideoDocument
+        // Add these specific options to handle hooks properly
+        draft: false,
+        autosave: false,
+        // Remove any hook-related options that might be causing issues
+      });
+
+      return result as VideoDocument;
     } catch (error) {
-      logError(error, 'VideoRepository.update')
-      return null
+      logError(error, 'VideoRepository.update');
+      return null;
     }
   }
 
@@ -242,6 +247,9 @@ export class VideoRepository {
     }
   }
 }
+
+
+
 
 
 

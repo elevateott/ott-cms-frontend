@@ -1,36 +1,40 @@
-import { MuxService } from './muxService'
+import { MuxService } from './muxService';
+import { MockMuxService } from './mockMuxService';
+import { appConfig, muxConfig } from '@/config';
 
 export const createMuxService = () => {
-  const tokenId = process.env.MUX_TOKEN_ID
-  const tokenSecret = process.env.MUX_TOKEN_SECRET
+  // Check if we're in development and mock mode is enabled
+  if (process.env.NODE_ENV === 'development' && process.env.USE_MOCK_MUX === 'true') {
+    console.log('Using mock Mux service for development');
+    return new MockMuxService();
+  }
 
-  // Temporary debug log (remove in production)
-  console.log('MUX ENV Variables:', {
-    tokenId: tokenId ? `${tokenId.substring(0, 8)}...` : 'missing',
-    hasSecret: !!tokenSecret
-  })
+  // Validate environment variables
+  const tokenId = process.env.MUX_TOKEN_ID || muxConfig.tokenId;
+  const tokenSecret = process.env.MUX_TOKEN_SECRET || muxConfig.tokenSecret;
 
   if (!tokenId || !tokenSecret) {
-    throw new Error('MUX_TOKEN_ID and MUX_TOKEN_SECRET environment variables are required')
+    console.error('Missing Mux credentials');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Falling back to mock service due to missing credentials');
+      return new MockMuxService();
+    }
+    throw new Error('MUX_TOKEN_ID and MUX_TOKEN_SECRET environment variables are required');
   }
 
   try {
-    // Log the token ID (but not the secret) for debugging
-    console.log('Initializing Mux service with token ID:', tokenId.substring(0, 8) + '...')
-
-    const service = new MuxService({
+    console.log('Initializing Mux service with token ID:', tokenId.substring(0, 8) + '...');
+    return new MuxService({
       tokenId,
       tokenSecret
-    })
-
-    console.log('Mux service initialized successfully')
-    return service
+    });
   } catch (error) {
-    console.error('Failed to initialize Mux service:', error)
-    throw error
+    console.error('Failed to initialize Mux service:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Falling back to mock service due to initialization error');
+      return new MockMuxService();
+    }
+    throw error;
   }
-}
-
-
-
+};
 

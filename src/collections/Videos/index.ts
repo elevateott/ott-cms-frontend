@@ -269,3 +269,5 @@ export const Videos: CollectionConfig = {
 }
 
 export default Videos
+
+

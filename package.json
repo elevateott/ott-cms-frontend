@@ -52,7 +52,6 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.378.0",
     "mongoose": "^8.13.2",
-    "mongoose-paginate-v2": "1.7.4",
     "next": "15.2.3",
     "next-sitemap": "^4.2.3",
     "payload": "3.34.0",
@@ -87,8 +86,7 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "sharp",
-      "mongoose-paginate-v2"
+      "sharp"
     ]
   }
 }

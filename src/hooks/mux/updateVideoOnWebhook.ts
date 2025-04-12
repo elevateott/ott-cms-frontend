@@ -1,52 +1,32 @@
-// src/hooks/mux/updateVideoOnWebhook.ts
-import { CollectionAfterChangeHook } from 'payload'
-import type { Video } from '@/payload-types'
+import { CollectionAfterChangeHook } from 'payload/types';
 
-export const fetchMuxMetadata: CollectionAfterChangeHook<Video> = async ({
-  doc,
-  req,
-  operation,
-}) => {
-  // Only proceed if this is a new or updated video with Mux source
-  if (
-    (operation === 'create' || operation === 'update') &&
-    doc.sourceType === 'mux' &&
-    doc.muxData?.assetId &&
-    doc.muxData?.status === 'processing'
-  ) {
+export const fetchMuxMetadata: CollectionAfterChangeHook = async ({ doc, req }) => {
+  // If this is a Mux video and it has an assetId
+  if (doc.sourceType === 'mux' && doc.muxData?.assetId) {
     try {
-      const { payload } = req
+      const muxAsset = await req.payload.muxService.getAsset(doc.muxData.assetId);
 
-      // Check if we already have a scheduled job to poll for this video
-      const existingJobs = await payload.find({
-        collection: 'mux-webhook-jobs',
-        where: {
-          assetId: {
-            equals: doc.muxData.assetId,
-          },
-        },
-      })
-
-      if (existingJobs.docs.length === 0) {
-        // Create a job to poll Mux for video status (in case webhook is missed)
-        await payload.create({
-          collection: 'mux-webhook-jobs',
+      if (muxAsset) {
+        // Update the video with metadata from Mux
+        await req.payload.update({
+          collection: 'videos',
+          id: doc.id,
           data: {
-            videoId: doc.id,
-            assetId: doc.muxData.assetId,
-            status: 'pending',
-            attemptCount: 0,
-            lastAttempt: new Date().toISOString(),
-          },
-        })
+            duration: muxAsset.duration,
+            aspectRatio: muxAsset.aspect_ratio,
+            muxData: {
+              ...doc.muxData,
+              status: muxAsset.status,
+              playbackId: muxAsset.playback_ids?.[0]?.id,
+            }
+          }
+        });
       }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      req.payload.logger.error(
-        `Error scheduling Mux metadata fetch for video ${doc.id}: ${errorMessage}`,
-      )
+    } catch (error) {
+      req.payload.logger.error(`Error fetching Mux metadata for video ${doc.id}: ${error}`);
     }
   }
 
-  return doc
-}
+  return doc;
+};
+

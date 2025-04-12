@@ -25,6 +25,10 @@ export class WebhookHandlerService {
     this.eventEmitter = eventEmitter
   }
 
+  private getThumbnailUrl(playbackId: string): string {
+    return `https://image.mux.com/${playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=preserve`;
+  }
+
   /**
    * Handle a webhook event
    */
@@ -47,6 +51,10 @@ export class WebhookHandlerService {
           await this.handleUploadAssetCreated(data);
           break;
 
+        case MUX_WEBHOOK_EVENT_TYPES.NON_STANDARD_INPUT_DETECTED:
+          await this.handleNonStandardInput(data);
+          break;
+
         default:
           console.log(`Unhandled webhook event type: ${type}`);
       }
@@ -60,14 +68,16 @@ export class WebhookHandlerService {
    */
   private async handleAssetCreated(data: any): Promise<void> {
     try {
-      const { id: assetId, upload_id, playback_ids } = data;
+      const { id: assetId, playback_ids, upload_id } = data;
 
-      // Check if a video document already exists with this uploadId
+      // If we have an upload_id, try to find an existing video
       if (upload_id) {
         const existingVideo = await this.videoRepository.findByMuxUploadId(upload_id);
 
         if (existingVideo) {
-          console.log(`Found existing video with uploadId ${upload_id}, updating it`);
+          const thumbnailUrl = playback_ids?.[0]?.id
+            ? this.getThumbnailUrl(playback_ids[0].id)
+            : undefined;
 
           // Update the existing video with the asset ID
           const updatedVideo = await this.videoRepository.update(existingVideo.id, {
@@ -77,37 +87,23 @@ export class WebhookHandlerService {
               playbackId: playback_ids?.[0]?.id,
               status: 'processing',
             },
-            // Set the muxThumbnailUrl field if we have a playback ID
-            muxThumbnailUrl: playback_ids?.[0]?.id
-              ? this.muxService.getThumbnailUrl(playback_ids[0].id)
-              : undefined,
+            muxThumbnailUrl: thumbnailUrl,
           });
 
           if (updatedVideo) {
-            console.log(`Updated existing video ${existingVideo.id} with assetId ${assetId}`);
             this.emitVideoUpdated(updatedVideo.id);
           }
-
           return;
         }
       }
 
-      // If we get here, we need to create a new video document
-      // Extract the filename from the asset data
-      let title = 'Untitled Video';
+      // If no existing video found, create a new one
+      const thumbnailUrl = playback_ids?.[0]?.id
+        ? this.getThumbnailUrl(playback_ids[0].id)
+        : undefined;
 
-      // If there's metadata with a filename, use it as the title
-      if (data.metadata && data.metadata.filename) {
-        // Remove file extension from the filename
-        title = data.metadata.filename.replace(/\\.[^/.]+$/, '');
-      } else if (data.passthrough && data.passthrough.filename) {
-        // Try to get filename from passthrough data
-        title = data.passthrough.filename.replace(/\\.[^/.]+$/, '');
-      }
-
-      // Create a new video document
       const newVideo = await this.videoRepository.create({
-        title,
+        title: `Untitled Video ${assetId}`,
         sourceType: 'mux',
         muxData: {
           assetId,
@@ -115,16 +111,11 @@ export class WebhookHandlerService {
           playbackId: playback_ids?.[0]?.id,
           status: 'processing',
         },
-        // Set the muxThumbnailUrl field if we have a playback ID
-        muxThumbnailUrl: playback_ids?.[0]?.id
-          ? this.muxService.getThumbnailUrl(playback_ids[0].id)
-          : undefined,
-        duration: data.duration || 0,
+        muxThumbnailUrl: thumbnailUrl,
         publishedAt: new Date().toISOString(),
       });
 
       if (newVideo) {
-        console.log(`Created new video from Mux asset: ${newVideo.id}`);
         this.emitVideoCreated(newVideo.id);
       }
     } catch (error) {
@@ -137,22 +128,15 @@ export class WebhookHandlerService {
    */
   private async handleAssetReady(data: any): Promise<void> {
     try {
-      const { id: assetId, upload_id, playback_ids, aspect_ratio, duration } = data;
+      const { id: assetId, playback_ids, duration, aspect_ratio } = data;
 
-      // First try to find the video with this assetId
-      let video = await this.videoRepository.findByMuxAssetId(assetId);
+      const video = await this.videoRepository.findByMuxAssetId(assetId);
+      if (!video) return;
 
-      // If no video found and we have an upload_id, try to find by uploadId
-      if (!video && upload_id) {
-        video = await this.videoRepository.findByMuxUploadId(upload_id);
-      }
+      const thumbnailUrl = playback_ids?.[0]?.id
+        ? this.getThumbnailUrl(playback_ids[0].id)
+        : undefined;
 
-      if (!video) {
-        console.log(`No video found for assetId ${assetId}`);
-        return;
-      }
-
-      // Update the video with the Mux asset data
       const updatedVideo = await this.videoRepository.update(video.id, {
         muxData: {
           ...video.muxData,
@@ -161,15 +145,11 @@ export class WebhookHandlerService {
         },
         aspectRatio: aspect_ratio,
         duration: duration,
-        // Set the muxThumbnailUrl field
-        muxThumbnailUrl: playback_ids?.[0]?.id
-          ? this.muxService.getThumbnailUrl(playback_ids[0].id)
-          : undefined,
+        muxThumbnailUrl: thumbnailUrl,
       });
 
       if (updatedVideo) {
-        console.log(`Updated video ${video.id} with Mux asset data`);
-        this.emitVideoUpdated(video.id);
+        this.emitVideoUpdated(updatedVideo.id);
       }
     } catch (error) {
       logError(error, 'WebhookHandlerService.handleAssetReady');
@@ -211,6 +191,40 @@ export class WebhookHandlerService {
   }
 
   /**
+   * Handle non-standard input detected event
+   */
+  private async handleNonStandardInput(data: any): Promise<void> {
+    try {
+      const { upload_id, video_quality, tracks } = data;
+
+      // Find the video with this upload ID
+      const video = await this.videoRepository.findByMuxUploadId(upload_id);
+
+      if (!video) {
+        console.log(`No video found for uploadId ${upload_id}`);
+        return;
+      }
+
+      // Update the video with the non-standard input information
+      const updatedVideo = await this.videoRepository.update(video.id, {
+        muxData: {
+          ...video.muxData,
+          videoQuality: video_quality,
+          nonStandardInput: true,
+          tracks: tracks,
+        },
+      });
+
+      if (updatedVideo) {
+        console.log(`Updated video ${video.id} with non-standard input information`);
+        this.emitVideoUpdated(video.id);
+      }
+    } catch (error) {
+      logError(error, 'WebhookHandlerService.handleNonStandardInput');
+    }
+  }
+
+  /**
    * Emit video created event
    */
   private emitVideoCreated(id: string): void {
@@ -232,4 +246,6 @@ export class WebhookHandlerService {
     }
   }
 }
+
+
 

@@ -1,50 +1,42 @@
 import { NextResponse } from 'next/server'
-import { createMuxService } from '@/services/mux'
+import { createMuxService } from '@/services/mux/index'
+import { logError } from '@/utils/errorHandler'
 
 export async function POST(request: Request) {
   try {
+    const muxService = createMuxService()
+
+    // Get the filename from the request body
     const body = await request.json()
     const { filename } = body
 
-    console.log(`Direct upload request with filename: ${filename}`)
-    console.log('MUX ENV Variables:', {
-      tokenId: process.env.MUX_TOKEN_ID?.substring(0, 8) + '...',
-      hasSecret: !!process.env.MUX_TOKEN_SECRET
-    })
-
-    let muxService
-    try {
-      muxService = createMuxService()
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      console.error('Failed to initialize Mux service:', error)
-      return NextResponse.json(
-        { error: 'Mux service configuration error: ' + errorMessage },
-        { status: 500 }
-      )
-    }
-
     const upload = await muxService.createDirectUpload({
-      corsOrigin: '*',
-      newAssetSettings: {
-        playbackPolicy: ['public'],
-      },
-      metadata: {
-        filename: filename || 'untitled',
-      },
+      ...(filename ? { metadata: { filename } } : {}),
     })
 
-    return NextResponse.json(upload)
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    console.error('Error creating Mux upload:', error)
+    // The Mux upload response should contain both the URL and upload ID
+    return NextResponse.json({
+      success: true,
+      data: {
+        url: upload.url,
+        uploadId: upload.uploadId,
+      },
+    })
+  } catch (error) {
+    console.error('Error in direct upload endpoint:', error)
+    logError(error, 'MuxDirectUpload.POST')
+
     return NextResponse.json(
-      { error: errorMessage || 'Failed to create upload URL' },
-      { status: 500 }
+      {
+        success: false,
+        error:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : 'An unknown error occurred'
+            : 'Failed to create upload URL',
+      },
+      { status: 500 },
     )
   }
 }
-
-
-
-

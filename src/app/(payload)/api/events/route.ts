@@ -4,10 +4,13 @@
  * Provides a stream of events to clients
  */
 
-import { NextRequest } from 'next/server'
-import { connectionManager } from '@/services/events/eventEmitter'
-import { logError } from '@/utils/errorHandler'
-import crypto from 'crypto'
+import { NextRequest } from 'next/server';
+import { connectionManager } from '@/services/events/eventEmitter';
+import { logError } from '@/utils/errorHandler';
+import crypto from 'crypto';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * GET /api/events
@@ -15,36 +18,49 @@ import crypto from 'crypto'
  * Create a server-sent events stream
  */
 export async function GET(req: NextRequest) {
-  // Generate a unique client ID
-  const clientId = crypto.randomUUID()
+  try {
+    const clientId = crypto.randomUUID();
+    console.log(`New client connection attempt: ${clientId}`);
 
-  const stream = new ReadableStream({
-    start(controller) {
-      try {
-        // Add client to connection manager
-        connectionManager.addClient(clientId, controller)
+    const stream = new ReadableStream({
+      start(controller) {
+        try {
+          // Add client to connection manager
+          connectionManager.addClient(clientId, controller);
 
-        // Send initial connection message
-        controller.enqueue(new TextEncoder().encode('event: connected\ndata: {}\n\n'))
+          // Send initial connection message
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode('event: connected\ndata: {}\n\n'));
 
-        // Remove client when connection is closed
-        req.signal.addEventListener('abort', () => {
-          connectionManager.removeClient(clientId)
-        })
-      } catch (error) {
-        logError(error, 'EventsAPI.GET')
+          // Remove client when connection is closed
+          req.signal.addEventListener('abort', () => {
+            console.log(`Connection aborted for client: ${clientId}`);
+            connectionManager.removeClient(clientId);
+          });
+        } catch (error) {
+          console.error('Error in stream start:', error);
+          logError(error, 'EventsAPI.GET.stream.start');
+          controller.error(error);
+        }
+      },
+      cancel() {
+        console.log(`Stream cancelled for client: ${clientId}`);
+        connectionManager.removeClient(clientId);
       }
-    },
-  })
+    });
 
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  })
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+      },
+    });
+  } catch (error) {
+    console.error('Error in GET handler:', error);
+    logError(error, 'EventsAPI.GET');
+    return new Response('Internal Server Error', { status: 500 });
+  }
 }
-
-
 

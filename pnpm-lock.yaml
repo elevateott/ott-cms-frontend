@@ -107,9 +107,6 @@ importers:
       mongoose:
         specifier: ^8.13.2
         version: 8.13.2(@aws-sdk/credential-providers@3.787.0)(socks@2.8.4)
-      mongoose-paginate-v2:
-        specifier: 1.7.4
-        version: 1.7.4
       next:
         specifier: 15.2.3
         version: 15.2.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(sass@1.77.4)
@@ -3522,10 +3519,6 @@ packages:
         optional: true
       socks:
         optional: true
-
-  mongoose-paginate-v2@1.7.4:
-    resolution: {integrity: sha512-2oUOH/2hrtW0Ki5dJbwxsLBeVafVBfE84QiJsr7tYBQVxUk1v5usDvRa29LpBtANMpBe7eeLUTI2tyjLSk3/Yg==}
-    engines: {node: '>=4.0.0'}
 
   mongoose-paginate-v2@1.8.5:
     resolution: {integrity: sha512-kFxhot+yw9KmpAGSSrF/o+f00aC2uawgNUbhyaM0USS9L7dln1NA77/pLg4lgOaRgXMtfgCENamjqZwIM1Zrig==}
@@ -8857,8 +8850,6 @@ snapshots:
     optionalDependencies:
       '@aws-sdk/credential-providers': 3.787.0
       socks: 2.8.4
-
-  mongoose-paginate-v2@1.7.4: {}
 
   mongoose-paginate-v2@1.8.5: {}
 

@@ -19,7 +19,7 @@ export function createVideoRepository(payload: Payload): VideoRepository {
 }
 
 export function createMuxService(): IMuxService {
-  if (appConfig.environment === 'development') {
+  if (appConfig.environment === 'development' && process.env.USE_MOCK_MUX === 'true') {
     console.log('Using mock Mux service for development')
     return new MockMuxService()
   }

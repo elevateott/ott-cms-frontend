@@ -46,7 +46,7 @@
     "redirects.js",
     "next.config.js",
     "next-sitemap.config.cjs"
-  ],
+, "src/collections/Videos/components/VideoList.tsx.bak"  ],
   "exclude": [
     "node_modules"
   ]
