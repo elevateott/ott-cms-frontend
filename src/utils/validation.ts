@@ -1,20 +1,20 @@
 /**
  * Validation Utilities
- * 
+ *
  * This module provides utility functions for validating data.
  */
 
 /**
  * Validate that required fields are present
  */
-export function validateRequiredFields<T extends Record<string, any>>(
+export function validateRequiredFields<T extends Record<string, unknown>>(
   data: T,
   requiredFields: (keyof T)[]
 ): { isValid: boolean; missingFields: string[] } {
   const missingFields = requiredFields.filter(
     (field) => data[field] === undefined || data[field] === null || data[field] === ''
   );
-  
+
   return {
     isValid: missingFields.length === 0,
     missingFields: missingFields as string[],
@@ -32,7 +32,7 @@ export function validatePattern(
   if (!pattern.test(value)) {
     return { isValid: false, error: errorMessage };
   }
-  
+
   return { isValid: true };
 }
 
@@ -48,7 +48,7 @@ export function validateRange(
   if (value < min || value > max) {
     return { isValid: false, error: errorMessage };
   }
-  
+
   return { isValid: true };
 }
 
@@ -63,7 +63,7 @@ export function validateMinLength(
   if (value.length < minLength) {
     return { isValid: false, error: errorMessage };
   }
-  
+
   return { isValid: true };
 }
 
@@ -78,7 +78,7 @@ export function validateMaxLength(
   if (value.length > maxLength) {
     return { isValid: false, error: errorMessage };
   }
-  
+
   return { isValid: true };
 }
 
@@ -103,7 +103,8 @@ export function validateUrl(
   try {
     new URL(url);
     return { isValid: true };
-  } catch (error) {
+  } catch (_error) { // Use underscore prefix to indicate intentionally unused parameter
     return { isValid: false, error: errorMessage };
   }
 }
+

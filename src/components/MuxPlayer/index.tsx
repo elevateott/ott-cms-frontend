@@ -22,6 +22,17 @@ type MuxPlayerProps = {
   maxResolution?: '1080p' | '720p' | '480p' | '360p'
 }
 
+type PlayerState = {
+  playing: boolean
+  currentTime: number
+  duration: number
+  buffering: boolean
+  volume: number
+  muted: boolean
+  playbackRate: number
+  error: string | null
+}
+
 const MuxPlayer: React.FC<MuxPlayerProps> = ({
   playbackId,
   title,
@@ -39,7 +50,7 @@ const MuxPlayer: React.FC<MuxPlayerProps> = ({
   maxResolution,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [playerState, setPlayerState] = useState({
+  const [playerState, setPlayerState] = useState<PlayerState>({
     playing: false,
     currentTime: 0,
     duration: 0,
@@ -140,7 +151,7 @@ const MuxPlayer: React.FC<MuxPlayerProps> = ({
     const handleError = () => {
       setPlayerState((prev) => ({
         ...prev,
-        error: video.error ? video.error.message : 'An unknown error occurred',
+        error: videoRef.current?.error?.message || 'An unknown error occurred',
       }))
     }
 

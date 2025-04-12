@@ -9,7 +9,7 @@
 import React from 'react'
 import { cn } from '@/utilities/ui'
 import Image from 'next/image'
-import { customImageLoader, getFallbackImageUrl } from '@/utilities/imageLoader'
+import { customImageLoader } from '@/utilities/imageLoader'
 
 export interface VideoThumbnailProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string
@@ -37,12 +37,11 @@ export const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
   const [imgError, setImgError] = React.useState(false)
 
   // Determine the source URL
-  const thumbnailSrc = imgError
-    ? getFallbackImageUrl(width, height, 'Video')
-    : src ||
-      (playbackId
-        ? `https://image.mux.com/${playbackId}/thumbnail.jpg?width=${width}&height=${height}&fit_mode=preserve`
-        : getFallbackImageUrl(width, height, 'Video'))
+  const thumbnailSrc = imgError || !src
+    ? playbackId
+      ? `https://image.mux.com/${playbackId}/thumbnail.jpg?width=${width}&height=${height}&fit_mode=preserve`
+      : null
+    : src
 
   return (
     <div
@@ -71,8 +70,24 @@ export const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
           />
         </div>
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-500 text-sm">
-          {fallbackText}
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-500">
+          <div className="flex flex-col items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 mb-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="text-sm">{fallbackText}</span>
+          </div>
         </div>
       )}
 
@@ -99,3 +114,4 @@ export const VideoThumbnail: React.FC<VideoThumbnailProps> = ({
 }
 
 export default VideoThumbnail
+

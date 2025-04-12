@@ -6,7 +6,7 @@
 
 import { Payload } from 'payload'
 import { VideoDocument } from '@/types/mux'
-import { PayloadFindOptions, PayloadPaginatedDocs, PayloadWhereClause } from '@/types/payload'
+import { PayloadPaginatedDocs } from '@/types/payload'
 import { logError } from '@/utils/errorHandler'
 
 export class VideoRepository {
@@ -37,11 +37,16 @@ export class VideoRepository {
    */
   async findByField(
     field: string,
-    value: any,
-    options: Partial<PayloadFindOptions> = {},
+    value: unknown,
+    options: {
+      limit?: number
+      page?: number
+      sort?: string
+      depth?: number
+    } = {},
   ): Promise<VideoDocument[]> {
     try {
-      const whereClause: PayloadWhereClause = {
+      const whereClause: Record<string, { equals: unknown }> = {
         [field]: {
           equals: value,
         },
@@ -65,7 +70,7 @@ export class VideoRepository {
    */
   async findByMuxAssetId(assetId: string): Promise<VideoDocument | null> {
     const videos = await this.findByField('muxData.assetId', assetId)
-    return videos.length > 0 ? videos[0] : null
+    return videos && videos.length > 0 ? (videos[0] as VideoDocument) : null
   }
 
   /**
@@ -73,7 +78,7 @@ export class VideoRepository {
    */
   async findByMuxUploadId(uploadId: string): Promise<VideoDocument | null> {
     const videos = await this.findByField('muxData.uploadId', uploadId)
-    return videos.length > 0 ? videos[0] : null
+    return videos && videos.length > 0 ? (videos[0] as VideoDocument) : null
   }
 
   /**
@@ -81,9 +86,31 @@ export class VideoRepository {
    */
   async create(data: Partial<VideoDocument>): Promise<VideoDocument | null> {
     try {
+      // Ensure required fields are present
+      if (!data.title || !data.sourceType) {
+        throw new Error('Missing required fields: title and sourceType are required')
+      }
+
+      // Create the properly typed data object
+      const createData = {
+        title: data.title,
+        sourceType: data.sourceType,
+        description: data.description,
+        slug: data.slug,
+        muxData: data.muxData,
+        embeddedUrl: data.embeddedUrl,
+        featured: (data as any).featured,
+        publishedAt: data.publishedAt,
+        category: (data as any).category,
+        thumbnail: data.thumbnail ? { relationTo: 'media', value: data.thumbnail } : undefined,
+      }
+
       const video = await this.payload.create({
         collection: 'videos',
-        data,
+        data: {
+          ...createData,
+          thumbnail: data.thumbnail?.id || null,
+        },
       })
       return video as VideoDocument
     } catch (error) {
@@ -145,9 +172,7 @@ export class VideoRepository {
   /**
    * Find videos with pagination
    */
-  async find(
-    options: Partial<PayloadFindOptions> = {},
-  ): Promise<PayloadPaginatedDocs<VideoDocument>> {
+  async find(options: Record<string, any> = {}): Promise<PayloadPaginatedDocs<VideoDocument>> {
     try {
       const result = await this.payload.find({
         collection: 'videos',
@@ -217,3 +242,17 @@ export class VideoRepository {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -3,19 +3,32 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { format } from 'date-fns'
 import { PlayCircleIcon } from 'lucide-react'
+import Image from 'next/image'
 
 type VideoCardProps = {
-  video: any // Your Video type
+  video: {
+    title: string
+    slug: string
+    thumbnail?: {
+      filename: string
+      alt?: string
+    }
+    duration: number
+    publishedAt?: string
+    category?: {
+      title: string
+    } | string
+  }
   className?: string
 }
 
 export const VideoCard: React.FC<VideoCardProps> = ({ video, className = '' }) => {
   if (!video) return null
 
-  const { id, title, slug, thumbnail, duration, publishedAt, category } = video
+  const { title, slug, thumbnail, duration, publishedAt, category } = video
 
   // Format duration for display (e.g., "1:23:45")
   const formatDuration = (seconds: number) => {
@@ -37,10 +50,12 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, className = '' }) =
       <Link href={`/videos/${slug}`} className="block relative">
         <div className="aspect-video relative overflow-hidden">
           {thumbnail ? (
-            <img
+            <Image
               src={`/media/${thumbnail.filename}`}
               alt={thumbnail.alt || title}
               className="w-full h-full object-cover"
+              width={640}
+              height={360}
             />
           ) : (
             <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -76,3 +91,9 @@ export const VideoCard: React.FC<VideoCardProps> = ({ video, className = '' }) =
     </Card>
   )
 }
+
+
+
+
+
+

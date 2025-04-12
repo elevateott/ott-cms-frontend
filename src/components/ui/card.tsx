@@ -1,11 +1,28 @@
 import { cn } from '@/utilities/ui'
 import * as React from 'react'
 
-const Card: React.FC<
-  { ref?: React.Ref<HTMLDivElement> } & React.HTMLAttributes<HTMLDivElement>
-> = ({ className, ref, ...props }) => (
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  ref?: React.Ref<HTMLDivElement>
+  variant?: 'default' | 'bordered' | 'elevated'
+  isHoverable?: boolean
+}
+
+const Card: React.FC<CardProps> = ({
+  className,
+  ref,
+  variant = 'default',
+  isHoverable = false,
+  ...props
+}) => (
   <div
-    className={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)}
+    className={cn(
+      'rounded-lg',
+      variant === 'default' && 'bg-card text-card-foreground',
+      variant === 'bordered' && 'border bg-card text-card-foreground',
+      variant === 'elevated' && 'bg-card text-card-foreground shadow-md',
+      isHoverable && 'transition-shadow hover:shadow-lg',
+      className,
+    )}
     ref={ref}
     {...props}
   />

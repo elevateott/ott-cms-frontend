@@ -1,28 +1,28 @@
 /**
  * Webhook Handler Service
- * 
+ *
  * Handles processing of Mux webhook events
  */
 
-import { VideoRepository } from '@/repositories/videoRepository';
-import { MuxService } from './muxService';
-import { MuxWebhookEvent, MuxWebhookEventType } from '@/types/mux';
-import { logError } from '@/utils/errorHandler';
-import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants';
+import { VideoRepository } from '@/repositories/videoRepository'
+import { IMuxService } from '@/services/mux/IMuxService'
+import { MuxWebhookEvent, MuxWebhookEventType } from '@/types/mux'
+import { logError } from '@/utils/errorHandler'
+import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
 
 export class WebhookHandlerService {
-  private videoRepository: VideoRepository;
-  private muxService: MuxService;
-  private eventEmitter: (event: string, data: any) => void;
+  private videoRepository: VideoRepository
+  private muxService: IMuxService
+  private eventEmitter: (event: string, data: any) => void
 
   constructor(
     videoRepository: VideoRepository,
-    muxService: MuxService,
+    muxService: IMuxService,
     eventEmitter: (event: string, data: any) => void
   ) {
-    this.videoRepository = videoRepository;
-    this.muxService = muxService;
-    this.eventEmitter = eventEmitter;
+    this.videoRepository = videoRepository
+    this.muxService = muxService
+    this.eventEmitter = eventEmitter
   }
 
   /**
@@ -31,22 +31,22 @@ export class WebhookHandlerService {
   async handleEvent(event: MuxWebhookEvent): Promise<void> {
     try {
       const { type, data } = event;
-      
+
       console.log(`Processing webhook event: ${type}`);
-      
+
       switch (type) {
         case MUX_WEBHOOK_EVENT_TYPES.ASSET_CREATED:
           await this.handleAssetCreated(data);
           break;
-          
+
         case MUX_WEBHOOK_EVENT_TYPES.ASSET_READY:
           await this.handleAssetReady(data);
           break;
-          
+
         case MUX_WEBHOOK_EVENT_TYPES.UPLOAD_ASSET_CREATED:
           await this.handleUploadAssetCreated(data);
           break;
-          
+
         default:
           console.log(`Unhandled webhook event type: ${type}`);
       }
@@ -61,14 +61,14 @@ export class WebhookHandlerService {
   private async handleAssetCreated(data: any): Promise<void> {
     try {
       const { id: assetId, upload_id, playback_ids } = data;
-      
+
       // Check if a video document already exists with this uploadId
       if (upload_id) {
         const existingVideo = await this.videoRepository.findByMuxUploadId(upload_id);
-        
+
         if (existingVideo) {
           console.log(`Found existing video with uploadId ${upload_id}, updating it`);
-          
+
           // Update the existing video with the asset ID
           const updatedVideo = await this.videoRepository.update(existingVideo.id, {
             muxData: {
@@ -82,20 +82,20 @@ export class WebhookHandlerService {
               ? this.muxService.getThumbnailUrl(playback_ids[0].id)
               : undefined,
           });
-          
+
           if (updatedVideo) {
             console.log(`Updated existing video ${existingVideo.id} with assetId ${assetId}`);
             this.emitVideoUpdated(updatedVideo.id);
           }
-          
+
           return;
         }
       }
-      
+
       // If we get here, we need to create a new video document
       // Extract the filename from the asset data
       let title = 'Untitled Video';
-      
+
       // If there's metadata with a filename, use it as the title
       if (data.metadata && data.metadata.filename) {
         // Remove file extension from the filename
@@ -104,7 +104,7 @@ export class WebhookHandlerService {
         // Try to get filename from passthrough data
         title = data.passthrough.filename.replace(/\\.[^/.]+$/, '');
       }
-      
+
       // Create a new video document
       const newVideo = await this.videoRepository.create({
         title,
@@ -122,7 +122,7 @@ export class WebhookHandlerService {
         duration: data.duration || 0,
         publishedAt: new Date().toISOString(),
       });
-      
+
       if (newVideo) {
         console.log(`Created new video from Mux asset: ${newVideo.id}`);
         this.emitVideoCreated(newVideo.id);
@@ -138,20 +138,20 @@ export class WebhookHandlerService {
   private async handleAssetReady(data: any): Promise<void> {
     try {
       const { id: assetId, upload_id, playback_ids, aspect_ratio, duration } = data;
-      
+
       // First try to find the video with this assetId
       let video = await this.videoRepository.findByMuxAssetId(assetId);
-      
+
       // If no video found and we have an upload_id, try to find by uploadId
       if (!video && upload_id) {
         video = await this.videoRepository.findByMuxUploadId(upload_id);
       }
-      
+
       if (!video) {
         console.log(`No video found for assetId ${assetId}`);
         return;
       }
-      
+
       // Update the video with the Mux asset data
       const updatedVideo = await this.videoRepository.update(video.id, {
         muxData: {
@@ -166,7 +166,7 @@ export class WebhookHandlerService {
           ? this.muxService.getThumbnailUrl(playback_ids[0].id)
           : undefined,
       });
-      
+
       if (updatedVideo) {
         console.log(`Updated video ${video.id} with Mux asset data`);
         this.emitVideoUpdated(video.id);
@@ -182,15 +182,15 @@ export class WebhookHandlerService {
   private async handleUploadAssetCreated(data: any): Promise<void> {
     try {
       const { id: uploadId, asset_id: assetId } = data;
-      
+
       // Find video with this uploadId
       const video = await this.videoRepository.findByMuxUploadId(uploadId);
-      
+
       if (!video) {
         console.log(`No video found for uploadId ${uploadId}`);
         return;
       }
-      
+
       // Update the video with the asset data
       const updatedVideo = await this.videoRepository.update(video.id, {
         muxData: {
@@ -200,7 +200,7 @@ export class WebhookHandlerService {
           ...(video.muxData?.status !== 'ready' ? { status: 'processing' } : {}),
         },
       });
-      
+
       if (updatedVideo) {
         console.log(`Updated video ${video.id} with Mux asset ID`);
         this.emitVideoUpdated(video.id);
@@ -232,3 +232,4 @@ export class WebhookHandlerService {
     }
   }
 }
+

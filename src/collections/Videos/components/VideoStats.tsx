@@ -8,7 +8,12 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 
 const VideoStats = () => {
   const { id } = useDocumentInfo()
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    views: { total: number; daily: { date: string; views: number }[] }
+    engagement: { averageWatchTime: number; completionRate: number }
+    loading: boolean
+    error: string | null
+  }>({
     views: {
       total: 0,
       daily: [],
@@ -37,11 +42,19 @@ const VideoStats = () => {
           error: null,
         })
       } catch (error) {
-        setStats((prevState) => ({
-          ...prevState,
-          loading: false,
-          error: error.message,
-        }))
+        setStats(
+          (prevState) =>
+            ({
+              ...prevState,
+              loading: false,
+              error: error instanceof Error ? error.message : String(error),
+            }) as {
+              views: typeof prevState.views
+              engagement: typeof prevState.engagement
+              loading: boolean
+              error: string | null
+            },
+        )
       }
     }
 

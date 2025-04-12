@@ -5,12 +5,9 @@
  */
 
 import { NextRequest } from 'next/server'
-import { connectionManager, sendEventToClients } from '@/services/events/eventEmitter'
+import { connectionManager } from '@/services/events/eventEmitter'
 import { logError } from '@/utils/errorHandler'
 import crypto from 'crypto'
-
-// Re-export the sendEventToClients function for backward compatibility
-export { sendEventToClients }
 
 /**
  * GET /api/events
@@ -44,7 +41,10 @@ export async function GET(req: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      'Connection': 'keep-alive',
     },
   })
 }
+
+
+

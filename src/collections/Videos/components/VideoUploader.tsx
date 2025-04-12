@@ -128,8 +128,9 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
           <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center">
             <MuxUploader
               endpoint={(file) => getUploadUrl(file)}
-              onUploadStart={(file) => {
-                // The file object is available in the onUploadStart callback
+              onUploadStart={(event) => {
+                // The file object is available in the event.detail.file
+                const file = event.detail.file
                 console.log('Upload started for file:', file.name)
                 setProgress(0)
               }}
@@ -137,7 +138,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
                 // This is the direct progress event from the Mux Uploader component
                 console.log('Direct progress event:', progress)
                 // Convert to percentage (0-100)
-                const percentage = progress * 100
+                const percentage = typeof progress === 'number' ? progress * 100 : 0
                 console.log(`Setting progress to ${percentage}%`)
                 setProgress(percentage)
               }}
@@ -147,7 +148,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({ refreshList }) => {
               }}
               onError={(error) => {
                 console.error('Upload error:', error)
-                setError(error.message || 'Upload failed')
+                setError(error instanceof Error ? error.message : 'Upload failed')
                 setUploadStatus('error')
               }}
             />

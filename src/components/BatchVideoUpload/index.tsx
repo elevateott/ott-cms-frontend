@@ -14,10 +14,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { UploadCloudIcon, PlusIcon, TrashIcon, CheckCircleIcon, XCircleIcon } from 'lucide-react'
 
-const BatchVideoUpload = ({ categories, tags }) => {
+interface UploadResults {
+  results: Array<{
+    title: string
+    success: boolean
+    error?: string
+  }>
+  summary: {
+    total: number
+    successful: number
+    failed: number
+  }
+}
+
+const BatchVideoUpload = ({ categories }: { categories: Array<{ id: string; title: string }> }) => {
   const { toast } = useToast()
   const [videos, setVideos] = useState([
     {
@@ -29,7 +42,7 @@ const BatchVideoUpload = ({ categories, tags }) => {
     },
   ])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [results, setResults] = useState(null)
+  const [results, setResults] = useState<UploadResults | null>(null)
 
   const addVideo = () => {
     setVideos([
@@ -44,19 +57,24 @@ const BatchVideoUpload = ({ categories, tags }) => {
     ])
   }
 
-  const removeVideo = (index) => {
+  const removeVideo = (index: number) => {
     const updatedVideos = [...videos]
     updatedVideos.splice(index, 1)
     setVideos(updatedVideos)
   }
 
-  const updateVideo = (index, field, value) => {
+  const updateVideo = (index: number, field: keyof (typeof videos)[0], value: string) => {
     const updatedVideos = [...videos]
-    updatedVideos[index][field] = value
+    if (updatedVideos[index]) {
+      updatedVideos[index] = {
+        ...updatedVideos[index],
+        [field]: value,
+      }
+    }
     setVideos(updatedVideos)
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     // Validate inputs
@@ -109,7 +127,7 @@ const BatchVideoUpload = ({ categories, tags }) => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
         variant: 'destructive',
       })
     } finally {
@@ -202,13 +220,13 @@ const BatchVideoUpload = ({ categories, tags }) => {
                 </div>
               </div>
 
-              {results && results.results && (
+              {results?.results && (
                 <div className="mt-4">
                   {results.results.find((r) => r.title === video.title) && (
                     <div
-                      className={`p-2 rounded ${results.results.find((r) => r.title === video.title).success ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}
+                      className={`p-2 rounded ${results.results.find((r) => r.title === video.title)?.success ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}
                     >
-                      {results.results.find((r) => r.title === video.title).success ? (
+                      {results.results.find((r) => r.title === video.title)?.success ? (
                         <div className="flex items-center">
                           <CheckCircleIcon className="h-5 w-5 mr-2" />
                           <span>Created successfully</span>
@@ -216,7 +234,7 @@ const BatchVideoUpload = ({ categories, tags }) => {
                       ) : (
                         <div className="flex items-center">
                           <XCircleIcon className="h-5 w-5 mr-2" />
-                          <span>{results.results.find((r) => r.title === video.title).error}</span>
+                          <span>{results.results.find((r) => r.title === video.title)?.error}</span>
                         </div>
                       )}
                     </div>

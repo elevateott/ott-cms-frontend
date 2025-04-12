@@ -1,4 +1,4 @@
-// src/app/(frontend)/video/[slug]/page.tsx
+import { Metadata } from 'next'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { notFound } from 'next/navigation'
@@ -6,6 +6,13 @@ import React from 'react'
 import { format } from 'date-fns'
 import { VideoPlayer } from '@/components/VideoPlayer'
 import { VideoCard } from '@/components/VideoCard'
+import type { Video } from '@/payload-types' // Import the Video type from payload-types
+
+type PageParams = {
+  params: Promise<{
+    slug: string
+  }>
+}
 
 export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
@@ -19,8 +26,8 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata({ params }) {
-  const { slug } = params
+export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
+  const { slug } = await params
   const payload = await getPayload({ config: configPromise })
 
   const videos = await payload.find({
@@ -46,8 +53,8 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default async function VideoPage({ params }) {
-  const { slug } = params
+export default async function VideoPage({ params }: PageParams) {
+  const { slug } = await params
   const payload = await getPayload({ config: configPromise })
 
   const videos = await payload.find({
@@ -67,11 +74,11 @@ export default async function VideoPage({ params }) {
   }
 
   // Get related videos
-  let relatedVideos = []
+  let relatedVideos: Video[] = []
 
   if (video.relatedVideos && video.relatedVideos.length > 0) {
     // Use explicitly defined related videos
-    relatedVideos = video.relatedVideos
+    relatedVideos = video.relatedVideos as Video[]
   } else if (video.category) {
     // Fallback to videos in the same category
     const sameCategory = await payload.find({
@@ -155,7 +162,31 @@ export default async function VideoPage({ params }) {
 
           <div className="space-y-4">
             {relatedVideos.map((relatedVideo) => (
-              <VideoCard key={relatedVideo.id} video={relatedVideo} className="!shadow-none" />
+              <VideoCard
+                key={relatedVideo.id}
+                video={{
+                  title: relatedVideo.title,
+                  slug: relatedVideo.slug || `video-${relatedVideo.id}`,
+                  thumbnail:
+                    relatedVideo.thumbnail &&
+                    typeof relatedVideo.thumbnail === 'object' &&
+                    'filename' in relatedVideo.thumbnail &&
+                    relatedVideo.thumbnail.filename
+                      ? {
+                          filename: relatedVideo.thumbnail.filename,
+                          alt: relatedVideo.thumbnail.alt ?? undefined,
+                        }
+                      : undefined,
+                  duration: relatedVideo.duration || 0,
+                  publishedAt: relatedVideo.publishedAt || undefined,
+                  category: relatedVideo.category
+                    ? typeof relatedVideo.category === 'object'
+                      ? { title: relatedVideo.category.title }
+                      : (relatedVideo.category as string)
+                    : undefined,
+                }}
+                className="!shadow-none"
+              />
             ))}
 
             {relatedVideos.length === 0 && (

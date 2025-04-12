@@ -1,4 +1,4 @@
-import { Field } from 'payload/types'
+import type { Field } from 'payload'
 
 export const muxUploaderField: Field = {
   name: 'muxUploader',
@@ -11,3 +11,5 @@ export const muxUploaderField: Field = {
     },
   },
 }
+
+

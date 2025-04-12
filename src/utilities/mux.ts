@@ -3,11 +3,11 @@ import Mux from '@mux/mux-node'
 
 // Initialize Mux with your API credentials
 const muxClient = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID,
-  tokenSecret: process.env.MUX_TOKEN_SECRET,
+  tokenId: process.env.MUX_TOKEN_ID || '',
+  tokenSecret: process.env.MUX_TOKEN_SECRET || '',
 })
 
-// Access the Video API
+// Access the Video API (lowercase 'video')
 const { video } = muxClient
 
 export const createMuxUpload = async (options?: {
@@ -15,15 +15,18 @@ export const createMuxUpload = async (options?: {
   passthrough?: Record<string, string>
 }) => {
   try {
+    console.log('Creating Mux upload with options:', options)
+
     const upload = await video.uploads.create({
       cors_origin: '*',
       new_asset_settings: {
         playback_policy: ['public'],
-        // Remove the deprecated mp4_support parameter
       },
       ...(options?.metadata ? { metadata: options.metadata } : {}),
       ...(options?.passthrough ? { passthrough: options.passthrough } : {}),
     })
+
+    console.log('Mux upload created:', upload)
 
     return {
       url: upload.url,
@@ -31,7 +34,7 @@ export const createMuxUpload = async (options?: {
     }
   } catch (error) {
     console.error('Error creating Mux upload:', error)
-    throw new Error('Failed to create Mux upload')
+    throw error
   }
 }
 

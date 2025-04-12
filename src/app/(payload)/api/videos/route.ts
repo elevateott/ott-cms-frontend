@@ -6,7 +6,7 @@
 
 import { NextRequest } from 'next/server'
 import { createGetHandler, createPostHandler } from '@/utils/apiHandler'
-import { createApiResponse, createErrorResponse, createNotFoundResponse } from '@/utils/apiResponse'
+import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
 import { createVideoRepository } from '@/services/serviceFactory'
 import { PAGINATION } from '@/constants'
 
@@ -60,38 +60,6 @@ export const GET = createGetHandler(
 )
 
 /**
- * GET /api/videos/[id]
- *
- * Fetch a single video by ID
- */
-export const getVideoById = createGetHandler(
-  async (req, { payload }) => {
-    // Get video ID from URL
-    const url = new URL(req.url)
-    const id = url.pathname.split('/').pop()
-
-    if (!id) {
-      return createErrorResponse('Missing video ID', 400)
-    }
-
-    // Create video repository
-    const videoRepository = createVideoRepository(payload)
-
-    // Fetch video
-    const video = await videoRepository.findById(id)
-
-    if (!video) {
-      return createNotFoundResponse('Video not found')
-    }
-
-    return createApiResponse(video)
-  },
-  {
-    errorContext: 'VideosAPI.getVideoById',
-  },
-)
-
-/**
  * POST /api/videos
  *
  * Create a new video
@@ -127,3 +95,4 @@ export const POST = createPostHandler(
     errorContext: 'VideosAPI.POST',
   },
 )
+

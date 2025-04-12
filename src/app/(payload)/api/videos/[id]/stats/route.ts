@@ -1,9 +1,11 @@
-// src/app/api/videos/[id]/stats/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+): Promise<Response> {
   try {
-    const { id: _id } = params
+    const { id } = await context.params
 
     // Generate mock data for demonstration purposes
     const daily = Array.from({ length: 7 }, (_, i) => {
@@ -19,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     // Calculate total views
     const totalViews = daily.reduce((sum, day) => sum + day.views, 0)
 
-    return NextResponse.json({
+    return Response.json({
       views: {
         total: totalViews,
         daily,
@@ -30,7 +32,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       },
     })
   } catch (error) {
-    console.error('Error fetching video stats:', error)
-    return NextResponse.json({ error: 'Failed to fetch video statistics' }, { status: 500 })
+    console.error('Error fetching video stats:', error instanceof Error ? error.message : 'Unknown error')
+    return Response.json(
+      { error: 'Failed to fetch video statistics' },
+      { status: 500 }
+    )
   }
 }
+
+

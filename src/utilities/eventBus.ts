@@ -33,7 +33,9 @@ class EventBus {
 
     // Return unsubscribe function
     return () => {
-      this.events[event] = this.events[event].filter((cb) => cb !== callback)
+      if (this.events[event]) {
+        this.events[event] = this.events[event].filter((cb) => cb !== callback)
+      }
     }
   }
 
@@ -51,7 +53,9 @@ class EventBus {
 
     // Return unsubscribe function
     return () => {
-      this.onceEvents[event] = this.onceEvents[event].filter((cb) => cb !== callback)
+      if (this.onceEvents[event]) {
+        this.onceEvents[event] = this.onceEvents[event].filter((cb) => cb !== callback)
+      }
     }
   }
 
@@ -127,3 +131,4 @@ export const EVENTS = {
   NAVIGATION_START: 'navigation_start',
   NAVIGATION_END: 'navigation_end',
 }
+

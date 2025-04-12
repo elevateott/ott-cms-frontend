@@ -6,36 +6,31 @@
 
 import { Payload } from 'payload'
 import { VideoRepository } from '@/repositories/videoRepository'
-import { MuxService } from './mux/muxService'
-import { MockMuxService } from './mux/mockMuxService'
-import { WebhookHandlerService } from './mux/webhookHandlerService'
-import { appConfig } from '@/config'
+import { MuxService } from '@/services/mux/muxService'
+import { MockMuxService } from '@/services/mux/mockMuxService'
+import { WebhookHandlerService } from '@/services/mux/webhookHandlerService'
+import { appConfig, muxConfig } from '@/config'
+import { IMuxService } from '@/services/mux/IMuxService'
+import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
+import configPromise from '@payload-config'
 
-/**
- * Create a VideoRepository instance
- */
 export function createVideoRepository(payload: Payload): VideoRepository {
   return new VideoRepository(payload)
 }
 
-/**
- * Create a MuxService instance
- */
-export function createMuxService(): MuxService | MockMuxService {
-  // In development mode, use the mock service
+export function createMuxService(): IMuxService {
   if (appConfig.environment === 'development') {
     console.log('Using mock Mux service for development')
     return new MockMuxService()
   }
 
-  // In production, use the real service
   console.log('Using real Mux service')
-  return new MuxService()
+  return new MuxService({
+    tokenId: muxConfig.tokenId,
+    tokenSecret: muxConfig.tokenSecret,
+  })
 }
 
-/**
- * Create a WebhookHandlerService instance
- */
 export function createWebhookHandlerService(
   payload: Payload,
   eventEmitter: (event: string, data: any) => void,
@@ -46,15 +41,12 @@ export function createWebhookHandlerService(
   return new WebhookHandlerService(videoRepository, muxService, eventEmitter)
 }
 
-/**
- * Create all services
- */
 export function createServices(
   payload: Payload,
   eventEmitter: (event: string, data: any) => void,
 ): {
   videoRepository: VideoRepository
-  muxService: MuxService
+  muxService: IMuxService
   webhookHandlerService: WebhookHandlerService
 } {
   const videoRepository = createVideoRepository(payload)

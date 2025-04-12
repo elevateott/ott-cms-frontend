@@ -6,8 +6,9 @@
 
 import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
 import { logError } from '@/utils/errorHandler'
+import { IMuxService } from '@/services/mux/IMuxService'
 
-export class MockMuxService {
+export class MockMuxService implements IMuxService {
   constructor() {
     console.log('MockMuxService initialized')
   }
@@ -177,3 +178,5 @@ export class MockMuxService {
     }
   }
 }
+
+

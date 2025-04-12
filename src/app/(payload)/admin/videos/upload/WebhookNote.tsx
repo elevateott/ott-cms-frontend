@@ -21,11 +21,16 @@ const WebhookNote: React.FC = () => {
         ******* (configured in .env file)
       </code>
       <p className="text-sm text-gray-700">
-        If you're seeing 401 errors, check that the webhook secret in your Mux dashboard matches the
+        If you&apos;re seeing 401 errors, check that the webhook secret in your Mux dashboard matches the
         one in your .env file (MUX_WEBHOOK_SECRET).
+      </p>
+      <p>
+        Don&apos;t worry if you don&apos;t see your video right away - it takes a few minutes to process.
       </p>
     </div>
   )
 }
 
 export default WebhookNote
+
+

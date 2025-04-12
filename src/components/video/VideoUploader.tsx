@@ -185,7 +185,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
         {isUploading && (
           <VideoUploadProgress
             progress={progress}
-            status={uploadStatus}
+            status={uploadStatus === 'idle' ? 'ready' : uploadStatus}
             filename={file?.name}
             error={error?.message}
             onCancel={handleCancel}
@@ -206,3 +206,4 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
 }
 
 export default VideoUploader
+

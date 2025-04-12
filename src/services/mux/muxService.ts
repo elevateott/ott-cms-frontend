@@ -5,44 +5,31 @@
  */
 
 import Mux from '@mux/mux-node'
+import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
+import { logError } from '@/utils/errorHandler'
+import { IMuxService } from '@/services/mux/IMuxService'
 import { muxConfig } from '@/config'
-import { MuxUploadRequest, MuxUploadResponse, MuxAsset, MuxWebhookEvent } from '@/types/mux'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
-import { logError } from '@/utils/errorHandler'
 
-// We'll initialize the client lazily when needed
-let muxClient: any = null
-let Video: any = null
+export class MuxService implements IMuxService {
+  private video: any
 
-export class MuxService {
-  constructor() {
-    this.initializeClient()
-  }
+  constructor({ tokenId, tokenSecret }: { tokenId: string; tokenSecret: string }) {
+    const muxClient = new Mux({
+      tokenId,
+      tokenSecret,
+    })
 
-  /**
-   * Initialize the Mux client
-   */
-  private initializeClient(): void {
-    if (muxClient && Video) {
-      return // Already initialized
-    }
+    // The Video API is accessed through video (lowercase)
+    this.video = muxClient.video
 
-    try {
-      muxClient = new Mux({
-        tokenId: muxConfig.tokenId,
-        tokenSecret: muxConfig.tokenSecret,
-      })
-
-      Video = muxClient.Video
-
-      if (!Video) {
-        console.error('Failed to initialize Mux Video client')
-      }
-    } catch (error) {
-      console.error('Error initializing Mux client:', error)
+    // Add validation
+    if (!this.video || !this.video.Uploads) {
+      throw new Error('Failed to initialize Mux Video client. Check your credentials.')
     }
   }
+
   /**
    * Create a direct upload URL
    */
@@ -51,24 +38,13 @@ export class MuxService {
     url: string
   }> {
     try {
-      // Set default options
-      const defaultOptions: MuxUploadRequest = {
-        corsOrigin: '*',
-        newAssetSettings: {
-          playbackPolicy: ['public'],
+      const upload = await this.video.Uploads.create({
+        cors_origin: '*',
+        new_asset_settings: {
+          playback_policy: ['public'],
         },
-      }
-
-      // Merge with provided options
-      const mergedOptions = { ...defaultOptions, ...options }
-
-      // Check if Video client is initialized
-      if (!Video || !Video.Uploads) {
-        throw new Error('Mux Video client not properly initialized')
-      }
-
-      // Create the upload
-      const upload = await Video.Uploads.create(mergedOptions)
+        ...options,
+      })
 
       return {
         uploadId: upload.id,
@@ -76,7 +52,7 @@ export class MuxService {
       }
     } catch (error) {
       logError(error, 'MuxService.createDirectUpload')
-      throw new Error('Failed to create Mux direct upload')
+      throw error
     }
   }
 
@@ -85,7 +61,7 @@ export class MuxService {
    */
   async getAsset(assetId: string): Promise<MuxAsset | null> {
     try {
-      const asset = await Video.Assets.get(assetId)
+      const asset = await this.video.Assets.get(assetId)
       return asset as unknown as MuxAsset
     } catch (error) {
       logError(error, 'MuxService.getAsset')
@@ -98,7 +74,7 @@ export class MuxService {
    */
   async deleteAsset(assetId: string): Promise<boolean> {
     try {
-      await Video.Assets.del(assetId)
+      await this.video.Assets.del(assetId)
       return true
     } catch (error) {
       logError(error, 'MuxService.deleteAsset')
@@ -148,7 +124,7 @@ export class MuxService {
       // Create the string to sign (timestamp + '.' + body)
       const stringToSign = `${timestamp}.${body}`
 
-      // Generate the HMAC signature
+      // Generate the HMAC signature using Node.js crypto module
       const hmac = crypto.createHmac('sha256', muxConfig.webhookSecret)
       hmac.update(stringToSign)
       const calculatedSignature = hmac.digest('hex')
@@ -251,3 +227,19 @@ export class MuxService {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

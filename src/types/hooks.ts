@@ -16,6 +16,8 @@ export interface UseVideoUploadResult {
   progress: number;
   error: Error | null;
   uploadStatus: 'idle' | 'uploading' | 'processing' | 'ready' | 'error';
+  upload: (file: File) => Promise<boolean>;
+  cancelUpload: () => void;
   getUploadUrl: (file?: File) => Promise<string | null>;
   handleProgress: (progress: number) => void;
   handleSuccess: (data: any) => void;
@@ -108,3 +110,4 @@ export interface UseFormResult<T> {
   setFieldTouched: (field: keyof T, touched: boolean) => void;
   resetForm: () => void;
 }
+
