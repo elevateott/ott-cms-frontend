@@ -1,13 +1,14 @@
 'use client'
 
 import React from 'react'
-import UploadWithMuxButton from './UploadWithMuxButton'
+import VideoAdmin from '@/collections/Videos/components/VideoAdmin'
+import WebhookNote from './WebhookNote'
 
 export default function VideosCollectionPage() {
   return (
-    <div className="mb-4">
-      <UploadWithMuxButton />
-      {/* The rest of the page will be rendered by Payload */}
+    <div className="p-4 w-full">
+      <WebhookNote />
+      <VideoAdmin className="w-full" />
     </div>
   )
 }

@@ -1,13 +1,23 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { cn } from '@/utilities/ui'
 import { Card } from '@/components/ui/card'
 import MuxUploader from '@mux/mux-uploader-react'
 import { useEventBusEmit } from '@/hooks/useEventBus'
-import { EVENTS } from '@/utilities/eventBus'
+import { EVENTS } from '@/constants/events'
 import { API_ROUTES } from '@/constants/api'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export interface VideoUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  onUploadComplete?: (data: any) => void
+  onUploadComplete?: (data: { uploadId?: string; assetId?: string; embeddedUrl?: string }) => void
   onUploadError?: (error: Error) => void
   refreshList?: () => void
 }
@@ -22,6 +32,8 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'processing' | 'error'>(
     'idle',
   )
+  const [sourceType, setSourceType] = useState<'mux' | 'embedded'>('mux')
+  const [embeddedUrl, setEmbeddedUrl] = useState('')
   const emitEvent = useEventBusEmit()
 
   // Function to get upload URL from your API
@@ -100,7 +112,9 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     })
   }
 
-  const handleSuccess = (data: any) => {
+  const handleSuccess = (event: CustomEvent) => {
+    // Extract data from the event
+    const data = event.detail || {}
     setUploadStatus('processing')
     if (onUploadComplete) {
       onUploadComplete(data)
@@ -115,23 +129,113 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     }
   }
 
+  // Handle embedded URL submission
+  const handleEmbeddedSubmit = () => {
+    if (!embeddedUrl) {
+      handleError(new Error('Please enter a valid URL'))
+      return
+    }
+
+    // Here you would typically create a video document with the embedded URL
+    // For now, just show a success message
+    if (onUploadComplete) {
+      onUploadComplete({ embeddedUrl })
+    }
+
+    // Show notification
+    emitEvent(EVENTS.NOTIFICATION, {
+      type: 'success',
+      title: 'URL Added',
+      message: 'Embedded video URL has been added.',
+    })
+
+    if (refreshList) {
+      setTimeout(refreshList, 2000)
+    }
+  }
+
   return (
     <div className={cn('', className)} {...props}>
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4">Upload Video</h2>
 
-        <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center">
-          <MuxUploader
-            endpoint={(file?: File | undefined) =>
-              file ? getUploadUrl(file).then((url) => url || '') : Promise.resolve('')
-            }
-            onUploadStart={() => {
-              setUploadStatus('uploading')
-            }}
-            onSuccess={handleSuccess}
-            onError={(event) => handleError(new Error('Upload failed'))}
-          />
+        {/* Source Type Selector */}
+        <div className="mb-6">
+          <Label htmlFor="sourceType" className="block mb-2 font-medium">
+            Video Source Type
+          </Label>
+          <Select
+            value={sourceType}
+            onValueChange={(value) => setSourceType(value as 'mux' | 'embedded')}
+          >
+            <SelectTrigger id="sourceType" className="w-full">
+              <SelectValue placeholder="Select source type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mux">
+                Mux Upload{' '}
+                <span className="text-xs text-muted-foreground ml-1">
+                  (Upload video files directly)
+                </span>
+              </SelectItem>
+              <SelectItem value="embedded">
+                Embedded URL{' '}
+                <span className="text-xs text-muted-foreground ml-1">
+                  (Use existing HLS stream)
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Mux Uploader */}
+        {sourceType === 'mux' && (
+          <div className="p-4 border border-border rounded-lg bg-card/50">
+            <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center mb-2">
+              <MuxUploader
+                endpoint={(file?: File | undefined) =>
+                  file ? getUploadUrl(file).then((url) => url || '') : Promise.resolve('')
+                }
+                onUploadStart={() => {
+                  setUploadStatus('uploading')
+                }}
+                onSuccess={handleSuccess}
+                onError={(_event) => handleError(new Error('Upload failed'))}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground italic text-center">
+              Drag and drop your video file here, or click to browse
+            </p>
+          </div>
+        )}
+
+        {/* Embedded URL Input */}
+        {sourceType === 'embedded' && (
+          <div className="space-y-4 p-4 border border-border rounded-lg bg-card/50">
+            <div>
+              <Label htmlFor="embeddedUrl" className="block mb-2 font-medium">
+                Embedded Video URL
+              </Label>
+              <Input
+                id="embeddedUrl"
+                type="url"
+                placeholder="https://example.com/video.m3u8"
+                value={embeddedUrl}
+                onChange={(e) => setEmbeddedUrl(e.target.value)}
+                className="w-full"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Enter the URL for your embedded HLS video stream (e.g., .m3u8 file)
+              </p>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground italic">
+                Note: Embedded videos must be properly formatted HLS streams
+              </p>
+              <Button onClick={handleEmbeddedSubmit}>Add Embedded Video</Button>
+            </div>
+          </div>
+        )}
 
         {uploadStatus === 'processing' && (
           <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -147,14 +251,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="font-medium mb-2">Upload Error</div>
             <p className="text-sm">There was an error uploading your video. Please try again.</p>
-            <button
-              className="mt-2 px-3 py-1 text-sm border rounded-md hover:bg-gray-50"
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
               onClick={() => {
                 setUploadStatus('idle')
               }}
             >
               Try Again
-            </button>
+            </Button>
           </div>
         )}
       </Card>

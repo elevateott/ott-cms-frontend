@@ -1,14 +1,16 @@
 'use client'
 
-import React from 'react'
-import VideoAdmin from '@/collections/Videos/components/VideoAdmin'
-import WebhookNote from './WebhookNote'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function VideoUploadPage() {
-  return (
-    <div className="p-4 w-full">
-      <WebhookNote />
-      <VideoAdmin className="w-full" />
-    </div>
-  )
+  const router = useRouter()
+
+  // Redirect to the new location
+  useEffect(() => {
+    router.replace('/admin/collections/videos')
+  }, [router])
+
+  // Return null or a loading indicator while redirecting
+  return null
 }
