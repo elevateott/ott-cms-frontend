@@ -17,6 +17,10 @@ export const Videos: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'sourceType', 'category', 'publishedAt', 'createdAt'],
     group: 'Media',
+    components: {
+      // Add our custom component before the default list view
+      beforeList: ['@/collections/Videos/components/VideoManagementComponent'],
+    },
   },
   fields: [
     {
@@ -269,5 +273,3 @@ export const Videos: CollectionConfig = {
 }
 
 export default Videos
-
-
