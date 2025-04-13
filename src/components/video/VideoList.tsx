@@ -4,10 +4,11 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/utilities/ui'
 import { Button } from '@/components/ui/button'
-import VideoGrid from './VideoGrid'
+
 import { useEventBusOn } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
 import { API_ROUTES } from '@/constants/api'
+import SimpleVideoGrid from './SimpleVideoGrid'
 
 interface Video {
   id: string
@@ -66,28 +67,46 @@ export const VideoList: React.FC<VideoListProps> = ({
     fetchVideos()
   }, [fetchVideos, refreshTrigger])
 
-  useEventBusOn(EVENTS.VIDEO_CREATED, () => {
-    setTimeout(fetchVideos, 500)
-  }, [fetchVideos])
+  useEventBusOn(
+    EVENTS.VIDEO_CREATED,
+    () => {
+      setTimeout(fetchVideos, 500)
+    },
+    [fetchVideos],
+  )
 
-  useEventBusOn(EVENTS.VIDEO_UPDATED, () => {
-    setTimeout(fetchVideos, 500)
-  }, [fetchVideos])
+  useEventBusOn(
+    EVENTS.VIDEO_UPDATED,
+    () => {
+      setTimeout(fetchVideos, 500)
+    },
+    [fetchVideos],
+  )
 
-  const handleView = useCallback((id: string) => {
-    router.push(`/admin/videos/${id}`)
-  }, [router])
+  const handleView = useCallback(
+    (id: string) => {
+      router.push(`/admin/videos/${id}`)
+    },
+    [router],
+  )
 
-  const handleEdit = useCallback((id: string) => {
-    router.push(`/admin/videos/${id}/edit`)
-  }, [router])
+  const handleEdit = useCallback(
+    (id: string) => {
+      router.push(`/admin/videos/${id}/edit`)
+    },
+    [router],
+  )
 
   const handleRefresh = useCallback(() => {
     fetchVideos()
   }, [fetchVideos])
 
   return (
-    <div className={cn('space-y-6', className)} {...props}>
+    <div
+      className={cn('space-y-6 w-full max-w-full', className)}
+      style={{ width: '100%', maxWidth: '100%' }}
+      {...props}
+    >
       {showRefreshButton && (
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Videos</h2>
@@ -131,13 +150,14 @@ export const VideoList: React.FC<VideoListProps> = ({
       )}
 
       {!loading && !error && (
-        <VideoGrid
-          videos={videos.map(video => ({
+        <SimpleVideoGrid
+          videos={videos.map((video) => ({
             id: video.id,
             title: video.title,
             status: video.muxData?.status,
             playbackId: video.muxData?.playbackId,
-            thumbnailUrl: video.muxThumbnailUrl ||
+            thumbnailUrl:
+              video.muxThumbnailUrl ||
               (video.muxData?.playbackId
                 ? `https://image.mux.com/${video.muxData.playbackId}/thumbnail.jpg?width=640&height=360&fit_mode=preserve`
                 : undefined),
@@ -153,6 +173,3 @@ export const VideoList: React.FC<VideoListProps> = ({
 }
 
 export default VideoList
-
-
-

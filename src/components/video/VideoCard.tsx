@@ -35,7 +35,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   onDelete,
 }) => {
   return (
-    <Card className={`h-full flex flex-col ${className}`}>
+    <Card className={`h-full flex flex-col border-2 border-blue-500 ${className}`}>
       <div className="relative w-full">
         <VideoThumbnail
           src={thumbnailUrl}
@@ -84,5 +84,3 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 }
 
 export default VideoCard
-
-

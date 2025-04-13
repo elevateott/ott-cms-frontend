@@ -12,8 +12,27 @@ import { muxConfig } from '@/config'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
+// Define a type for the Mux Video client
+interface MuxVideoClient {
+  assets?: {
+    get: (assetId: string) => Promise<any>
+    del: (assetId: string) => Promise<void>
+  }
+  Assets?: {
+    get: (assetId: string) => Promise<any>
+    del: (assetId: string) => Promise<void>
+  }
+  uploads?: {
+    create: (options: any) => Promise<any>
+  }
+  Uploads?: {
+    create: (options: any) => Promise<any>
+  }
+  [key: string]: any // Allow other properties
+}
+
 export class MuxService implements IMuxService {
-  private video: any
+  private video: MuxVideoClient
 
   constructor({ tokenId, tokenSecret }: { tokenId: string; tokenSecret: string }) {
     if (!tokenId || !tokenSecret) {
@@ -28,15 +47,27 @@ export class MuxService implements IMuxService {
         tokenSecret,
       })
 
-      this.video = muxClient.video // Note: Changed from lowercase 'video' to 'Video'
+      // Store the video client
+      this.video = muxClient.video as unknown as MuxVideoClient // Cast to our interface
 
       // Add validation with better error messaging
       if (!this.video) {
         throw new Error('Mux Video client initialization failed - video object is undefined')
       }
 
-      if (!this.video.uploads) {
-        throw new Error('Mux Video client initialization failed - uploads API not available')
+      // Log available properties for debugging
+      console.log('Mux video client properties:', Object.keys(this.video))
+
+      // Check for uploads property (could be lowercase or uppercase)
+      const hasUploads = this.video.uploads || this.video.Uploads
+      const hasAssets = this.video.assets || this.video.Assets
+
+      if (!hasUploads) {
+        console.warn('Mux Video client missing uploads property - uploads API may not be available')
+      }
+
+      if (!hasAssets) {
+        console.warn('Mux Video client missing assets property - assets API may not be available')
       }
 
       console.log('Mux Video client initialized successfully')
@@ -56,17 +87,40 @@ export class MuxService implements IMuxService {
     url: string
   }> {
     try {
-      const upload = await this.video.uploads.create({
-        cors_origin: '*',
-        new_asset_settings: {
-          playback_policy: ['public'],
-        },
-        ...options,
-      })
+      // Check if video.uploads exists (lowercase 'u')
+      if (this.video.uploads) {
+        const upload = await this.video.uploads.create({
+          cors_origin: '*',
+          new_asset_settings: {
+            playback_policy: ['public'],
+          },
+          ...options,
+        })
 
-      return {
-        uploadId: upload.id,
-        url: upload.url,
+        return {
+          uploadId: upload.id,
+          url: upload.url,
+        }
+      }
+      // Fallback to video.Uploads if it exists (capital 'U')
+      else if (this.video.Uploads) {
+        const upload = await this.video.Uploads.create({
+          cors_origin: '*',
+          new_asset_settings: {
+            playback_policy: ['public'],
+          },
+          ...options,
+        })
+
+        return {
+          uploadId: upload.id,
+          url: upload.url,
+        }
+      }
+      // Log error if neither exists
+      else {
+        console.error('Mux video client is missing uploads property', this.video)
+        throw new Error('Mux video client is missing uploads property')
       }
     } catch (error) {
       logError(error, 'MuxService.createDirectUpload')
@@ -79,11 +133,29 @@ export class MuxService implements IMuxService {
    */
   async getAsset(assetId: string): Promise<MuxAsset | null> {
     try {
-      const asset = await this.video.Assets.get(assetId)
-      return asset as unknown as MuxAsset
+      // Get the asset directly using the assetId
+      const response = await this.video._client.get(`/video/v1/assets/${assetId}`);
+
+      if (!response) {
+        return null;
+      }
+
+      // Transform the response into our MuxAsset type
+      return {
+        id: response.id,
+        playbackIds: response.playback_ids,
+        status: response.status,
+        duration: response.duration,
+        aspectRatio: response.aspect_ratio,
+        maxResolution: response.max_resolution,
+        maxStoredResolution: response.max_stored_resolution,
+        uploadId: response.upload_id,
+        createdAt: response.created_at,
+        tracks: response.tracks
+      } as MuxAsset;
     } catch (error) {
-      logError(error, 'MuxService.getAsset')
-      return null
+      logError(error, 'MuxService.getAsset');
+      return null;
     }
   }
 
@@ -92,8 +164,21 @@ export class MuxService implements IMuxService {
    */
   async deleteAsset(assetId: string): Promise<boolean> {
     try {
-      await this.video.Assets.del(assetId)
-      return true
+      // Check if video.assets exists (lowercase 'a')
+      if (this.video.assets) {
+        await this.video.assets.del(assetId)
+        return true
+      }
+      // Fallback to video.Assets if it exists (capital 'A')
+      else if (this.video.Assets) {
+        await this.video.Assets.del(assetId)
+        return true
+      }
+      // Log error if neither exists
+      else {
+        console.error('Mux video client is missing assets property', this.video)
+        return false
+      }
     } catch (error) {
       logError(error, 'MuxService.deleteAsset')
       return false
@@ -128,11 +213,14 @@ export class MuxService implements IMuxService {
    */
   verifyWebhookSignature(signature: string, body: string): boolean {
     try {
-      // Parse the signature header
-      // Format is: t=timestamp,v1=signature
-      const [timestampPart, signaturePart] = signature.split(',')
+      if (!muxConfig.webhookSecret) {
+        throw new Error('MUX_WEBHOOK_SECRET is required for webhook verification')
+      }
 
+      // Mux signatures are in the format "t=timestamp,v1=signature"
+      const [timestampPart, signaturePart] = signature.split(',')
       if (!timestampPart || !signaturePart) {
+        console.error('Invalid signature format')
         return false
       }
 
@@ -142,12 +230,12 @@ export class MuxService implements IMuxService {
       // Create the string to sign (timestamp + '.' + body)
       const stringToSign = `${timestamp}.${body}`
 
-      // Generate the HMAC signature using Node.js crypto module
-      const hmac = crypto.createHmac('sha256', muxConfig.webhookSecret)
-      hmac.update(stringToSign)
-      const calculatedSignature = hmac.digest('hex')
+      // Calculate HMAC
+      const calculatedSignature = crypto
+        .createHmac('sha256', muxConfig.webhookSecret)
+        .update(stringToSign)
+        .digest('hex')
 
-      // Compare signatures
       return receivedSignature === calculatedSignature
     } catch (error) {
       logError(error, 'MuxService.verifyWebhookSignature')
@@ -214,12 +302,11 @@ export class MuxService implements IMuxService {
     } = {},
   ): string {
     try {
-      const {
-        expiresIn = 3600, // 1 hour
-        tokenType = 'jwt',
-        keyId = muxConfig.signingKeyId,
-        keySecret = muxConfig.signingKeyPrivateKey,
-      } = options
+      // Extract options with defaults
+      const expiresIn = options.expiresIn || 3600 // 1 hour default
+      // tokenType is not used but kept in the interface for API compatibility
+      const keyId = options.keyId || muxConfig.signingKeyId
+      const keySecret = options.keySecret || muxConfig.signingKeyPrivateKey
 
       // Calculate expiration time
       const expirationTime = Math.floor(Date.now() / 1000) + expiresIn
@@ -232,10 +319,12 @@ export class MuxService implements IMuxService {
       }
 
       // Sign the JWT
+      // Note: 'keyid' is the correct property name for the JWT library
+      // even though TypeScript shows it as unknown
       const token = jwt.sign(payload, keySecret, {
         algorithm: 'RS256',
-        keyid: keyId,
-      })
+        keyid: keyId, // This is the correct property name for the JWT library
+      } as any)
 
       // Return the signed URL
       return `https://stream.mux.com/${playbackId}.m3u8?token=${token}`
@@ -245,3 +334,8 @@ export class MuxService implements IMuxService {
     }
   }
 }
+
+
+
+
+

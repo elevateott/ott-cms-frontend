@@ -1,14 +1,6 @@
-// src/utilities/mux.ts
-import Mux from '@mux/mux-node'
+import { createMuxService } from '@/services/mux';
 
-// Initialize Mux with your API credentials
-const muxClient = new Mux({
-  tokenId: process.env.MUX_TOKEN_ID || '',
-  tokenSecret: process.env.MUX_TOKEN_SECRET || '',
-})
-
-// Access the Video API (lowercase 'video')
-const { video } = muxClient
+const muxService = createMuxService();
 
 export const createMuxUpload = async (options?: {
   metadata?: Record<string, string>
@@ -16,22 +8,7 @@ export const createMuxUpload = async (options?: {
 }) => {
   try {
     console.log('Creating Mux upload with options:', options)
-
-    const upload = await video.uploads.create({
-      cors_origin: '*',
-      new_asset_settings: {
-        playback_policy: ['public'],
-      },
-      ...(options?.metadata ? { metadata: options.metadata } : {}),
-      ...(options?.passthrough ? { passthrough: options.passthrough } : {}),
-    })
-
-    console.log('Mux upload created:', upload)
-
-    return {
-      url: upload.url,
-      uploadId: upload.id,
-    }
+    return await muxService.createDirectUpload(options);
   } catch (error) {
     console.error('Error creating Mux upload:', error)
     throw error
@@ -40,8 +17,7 @@ export const createMuxUpload = async (options?: {
 
 export const getMuxAsset = async (assetId: string) => {
   try {
-    const asset = await video.assets.retrieve(assetId)
-    return asset
+    return await muxService.getAsset(assetId);
   } catch (error) {
     console.error(`Error fetching Mux asset ${assetId}:`, error)
     throw new Error('Failed to fetch Mux asset')
@@ -78,3 +54,4 @@ export const deleteMuxAsset = async (assetId: string) => {
     throw new Error('Failed to delete Mux asset')
   }
 }
+

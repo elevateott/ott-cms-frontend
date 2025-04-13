@@ -1,0 +1,45 @@
+.video-grid-container {
+  display: grid !important;
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+/* Small screens (640px and up) */
+@media (min-width: 640px) {
+  .video-grid-container {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Medium screens (768px and up) */
+@media (min-width: 768px) {
+  .video-grid-container {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Large screens (1024px and up) */
+@media (min-width: 1024px) {
+  .video-grid-container {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Force grid layout for all parent containers */
+body,
+#__next,
+main,
+[class*='container'],
+[class*='layout'],
+[class*='wrapper'] {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: visible !important;
+}
+
+.video-grid-item {
+  width: 100% !important;
+  height: auto !important;
+}

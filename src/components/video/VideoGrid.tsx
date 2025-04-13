@@ -13,11 +13,12 @@ export interface VideoGridProps extends React.HTMLAttributes<HTMLDivElement> {
   onDelete?: (id: string) => void
 }
 
+// Force specific grid columns at different breakpoints
 const columnsStyles = {
   1: 'grid-cols-1',
-  2: 'grid-cols-1 sm:grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
 }
 
 const gapStyles = {
@@ -62,7 +63,7 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
   return (
     <div
       className={cn(
-        'grid',
+        'grid w-full border-2 border-red-500', // Added border for debugging
         columnsStyles[columns],
         gapStyles[gap],
         'auto-rows-fr', // This ensures equal height rows

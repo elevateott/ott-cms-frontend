@@ -61,7 +61,11 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
   }, [])
 
   return (
-    <div className={cn('space-y-6', className)} {...props}>
+    <div
+      className={cn('space-y-6 w-full max-w-full', className)}
+      style={{ width: '100%', maxWidth: '100%' }}
+      {...props}
+    >
       {/* Header with upload button */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Video Management</h1>

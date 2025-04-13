@@ -14,21 +14,29 @@ import { IMuxService } from '@/services/mux/IMuxService'
 import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
 import configPromise from '@payload-config'
 
+let muxServiceInstance: IMuxService | null = null;
+
 export function createVideoRepository(payload: Payload): VideoRepository {
   return new VideoRepository(payload)
 }
 
 export function createMuxService(): IMuxService {
+  if (muxServiceInstance) {
+    return muxServiceInstance;
+  }
+
   if (appConfig.environment === 'development' && process.env.USE_MOCK_MUX === 'true') {
     console.log('Using mock Mux service for development')
-    return new MockMuxService()
+    muxServiceInstance = new MockMuxService()
+    return muxServiceInstance
   }
 
   console.log('Using real Mux service')
-  return new MuxService({
+  muxServiceInstance = new MuxService({
     tokenId: muxConfig.tokenId,
     tokenSecret: muxConfig.tokenSecret,
   })
+  return muxServiceInstance
 }
 
 export function createWebhookHandlerService(

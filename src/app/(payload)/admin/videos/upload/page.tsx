@@ -6,9 +6,9 @@ import WebhookNote from './WebhookNote'
 
 export default function VideoUploadPage() {
   return (
-    <div className="p-4">
+    <div className="p-4 w-full">
       <WebhookNote />
-      <VideoAdmin />
+      <VideoAdmin className="w-full" />
     </div>
   )
 }

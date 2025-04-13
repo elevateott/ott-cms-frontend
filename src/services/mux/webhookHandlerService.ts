@@ -128,31 +128,36 @@ export class WebhookHandlerService {
    */
   private async handleAssetReady(data: any): Promise<void> {
     try {
-      const { id: assetId, playback_ids, duration, aspect_ratio } = data;
+      const { id: assetId } = data;
 
+      // Find video with this assetId
       const video = await this.videoRepository.findByMuxAssetId(assetId);
-      if (!video) return;
 
-      const thumbnailUrl = playback_ids?.[0]?.id
-        ? this.getThumbnailUrl(playback_ids[0].id)
-        : undefined;
+      if (!video) {
+        console.log(`No video found for assetId ${assetId}`);
+        return;
+      }
 
+      // Only update if status is not already 'ready'
+      if (video.muxData?.status === 'ready') {
+        console.log(`Video ${video.id} is already in ready state, skipping update`);
+        return;
+      }
+
+      // Update the video with the asset data
       const updatedVideo = await this.videoRepository.update(video.id, {
         muxData: {
           ...video.muxData,
           status: 'ready',
-          playbackId: playback_ids?.[0]?.id,
         },
-        aspectRatio: aspect_ratio,
-        duration: duration,
-        muxThumbnailUrl: thumbnailUrl,
       });
 
       if (updatedVideo) {
-        this.emitVideoUpdated(updatedVideo.id);
+        console.log(`Updated video ${video.id} status to ready`);
+        this.emitVideoUpdated(video.id);
       }
     } catch (error) {
-      logError(error, 'WebhookHandlerService.handleAssetReady');
+      console.error('Error handling asset.ready event:', error);
     }
   }
 
