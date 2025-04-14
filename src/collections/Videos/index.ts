@@ -4,6 +4,7 @@ import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { deleteAssetOnVideoDelete } from '@/hooks/mux/deleteAssetOnVideoDelete'
 import { fetchMuxMetadata } from '@/hooks/mux/updateVideoOnWebhook'
+//import { TestCustomCell } from '@/collections/Videos/components/TestCustomCell'
 
 export const Videos: CollectionConfig = {
   slug: 'videos',
@@ -15,7 +16,15 @@ export const Videos: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'sourceType', 'category', 'publishedAt', 'createdAt'],
+    defaultColumns: [
+      'thumbnailPreview',
+      'title',
+      'sourceType',
+      'category',
+      'visibility',
+      'status',
+      'createdAt',
+    ],
     group: 'Media',
     components: {
       // Add our custom component before the default list view
@@ -23,6 +32,15 @@ export const Videos: CollectionConfig = {
     },
   },
   fields: [
+    {
+      name: 'thumbnailPreview',
+      type: 'ui',
+      admin: {
+        components: {
+          Cell: '@/collections/Videos/components/ThumbnailCell',
+        },
+      },
+    },
     {
       name: 'title',
       type: 'text',
@@ -129,9 +147,6 @@ export const Videos: CollectionConfig = {
       admin: {
         description:
           'Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)',
-        condition: (data) =>
-          data?.sourceType !== 'mux' ||
-          (data?.sourceType === 'mux' && data?.muxData?.status === 'ready'),
       },
     },
     {
