@@ -87,15 +87,22 @@ export class MuxService implements IMuxService {
     url: string
   }> {
     try {
+      console.log('MuxService.createDirectUpload called with options:', options)
+
       // Check if video.uploads exists (lowercase 'u')
       if (this.video.uploads) {
-        const upload = await this.video.uploads.create({
+        console.log('Using video.uploads.create')
+        const uploadOptions = {
           cors_origin: '*',
           new_asset_settings: {
             playback_policy: ['public'],
           },
           ...options,
-        })
+        }
+        console.log('Upload options:', uploadOptions)
+
+        const upload = await this.video.uploads.create(uploadOptions)
+        console.log('Upload created successfully:', { id: upload.id })
 
         return {
           uploadId: upload.id,
@@ -104,13 +111,18 @@ export class MuxService implements IMuxService {
       }
       // Fallback to video.Uploads if it exists (capital 'U')
       else if (this.video.Uploads) {
-        const upload = await this.video.Uploads.create({
+        console.log('Using video.Uploads.create')
+        const uploadOptions = {
           cors_origin: '*',
           new_asset_settings: {
             playback_policy: ['public'],
           },
           ...options,
-        })
+        }
+        console.log('Upload options:', uploadOptions)
+
+        const upload = await this.video.Uploads.create(uploadOptions)
+        console.log('Upload created successfully:', { id: upload.id })
 
         return {
           uploadId: upload.id,
@@ -123,21 +135,62 @@ export class MuxService implements IMuxService {
         throw new Error('Mux video client is missing uploads property')
       }
     } catch (error) {
+      console.error('Error in MuxService.createDirectUpload:', error)
       logError(error, 'MuxService.createDirectUpload')
       throw error
     }
   }
 
+  // Add rate limiting for Mux API calls
+  private static lastRequestTime = 0
+  private static MIN_REQUEST_INTERVAL = 1000 // 1 second between requests
+  private static pendingRequests = new Map<string, Promise<any>>()
+
   /**
-   * Get asset details
+   * Get asset details with rate limiting
    */
   async getAsset(assetId: string): Promise<MuxAsset | null> {
+    // If there's already a pending request for this asset, return that promise
+    const cacheKey = `asset:${assetId}`
+    if (MuxService.pendingRequests.has(cacheKey)) {
+      console.log(`Using cached request for Mux asset ${assetId}`)
+      return MuxService.pendingRequests.get(cacheKey) as Promise<MuxAsset | null>
+    }
+
+    // Create a new request promise with rate limiting
+    const requestPromise = this.executeGetAsset(assetId)
+    MuxService.pendingRequests.set(cacheKey, requestPromise)
+
+    // Remove the promise from the map when it resolves or rejects
+    requestPromise.finally(() => {
+      MuxService.pendingRequests.delete(cacheKey)
+    })
+
+    return requestPromise
+  }
+
+  /**
+   * Execute the get asset request with rate limiting
+   */
+  private async executeGetAsset(assetId: string): Promise<MuxAsset | null> {
     try {
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        console.log(`Rate limiting: Waiting ${delay}ms before fetching Mux asset ${assetId}`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      console.log(`Fetching Mux asset ${assetId}`)
+
       // Get the asset directly using the assetId
-      const response = await this.video._client.get(`/video/v1/assets/${assetId}`);
+      const response = await this.video._client.get(`/video/v1/assets/${assetId}`)
 
       if (!response) {
-        return null;
+        return null
       }
 
       // Transform the response into our MuxAsset type
@@ -151,11 +204,11 @@ export class MuxService implements IMuxService {
         maxStoredResolution: response.max_stored_resolution,
         uploadId: response.upload_id,
         createdAt: response.created_at,
-        tracks: response.tracks
-      } as MuxAsset;
+        tracks: response.tracks,
+      } as MuxAsset
     } catch (error) {
-      logError(error, 'MuxService.getAsset');
-      return null;
+      logError(error, 'MuxService.getAsset')
+      return null
     }
   }
 
@@ -334,8 +387,3 @@ export class MuxService implements IMuxService {
     }
   }
 }
-
-
-
-
-

@@ -39,9 +39,11 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   // Function to get upload URL from your API
   const getUploadUrl = async (file: File): Promise<string | null> => {
     try {
+      console.log('VideoUploader.getUploadUrl called with file:', file.name, 'size:', file.size)
       const filename = file.name
 
       // First create the upload URL
+      console.log('Fetching upload URL from', API_ROUTES.MUX_DIRECT_UPLOAD)
       const response = await fetch(API_ROUTES.MUX_DIRECT_UPLOAD, {
         method: 'POST',
         headers: {
@@ -52,12 +54,15 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get upload URL')
+        console.error('Failed to get upload URL, status:', response.status)
+        throw new Error(`Failed to get upload URL: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('Upload URL response:', data)
 
       if (!data.data?.url || !data.data?.uploadId) {
+        console.error('Invalid response from server:', data)
         throw new Error('Invalid response from server')
       }
 
@@ -115,17 +120,27 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const handleSuccess = (event: CustomEvent) => {
     // Extract data from the event
     const data = event.detail || {}
+    console.log('handleSuccess called with data:', data)
+
     setUploadStatus('processing')
+
     if (onUploadComplete) {
+      console.log('Calling onUploadComplete with data:', data)
       onUploadComplete(data)
     }
+
     emitEvent(EVENTS.NOTIFICATION, {
       type: 'success',
       title: 'Upload Complete',
       message: 'Video has been uploaded and is now processing.',
     })
+
     if (refreshList) {
-      setTimeout(refreshList, 2000)
+      console.log('Calling refreshList after 2 seconds')
+      setTimeout(() => {
+        console.log('Refreshing list now')
+        refreshList()
+      }, 2000)
     }
   }
 
@@ -193,14 +208,35 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           <div className="p-4 border border-border rounded-lg bg-card/50">
             <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center mb-2">
               <MuxUploader
-                endpoint={(file?: File | undefined) =>
-                  file ? getUploadUrl(file).then((url) => url || '') : Promise.resolve('')
-                }
+                endpoint={(file?: File | undefined) => {
+                  console.log('MuxUploader endpoint called with file:', file?.name)
+                  return file
+                    ? getUploadUrl(file).then((url) => {
+                        console.log('Got upload URL:', url)
+                        return url || ''
+                      })
+                    : Promise.resolve('')
+                }}
                 onUploadStart={() => {
+                  console.log('MuxUploader onUploadStart called')
                   setUploadStatus('uploading')
                 }}
-                onSuccess={handleSuccess}
-                onError={(_event) => handleError(new Error('Upload failed'))}
+                onProgress={(event) => {
+                  // Cast the native event to access the detail property
+                  const evt = event as unknown as CustomEvent<number>
+                  const progressValue = evt.detail * 100
+                  console.log('MuxUploader onProgress:', progressValue.toFixed(2) + '%')
+                }}
+                onSuccess={(event) => {
+                  console.log('MuxUploader onSuccess called with event:', event)
+                  handleSuccess(event as CustomEvent)
+                }}
+                onError={(event) => {
+                  console.error('MuxUploader onError called with event:', event)
+                  handleError(
+                    new Error('Upload failed: ' + (event as any)?.message || 'Unknown error'),
+                  )
+                }}
               />
             </div>
             <p className="text-xs text-muted-foreground italic text-center">

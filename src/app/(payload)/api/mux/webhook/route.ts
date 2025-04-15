@@ -49,6 +49,17 @@ export async function POST(req: NextRequest) {
       data: JSON.stringify(event.data).substring(0, 200) + '...',
     })
 
+    // Log more details for asset.ready events
+    if (event.type === 'video.asset.ready') {
+      console.log('Received video.asset.ready event with data:', {
+        id: event.data.id,
+        playback_ids: event.data.playback_ids,
+        status: event.data.status,
+        created_at: event.data.created_at,
+        updated_at: event.data.updated_at,
+      })
+    }
+
     // Initialize Payload
     const payload = await getPayload({ config: configPromise })
 

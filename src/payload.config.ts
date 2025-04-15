@@ -51,6 +51,8 @@ export default buildConfig({
       // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below and the import `BeforeDashboard` statement on line 15.
       beforeDashboard: ['@/components/BeforeDashboard'],
+      // Add our custom event provider to the admin panel
+      providers: ['@/components/AdminEventProvider'],
       // No custom views at the global level
       // Custom components are configured at the collection level
     },

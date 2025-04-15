@@ -7,9 +7,7 @@ export const muxUploaderField: Field = {
     condition: (data) => data?.sourceType === 'mux',
     description: 'Upload your video directly to Mux',
     components: {
-      Field: '@/collections/Videos/components/MuxUploadField',
+      Field: '@/collections/Videos/components/MuxUploaderField',
     },
   },
 }
-
-

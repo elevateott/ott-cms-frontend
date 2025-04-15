@@ -12,16 +12,28 @@ const ThumbnailCell = (props: DefaultCellComponentProps) => {
   const muxStatus = rowData?.muxData?.status
   const imageUrl = thumbnail || muxThumbnail || '/media/fallback-thumbnail-1-600x600.png'
 
+  console.log('ThumbnailCell rowData:', rowData)
+  console.log('status', muxStatus)
+
   const renderContent = () => {
     switch (muxStatus) {
       case 'uploading':
       case 'processing':
         return (
-          <div className="flex items-center gap-2 justify-center w-full h-full text-sm text-gray-700">
+          <div className="spinner-wrapper">
             <div className="lds-spinner">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} />
-              ))}
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
             </div>
           </div>
         )

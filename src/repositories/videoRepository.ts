@@ -119,11 +119,52 @@ export class VideoRepository {
     }
   }
 
+  // Add rate limiting for Mux API calls
+  private static lastUpdateTime = 0
+  private static MIN_UPDATE_INTERVAL = 500 // 500ms between updates
+  private static pendingUpdates = new Map<string, Promise<VideoDocument | null>>()
+
   /**
-   * Update a video
+   * Update a video with rate limiting
    */
   async update(id: string, data: Partial<VideoDocument>): Promise<VideoDocument | null> {
+    // If there's already a pending update for this video, return that promise
+    if (VideoRepository.pendingUpdates.has(id)) {
+      console.log(`Using pending update for video ${id}`)
+      return VideoRepository.pendingUpdates.get(id)!
+    }
+
+    // Create a new update promise with rate limiting
+    const updatePromise = this.executeUpdate(id, data)
+    VideoRepository.pendingUpdates.set(id, updatePromise)
+
+    // Remove the promise from the map when it resolves or rejects
+    updatePromise.finally(() => {
+      VideoRepository.pendingUpdates.delete(id)
+    })
+
+    return updatePromise
+  }
+
+  /**
+   * Execute the update with rate limiting
+   */
+  private async executeUpdate(
+    id: string,
+    data: Partial<VideoDocument>,
+  ): Promise<VideoDocument | null> {
     try {
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastUpdate = now - VideoRepository.lastUpdateTime
+      if (timeSinceLastUpdate < VideoRepository.MIN_UPDATE_INTERVAL) {
+        const delay = VideoRepository.MIN_UPDATE_INTERVAL - timeSinceLastUpdate
+        console.log(`Rate limiting: Waiting ${delay}ms before updating video ${id}`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      VideoRepository.lastUpdateTime = Date.now()
+
+      console.log(`Updating video ${id} with data:`, data)
       const result = await this.payload.update({
         collection: 'videos',
         id,
@@ -131,13 +172,13 @@ export class VideoRepository {
         // Add these specific options to handle hooks properly
         draft: false,
         autosave: false,
-        // Remove any hook-related options that might be causing issues
-      });
+        depth: 0, // Minimize depth to avoid unnecessary processing
+      })
 
-      return result as VideoDocument;
+      return result as VideoDocument
     } catch (error) {
-      logError(error, 'VideoRepository.update');
-      return null;
+      logError(error, 'VideoRepository.update')
+      return null
     }
   }
 
@@ -247,20 +288,3 @@ export class VideoRepository {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -32,6 +32,8 @@ export const Videos: CollectionConfig = {
       beforeList: [
         '@/collections/Videos/components/VideoManagementComponent',
         '@/collections/Videos/components/DefaultListViewRefresher',
+        '@/collections/Videos/components/ListViewRefreshButton',
+        '@/collections/Videos/components/GlobalEventListener',
       ],
     },
   },
