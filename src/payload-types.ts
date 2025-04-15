@@ -829,8 +829,8 @@ export interface Video {
    * Season number (if part of a series)
    */
   seasonNumber?: number | null;
-  updatedAt: string;
   createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1442,8 +1442,8 @@ export interface VideosSelect<T extends boolean = true> {
   series?: T;
   episodeNumber?: T;
   seasonNumber?: T;
-  updatedAt?: T;
   createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

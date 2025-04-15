@@ -18,6 +18,7 @@ import { SlugComponent as SlugComponent_92cc057d0a2abb4f6cf0307edf59f986 } from 
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { default as default_d46ab6bfc842515651b5f3fd26db0f94 } from '@/collections/Videos/components/ThumbnailCell'
+import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
 import { default as default_de32723381581c2254257fe9606d9642 } from '@/collections/Videos/components/VideoManagementComponent'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
@@ -47,6 +48,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/collections/Videos/components/ThumbnailCell#default": default_d46ab6bfc842515651b5f3fd26db0f94,
+  "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,
   "@/collections/Videos/components/VideoManagementComponent#default": default_de32723381581c2254257fe9606d9642,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,

@@ -84,7 +84,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
       )}
 
       {/* Video list */}
-      <VideoList refreshTrigger={refreshTrigger} showRefreshButton={true} />
+      {/* <VideoList refreshTrigger={refreshTrigger} showRefreshButton={true} /> */}
     </div>
   )
 }

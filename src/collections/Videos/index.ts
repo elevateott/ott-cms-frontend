@@ -8,6 +8,7 @@ import { fetchMuxMetadata } from '@/hooks/mux/updateVideoOnWebhook'
 
 export const Videos: CollectionConfig = {
   slug: 'videos',
+  defaultSort: ['-createdAt'],
   access: {
     read: () => true,
     create: authenticated,
@@ -27,14 +28,18 @@ export const Videos: CollectionConfig = {
     ],
     group: 'Media',
     components: {
-      // Add our custom component before the default list view
-      beforeList: ['@/collections/Videos/components/VideoManagementComponent'],
+      // Add our custom components before the default list view
+      beforeList: [
+        '@/collections/Videos/components/VideoManagementComponent',
+        '@/collections/Videos/components/DefaultListViewRefresher',
+      ],
     },
   },
   fields: [
     {
       name: 'thumbnailPreview',
       type: 'ui',
+      label: '',
       admin: {
         components: {
           Cell: '@/collections/Videos/components/ThumbnailCell',
@@ -53,7 +58,7 @@ export const Videos: CollectionConfig = {
     ...slugField(),
     {
       name: 'sourceType',
-      label: 'Video Source Type',
+      label: 'Source',
       type: 'select',
       options: [
         { label: 'Mux', value: 'mux' },
@@ -261,6 +266,21 @@ export const Videos: CollectionConfig = {
         description: 'Season number (if part of a series)',
         // Use a simple className instead of a condition
         className: 'season-number-field',
+      },
+    },
+    {
+      name: 'createdAt',
+      type: 'date',
+      label: 'Added', // 👈 Custom label
+      admin: {
+        components: {
+          Cell: '@/components/FormattedDateCell',
+        },
+        position: 'sidebar', // optional: keeps it in the sidebar in the edit view
+      },
+      access: {
+        create: () => false,
+        update: () => false,
       },
     },
   ],
