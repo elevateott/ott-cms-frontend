@@ -137,8 +137,12 @@ const DefaultListViewRefresher: React.FC = () => {
             )}
           </p>
           <div className="flex space-x-4 mt-1">
-            <span className="text-xs text-green-700">Created events: {eventCounts.created}</span>
-            <span className="text-xs text-green-700">Updated events: {eventCounts.updated}</span>
+            <div>
+              <span className="text-xs text-green-700">Created events: {eventCounts.created}</span>
+            </div>
+            <div>
+              <span className="text-xs text-green-700">Updated events: {eventCounts.updated}</span>
+            </div>
           </div>
         </div>
         <button

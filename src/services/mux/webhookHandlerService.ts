@@ -253,13 +253,24 @@ export class WebhookHandlerService {
       }
 
       // Update the video with the non-standard input information
+      // Create a custom update object to avoid type issues
+      const muxDataUpdate: any = {
+        ...video.muxData,
+        nonStandardInput: true,
+      }
+
+      // Add video quality if available
+      if (video_quality) {
+        muxDataUpdate.videoQuality = video_quality
+      }
+
+      // Add tracks if available
+      if (tracks) {
+        muxDataUpdate.tracks = tracks
+      }
+
       const updatedVideo = await this.videoRepository.update(video.id, {
-        muxData: {
-          ...video.muxData,
-          videoQuality: video_quality,
-          nonStandardInput: true,
-          tracks: tracks,
-        },
+        muxData: muxDataUpdate,
       })
 
       if (updatedVideo) {

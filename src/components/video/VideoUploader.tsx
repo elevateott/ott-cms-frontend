@@ -174,33 +174,29 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4">Upload Video</h2>
 
-        {/* Source Type Selector */}
+        {/* Source Type Info */}
         <div className="mb-6">
-          <Label htmlFor="sourceType" className="block mb-2 font-medium">
-            Video Source Type
-          </Label>
-          <Select
-            value={sourceType}
-            onValueChange={(value) => setSourceType(value as 'mux' | 'embedded')}
-          >
-            <SelectTrigger id="sourceType" className="w-full">
-              <SelectValue placeholder="Select source type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mux">
-                Mux Upload{' '}
-                <span className="text-xs text-muted-foreground ml-1">
-                  (Upload video files directly)
-                </span>
-              </SelectItem>
-              <SelectItem value="embedded">
-                Embedded URL{' '}
-                <span className="text-xs text-muted-foreground ml-1">
-                  (Use existing HLS stream)
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <p className="text-sm text-muted-foreground">
+            Upload a video file directly to Mux, or switch to Embedded URL to use an existing HLS
+            stream.
+          </p>
+          <div className="flex items-center mt-2">
+            <Label htmlFor="sourceType" className="mr-2 font-medium">
+              Source Type:
+            </Label>
+            <Select
+              value={sourceType}
+              onValueChange={(value) => setSourceType(value as 'mux' | 'embedded')}
+            >
+              <SelectTrigger id="sourceType" className="w-48">
+                <SelectValue placeholder="Select source type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mux">Mux Upload</SelectItem>
+                <SelectItem value="embedded">Embedded URL</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Mux Uploader */}

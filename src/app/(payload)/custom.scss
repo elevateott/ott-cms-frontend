@@ -1,3 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix for table width issues with Tailwind */
+.table {
+  display: block !important;
+}
+
+/* Additional fixes for Payload CMS admin panel with Tailwind */
+.collection-list .table {
+  width: 100% !important;
+  left: 0 !important;
+}
+
+.collection-list__wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Fix for VideoManagementComponent width */
+.collection-list__before > div {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Fix for table width on smaller screens */
+@media (max-width: 1024px) {
+  .collection-list .table {
+    width: 100%;
+    left: 0;
+    padding-left: 0;
+  }
+
+  .collection-list .table:after {
+    padding-right: 0;
+  }
+}
+
 // Spinner animation
 @keyframes spin {
   to {
@@ -21,6 +60,7 @@
   justify-content: center;
   height: 100%;
   width: 100%;
+  background-color: transparent;
 }
 .lds-spinner {
   color: #fff;
