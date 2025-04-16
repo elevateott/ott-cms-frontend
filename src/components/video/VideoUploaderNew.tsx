@@ -7,7 +7,7 @@ import { API_ROUTES } from '@/constants/api'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import EnhancedMuxUploader from './EnhancedMuxUploader'
+import ClientVideoUploader from './ClientVideoUploader'
 import {
   Select,
   SelectContent,
@@ -201,9 +201,9 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
 
         {/* Mux Uploader */}
         {sourceType === 'mux' && (
-          <EnhancedMuxUploader
+          <ClientVideoUploader
             endpoint={(file?: File) => {
-              console.log('EnhancedMuxUploader endpoint called with file:', file?.name)
+              console.log('ClientVideoUploader endpoint called with file:', file?.name)
               return file
                 ? getUploadUrl(file).then((url) => {
                     console.log('Got upload URL:', url)
@@ -212,21 +212,21 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 : Promise.resolve('')
             }}
             onUploadComplete={(data) => {
-              console.log('EnhancedMuxUploader onUploadComplete called with data:', data)
+              console.log('ClientVideoUploader onUploadComplete called with data:', data)
               handleSuccess({
                 detail: {
                   upload_id: data.uploadId,
                   asset_id: data.assetId,
-                  playback_ids: data.playbackId ? [{ id: data.playbackId }] : undefined
-                }
+                  playback_ids: data.playbackId ? [{ id: data.playbackId }] : undefined,
+                },
               } as unknown as CustomEvent)
             }}
             onUploadError={(error) => {
-              console.error('EnhancedMuxUploader onUploadError called with error:', error)
+              console.error('ClientVideoUploader onUploadError called with error:', error)
               handleError(error)
             }}
           />
-        )
+        )}
 
         {/* Embedded URL Input */}
         {sourceType === 'embedded' && (

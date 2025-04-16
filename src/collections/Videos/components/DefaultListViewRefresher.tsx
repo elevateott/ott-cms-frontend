@@ -75,50 +75,12 @@ const DefaultListViewRefresher: React.FC = () => {
   useEventBusOn(
     EVENTS.VIDEO_UPDATED,
     (data) => {
-      setEventCounts((prev) => ({ ...prev, updated: prev.updated + 1 }))
-      console.log(
-        `DefaultListViewRefresher received video_updated event (${eventCounts.updated + 1}):`,
-        data,
-      )
-      // Add a small delay to ensure the database has been updated
-      setTimeout(() => {
-        console.log('Refreshing page due to video_updated event')
-
-        // Try multiple refresh methods to ensure the list is updated
-        try {
-          // Method 1: Use our refresh function
-          refreshPage()
-
-          // Method 2: Force a hard refresh of the collection list
-          const refreshButton = document.querySelector(
-            '.collection-list button[title="Refresh"]',
-          ) as HTMLButtonElement
-          if (refreshButton) {
-            console.log('Found refresh button, clicking it directly')
-            refreshButton.click()
-          }
-
-          // Method 3: Reload the page if the status was updated to 'ready'
-          if (data && data.id) {
-            console.log('Checking if we need to reload the page for video:', data.id)
-            // If this is a status change to ready, force a page reload
-            fetch(`/api/videos/${data.id}`)
-              .then((response) => response.json())
-              .then((videoData) => {
-                if (videoData && videoData.muxData && videoData.muxData.status === 'ready') {
-                  console.log('Video status is ready, reloading the page in 2 seconds')
-                  setTimeout(() => {
-                    console.log('Reloading page now')
-                    window.location.reload()
-                  }, 2000)
-                }
-              })
-              .catch((err) => console.error('Error fetching video data:', err))
-          }
-        } catch (error) {
-          console.error('Error during refresh attempts:', error)
-        }
-      }, 1000)
+      // Only refresh if the status is 'ready' and it's a new ready status
+      if (data.muxData?.status === 'ready' && data.isNewReadyStatus) {
+        setEventCounts((prev) => ({ ...prev, updated: prev.updated + 1 }))
+        console.log('Video ready, refreshing list view')
+        setTimeout(() => refreshPage(), 1000)
+      }
     },
     [refreshPage, eventCounts.updated],
   )
@@ -157,3 +119,4 @@ const DefaultListViewRefresher: React.FC = () => {
 }
 
 export default DefaultListViewRefresher
+

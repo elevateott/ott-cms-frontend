@@ -15,10 +15,6 @@ export default function VideoManagementComponent(_props: BeforeListClientProps) 
       <div className="mb-8">
         <VideoAdmin className="w-full" />
       </div>
-
-      <div className="mt-4 pt-2 border-t border-gray-100 dark:border-gray-800 text-sm text-gray-500">
-        <p>The standard Payload CMS list view appears below in addition to the grid view.</p>
-      </div>
     </div>
   )
 }
