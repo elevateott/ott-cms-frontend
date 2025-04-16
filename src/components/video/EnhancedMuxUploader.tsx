@@ -154,38 +154,38 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
       {/* Custom Mux Uploader */}
       <div className="w-full">
         <MuxUploader
-            ref={uploaderRef}
-            endpoint={endpoint}
-            onUploadStart={handleUploadStart as any}
-            onProgress={handleProgress as any}
-            onSuccess={handleSuccess as any}
-            onError={handleError as any}
-          >
-            <div className="w-full h-48 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center hover:border-gray-500 transition-colors">
-              <MuxUploaderDrop className="w-full h-full flex flex-col items-center justify-center text-center">
-                <svg
-                  className="w-12 h-12 text-gray-400 mb-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                <p className="text-sm text-gray-300 text-center">Drop your video file here or</p>
-                <MuxUploaderFileSelect>
-                  <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                    Browse Files
-                  </button>
-                </MuxUploaderFileSelect>
-              </MuxUploaderDrop>
-            </div>
-          </MuxUploader>
+          ref={uploaderRef}
+          endpoint={endpoint}
+          onUploadStart={handleUploadStart as any}
+          onProgress={handleProgress as any}
+          onSuccess={handleSuccess as any}
+          onError={handleError as any}
+        >
+          <div className="w-full h-48 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center hover:border-gray-500 transition-colors">
+            <MuxUploaderDrop className="w-full h-full flex flex-col items-center justify-center text-center">
+              <svg
+                className="w-12 h-12 text-gray-400 mb-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
+              </svg>
+              <p className="text-sm text-gray-300 text-center">Drop your video file here or</p>
+              <MuxUploaderFileSelect>
+                <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                  Browse Files
+                </button>
+              </MuxUploaderFileSelect>
+            </MuxUploaderDrop>
+          </div>
+        </MuxUploader>
       </div>
 
       {/* Progress bar for current upload */}
@@ -203,7 +203,6 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
             </p>
           </div>
         )}
-      </div>
 
       {/* Uploaded Videos List */}
       {uploadedVideos.length > 0 && (

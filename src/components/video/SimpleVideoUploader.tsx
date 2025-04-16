@@ -446,7 +446,7 @@ const SimpleVideoUploader: React.FC<SimpleVideoUploaderProps> = ({
           updatedVideos[lastVideoIndex] = {
             ...updatedVideos[lastVideoIndex],
             status: 'processing',
-            assetId: detail.asset_id
+            assetId: detail.asset_id,
           }
         }
 
@@ -988,7 +988,7 @@ const SimpleVideoUploader: React.FC<SimpleVideoUploaderProps> = ({
               {/* Direct file input as fallback */}
               <div className="mt-4">
                 <p className="text-sm text-gray-500 text-center">
-                  If the above methods don't work, try this:
+                  If the above methods don&apos;t work, try this:
                 </p>
                 <label className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors cursor-pointer inline-block">
                   Direct File Upload
@@ -1021,5 +1021,3 @@ const SimpleVideoUploader: React.FC<SimpleVideoUploaderProps> = ({
 }
 
 export default SimpleVideoUploader
-
-

@@ -4,7 +4,7 @@
  * Provides endpoints for fetching videos
  */
 
-import { NextRequest } from 'next/server'
+import { NextRequest as _NextRequest } from 'next/server'
 import { createGetHandler, createPostHandler } from '@/utils/apiHandler'
 import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
 import { createVideoRepository } from '@/services/serviceFactory'
@@ -65,7 +65,7 @@ export const GET = createGetHandler(
  * Create a new video
  */
 export const POST = createPostHandler(
-  async (req, body, { user, payload }) => {
+  async (req, body, { payload }) => {
     // Validate request body
     if (!body.title) {
       return createErrorResponse('Missing required field: title', 400)
@@ -95,5 +95,3 @@ export const POST = createPostHandler(
     errorContext: 'VideosAPI.POST',
   },
 )
-
-

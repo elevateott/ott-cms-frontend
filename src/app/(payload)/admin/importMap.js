@@ -18,11 +18,14 @@ import { SlugComponent as SlugComponent_92cc057d0a2abb4f6cf0307edf59f986 } from 
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { default as default_d46ab6bfc842515651b5f3fd26db0f94 } from '@/collections/Videos/components/ThumbnailCell'
+import { default as default_4a693924dc6bcaf2cb86a4b715cfdcb5 } from '@/collections/Videos/components/StatusField'
+import { default as default_c978f8026cc38bd159688b3b4035a082 } from '@/collections/Videos/components/StatusCell'
 import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
 import { default as default_de32723381581c2254257fe9606d9642 } from '@/collections/Videos/components/VideoManagementComponent'
 import { default as default_c197f997e7052b81ffd39ec91a0f501d } from '@/collections/Videos/components/DefaultListViewRefresher'
 import { default as default_fa617612a1d940251d90cd6c94a4a648 } from '@/collections/Videos/components/ListViewRefreshButton'
 import { default as default_ac3b1d16ae128c37ac95ef590030c1dc } from '@/collections/Videos/components/GlobalEventListener'
+import { default as default_45fabfc1a612e4c88db72a775402856c } from '@/collections/Videos/components/ListViewRefresher'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -52,11 +55,14 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/collections/Videos/components/ThumbnailCell#default": default_d46ab6bfc842515651b5f3fd26db0f94,
+  "@/collections/Videos/components/StatusField#default": default_4a693924dc6bcaf2cb86a4b715cfdcb5,
+  "@/collections/Videos/components/StatusCell#default": default_c978f8026cc38bd159688b3b4035a082,
   "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,
   "@/collections/Videos/components/VideoManagementComponent#default": default_de32723381581c2254257fe9606d9642,
   "@/collections/Videos/components/DefaultListViewRefresher#default": default_c197f997e7052b81ffd39ec91a0f501d,
   "@/collections/Videos/components/ListViewRefreshButton#default": default_fa617612a1d940251d90cd6c94a4a648,
   "@/collections/Videos/components/GlobalEventListener#default": default_ac3b1d16ae128c37ac95ef590030c1dc,
+  "@/collections/Videos/components/ListViewRefresher#default": default_45fabfc1a612e4c88db72a775402856c,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,

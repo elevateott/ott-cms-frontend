@@ -17,6 +17,7 @@ export interface UploadedVideo {
   progress: number
   error?: string
   assetId?: string
+  uploadId?: string
   playbackId?: string
 }
 
@@ -27,15 +28,28 @@ export interface VideoUploadListProps {
 }
 
 const VideoUploadList: React.FC<VideoUploadListProps> = ({ videos, onClearAll, className }) => {
-  console.log('VideoUploadList received videos:', videos)
+  console.log('🔍 DEBUG [VideoUploadList] Received videos:', videos)
+  console.log('🔍 DEBUG [VideoUploadList] Videos JSON:', JSON.stringify(videos))
+
+  // Log the status of each video
+  useEffect(() => {
+    if (videos.length > 0) {
+      console.log('🔍 DEBUG [VideoUploadList] Current video statuses:')
+      videos.forEach((video) => {
+        console.log(
+          `🔍 DEBUG [VideoUploadList] Video ${video.id} (${video.filename}): ${video.status}`,
+        )
+      })
+    }
+  }, [videos])
 
   if (videos.length === 0) {
-    console.log('No videos to display')
+    console.log('🔍 DEBUG [VideoUploadList] No videos to display')
     return null
   }
 
   return (
-    <div className={cn('mt-4 border-2 border-red-500 rounded-lg overflow-hidden', className)}>
+    <div className={cn('mt-4 border rounded-lg overflow-hidden', className)}>
       <div className="p-4 bg-gray-100 flex justify-between items-center">
         <h3 className="text-lg font-medium">Uploaded Videos</h3>
         {onClearAll && (

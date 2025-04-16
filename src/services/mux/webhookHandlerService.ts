@@ -287,10 +287,26 @@ export class WebhookHandlerService {
    */
   private emitVideoCreated(id: string): void {
     try {
-      console.log(`Emitting video_created event for video ${id}`)
+      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video_created event for video ${id}`)
+      console.log(`🔍 DEBUG [WebhookHandlerService] Event data:`, { id })
       this.eventEmitter('video_created', { id })
-      console.log(`Successfully emitted video_created event for video ${id}`)
+
+      // Also emit the event with the colon format for consistency
+      this.eventEmitter('video:created', { id })
+
+      // Emit the REFRESH_LIST_VIEW event to refresh the list view
+      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting refresh:list:view event for new video`)
+      this.eventEmitter('refresh:list:view', {
+        source: 'webhook',
+        action: 'video_created',
+        videoId: id,
+      })
+
+      console.log(
+        `🔍 DEBUG [WebhookHandlerService] Successfully emitted video_created event for video ${id}`,
+      )
     } catch (error) {
+      console.error(`🔍 DEBUG [WebhookHandlerService] Error emitting video_created event:`, error)
       logError(error, 'WebhookHandlerService.emitVideoCreated')
     }
   }
@@ -302,20 +318,50 @@ export class WebhookHandlerService {
    */
   private emitVideoUpdated(id: string, isStatusChange: boolean = false): void {
     try {
-      console.log(`Emitting video_updated event for video ${id}`)
+      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video_updated event for video ${id}`)
+      console.log(`🔍 DEBUG [WebhookHandlerService] Event data:`, { id, isStatusChange })
       this.eventEmitter('video_updated', { id, isStatusChange })
 
       // Also emit the event with the colon format to ensure compatibility
+      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video:updated event for video ${id}`)
       this.eventEmitter('video:updated', { id, isStatusChange })
 
       // If this is a status change to ready, emit a special event
       if (isStatusChange) {
-        console.log(`Emitting status_ready event for video ${id}`)
-        this.eventEmitter('video:status:ready', { id })
+        console.log(
+          `🔍 DEBUG [WebhookHandlerService] Emitting video:status:ready event for video ${id}`,
+        )
+        console.log(`🔍 DEBUG [WebhookHandlerService] Status ready event data:`, { id })
+
+        // Emit the general status ready event
+        const statusReadyEventData = { id, status: 'ready', timestamp: Date.now() }
+        console.log(
+          `🔍 DEBUG [WebhookHandlerService] Status ready event payload:`,
+          statusReadyEventData,
+        )
+        this.eventEmitter('video:status:ready', statusReadyEventData)
+
+        // Emit a specific event for this video ID to update its status in the context
+        console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video:${id}:status:ready event`)
+        const videoSpecificEventData = { id, status: 'ready', timestamp: Date.now() }
+        console.log(
+          `🔍 DEBUG [WebhookHandlerService] Video-specific event payload:`,
+          videoSpecificEventData,
+        )
+        this.eventEmitter(`video:${id}:status:ready`, videoSpecificEventData)
+
+        // Also emit a direct REFRESH_LIST_VIEW event to ensure the list view is updated
+        console.log(
+          `🔍 DEBUG [WebhookHandlerService] Emitting REFRESH_LIST_VIEW event for video ${id}`,
+        )
+        this.eventEmitter('REFRESH_LIST_VIEW', { id, status: 'ready', timestamp: Date.now() })
       }
 
-      console.log(`Successfully emitted video_updated events for video ${id}`)
+      console.log(
+        `🔍 DEBUG [WebhookHandlerService] Successfully emitted video_updated events for video ${id}`,
+      )
     } catch (error) {
+      console.error(`🔍 DEBUG [WebhookHandlerService] Error emitting video_updated event:`, error)
       logError(error, 'WebhookHandlerService.emitVideoUpdated')
     }
   }

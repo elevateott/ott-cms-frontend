@@ -14,9 +14,14 @@ const ListViewRefreshButton: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
-  // Function to refresh the list view
+  // Function to refresh the list view - DISABLED FOR NOW
   const refreshList = () => {
-    console.log('Refreshing list view due to Mux webhook event')
+    console.log('DISABLED: Would normally refresh list view due to Mux webhook event')
+    // Just update the last refreshed time without actually refreshing
+    setLastRefreshed(new Date())
+
+    // DISABLED REFRESH CODE
+    /*
     try {
       // Find the refresh button in the list view and click it
       const refreshButton = document.querySelector(
@@ -34,6 +39,7 @@ const ListViewRefreshButton: React.FC = () => {
     } catch (error) {
       console.error('Error refreshing list:', error)
     }
+    */
   }
 
   // Keep track of event counts
@@ -177,27 +183,26 @@ const ListViewRefreshButton: React.FC = () => {
 
   // Render a visible component as a fallback
   return (
-    <div className="p-2 mb-4 bg-blue-50 border border-blue-200 rounded-md">
+    <div className="p-2 mb-4 bg-yellow-50 border border-yellow-200 rounded-md">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-medium text-blue-800">Mux Auto-Refresh</h3>
-          <p className="text-xs text-blue-600">
-            This list will automatically refresh when videos are created or updated via Mux
-            webhooks.
+          <h3 className="text-sm font-medium text-yellow-800">Mux Auto-Refresh Disabled</h3>
+          <p className="text-xs text-yellow-600">
+            Auto-refresh is currently disabled. Events are still being logged.
             {lastRefreshed && (
-              <span className="ml-1">Last refreshed: {lastRefreshed.toLocaleTimeString()}</span>
+              <span className="ml-1">Last event: {lastRefreshed.toLocaleTimeString()}</span>
             )}
           </p>
           <div className="flex space-x-4 mt-1">
-            <span className="text-xs text-blue-700">Created events: {eventCounts.created}</span>
-            <span className="text-xs text-blue-700">Updated events: {eventCounts.updated}</span>
+            <span className="text-xs text-yellow-700">Created events: {eventCounts.created}</span>
+            <span className="text-xs text-yellow-700">Updated events: {eventCounts.updated}</span>
           </div>
         </div>
         <button
           onClick={refreshList}
-          className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
         >
-          Refresh Now
+          Manual Refresh
         </button>
       </div>
       {!isVisible && (

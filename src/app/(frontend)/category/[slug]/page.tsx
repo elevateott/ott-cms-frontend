@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 import { VideoCard } from '@/components/VideoCard'
 import type { Video as PayloadVideo } from '@/payload-types'
-import { VIDEO_SOURCE_TYPES } from '@/constants'
+import { VIDEO_SOURCE_TYPES } from '@/constants/video'
 
 // Define a simpler type for what VideoCard actually needs
 type VideoCardProps = {
@@ -38,7 +38,10 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
+export async function generateMetadata(
+  props: Props,
+  _parent: ResolvingMetadata,
+): Promise<Metadata> {
   const params = await props.params
   const { slug } = params
   const payload = await getPayload({ config: configPromise })
@@ -105,14 +108,15 @@ export default async function CategoryPage(props: Props) {
     .filter((video): video is PayloadVideo => {
       return Boolean(
         video &&
-        video.id &&
-        video.title &&
-        video.slug &&
-        typeof video.duration === 'number' &&
-        video.sourceType &&
-        (video.sourceType === VIDEO_SOURCE_TYPES.MUX || video.sourceType === VIDEO_SOURCE_TYPES.EMBEDDED) &&
-        video.updatedAt &&
-        video.createdAt
+          video.id &&
+          video.title &&
+          video.slug &&
+          typeof video.duration === 'number' &&
+          video.sourceType &&
+          (video.sourceType === VIDEO_SOURCE_TYPES.MUX ||
+            video.sourceType === VIDEO_SOURCE_TYPES.EMBEDDED) &&
+          video.updatedAt &&
+          video.createdAt,
       )
     })
     .map((video): VideoCardProps => {
@@ -123,12 +127,19 @@ export default async function CategoryPage(props: Props) {
         id: video.id,
         title: video.title,
         slug: videoSlug,
-        thumbnail: video.thumbnail && typeof video.thumbnail === 'object' && 'filename' in video.thumbnail && video.thumbnail.filename
-          ? { filename: video.thumbnail.filename, alt: video.thumbnail.alt ?? undefined }
-          : undefined,
+        thumbnail:
+          video.thumbnail &&
+          typeof video.thumbnail === 'object' &&
+          'filename' in video.thumbnail &&
+          video.thumbnail.filename
+            ? { filename: video.thumbnail.filename, alt: video.thumbnail.alt ?? undefined }
+            : undefined,
         duration: video.duration ?? 0,
         publishedAt: video.publishedAt || undefined,
-        category: video.category && typeof video.category === 'object' ? { title: video.category.title } : video.category as string,
+        category:
+          video.category && typeof video.category === 'object'
+            ? { title: video.category.title }
+            : (video.category as string),
       }
     })
 
@@ -155,9 +166,3 @@ export default async function CategoryPage(props: Props) {
     </div>
   )
 }
-
-
-
-
-
-

@@ -22,9 +22,15 @@ const GlobalEventListener: React.FC = () => {
     // Create an EventSource connection to the server
     const eventSource = new EventSource('/api/events')
 
-    // Function to refresh the list view
+    // Function to refresh the list view - DISABLED FOR NOW
     const refreshList = () => {
-      console.log('Refreshing list view due to direct event source event')
+      console.log('DISABLED: Would normally refresh list view due to direct event source event')
+      // Just update the last refreshed time without actually refreshing
+      setLastRefreshed(new Date())
+      setEventCount((prev) => prev + 1)
+
+      // DISABLED REFRESH CODE
+      /*
       try {
         // Find the refresh button in the list view and click it
         const refreshButton = document.querySelector(
@@ -41,6 +47,7 @@ const GlobalEventListener: React.FC = () => {
       } catch (error) {
         console.error('Error refreshing list:', error)
       }
+      */
     }
 
     // Listen for video_created events
@@ -84,9 +91,14 @@ const GlobalEventListener: React.FC = () => {
               refreshButton.click()
             }
 
-            // Method 3: Reload the page if the status was updated to 'ready'
+            // Method 3: Reload the page if the status was updated to 'ready' - DISABLED FOR NOW
             if (data && data.id) {
-              console.log('Checking if we need to reload the page for video:', data.id)
+              console.log(
+                'DISABLED: Would normally check if we need to reload the page for video:',
+                data.id,
+              )
+              // DISABLED RELOAD CODE
+              /*
               // If this is a status change to ready, force a page reload
               fetch(`/api/videos/${data.id}`)
                 .then((response) => response.json())
@@ -100,6 +112,7 @@ const GlobalEventListener: React.FC = () => {
                   }
                 })
                 .catch((err) => console.error('Error fetching video data:', err))
+              */
             }
           } catch (error) {
             console.error('Error during refresh attempts:', error)
@@ -110,35 +123,43 @@ const GlobalEventListener: React.FC = () => {
       }
     })
 
-    // Listen for reload:page events
+    // Listen for reload:page events - DISABLED FOR NOW
     eventSource.addEventListener('reload:page', (event) => {
       console.log('GlobalEventListener received reload:page event:', event)
       try {
         const data = JSON.parse(event.data)
         console.log('Parsed reload:page event data:', data)
 
+        // DISABLED RELOAD CODE
+        console.log('DISABLED: Would normally reload page due to reload:page event')
+        /*
         // Reload the page after a short delay
         setTimeout(() => {
           console.log('Reloading page due to reload:page event')
           window.location.reload()
         }, 2000)
+        */
       } catch (error) {
         console.error('Error parsing reload:page event data:', error)
       }
     })
 
-    // Listen for video:status:ready events
+    // Listen for video:status:ready events - DISABLED FOR NOW
     eventSource.addEventListener('video:status:ready', (event) => {
       console.log('GlobalEventListener received video:status:ready event:', event)
       try {
         const data = JSON.parse(event.data)
         console.log('Parsed video:status:ready event data:', data)
 
+        // DISABLED RELOAD CODE
+        console.log('DISABLED: Would normally reload page due to video:status:ready event')
+        /*
         // Reload the page after a short delay
         setTimeout(() => {
           console.log('Reloading page due to video:status:ready event')
           window.location.reload()
         }, 2000)
+        */
       } catch (error) {
         console.error('Error parsing video:status:ready event data:', error)
       }
@@ -165,11 +186,11 @@ const GlobalEventListener: React.FC = () => {
 
   // This component now renders a visible indicator
   return (
-    <div className="p-2 mb-4 bg-purple-50 border border-purple-200 rounded-md">
+    <div className="p-2 mb-4 bg-yellow-50 border border-yellow-200 rounded-md">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-medium text-purple-800">
-            Direct Event Source
+          <h3 className="text-sm font-medium text-yellow-800">
+            Direct Event Source (Auto-Refresh Disabled)
             <span
               className="ml-2 px-2 py-0.5 text-xs rounded-full"
               style={{
@@ -185,19 +206,19 @@ const GlobalEventListener: React.FC = () => {
               {connectionStatus}
             </span>
           </h3>
-          <p className="text-xs text-purple-600">
-            Listening for server-sent events directly.
+          <p className="text-xs text-yellow-600">
+            Listening for server-sent events directly (refresh disabled).
             {lastRefreshed && (
-              <span className="ml-1">Last refreshed: {lastRefreshed.toLocaleTimeString()}</span>
+              <span className="ml-1">Last event: {lastRefreshed.toLocaleTimeString()}</span>
             )}
             {eventCount > 0 && <span className="ml-1">Events received: {eventCount}</span>}
           </p>
         </div>
         <button
-          onClick={() => window.location.reload()}
-          className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+          onClick={() => console.log('DISABLED: Would normally reconnect')}
+          className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
         >
-          Reconnect
+          Manual Refresh
         </button>
       </div>
     </div>

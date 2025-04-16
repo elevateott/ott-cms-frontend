@@ -1,10 +1,12 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import MuxUploader from '@mux/mux-uploader-react'
 import { MuxUploaderDrop, MuxUploaderFileSelect } from '@mux/mux-uploader-react'
 import VideoUploadList, { UploadedVideo } from './VideoUploadList'
 import { cn } from '@/utilities/ui'
+import { useEventBusOn } from '@/hooks/useEventBus'
+import { EVENTS } from '@/constants/events'
 
 export interface MuxUploaderWithListProps {
   endpoint: (file?: File) => Promise<string>
@@ -19,53 +21,182 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
   onUploadError,
   className,
 }) => {
-  // Initialize with test data to verify the list is visible
-  const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([
-    {
-      id: '1',
-      filename: 'test-video.mp4',
-      title: 'test-video',
-      status: 'uploading',
-      progress: 45,
-    },
-    {
-      id: '2',
-      filename: 'completed-video.mp4',
-      title: 'completed-video',
-      status: 'processing',
-      progress: 100,
-      assetId: 'test-asset-id',
-      playbackId: 'test-playback-id',
-    },
-    {
-      id: '3',
-      filename: 'ready-video.mp4',
-      title: 'ready-video',
-      status: 'ready',
-      progress: 100,
-      assetId: 'ready-asset-id',
-      playbackId: 'ready-playback-id',
-    },
-    {
-      id: '4',
-      filename: 'error-video.mp4',
-      title: 'error-video',
-      status: 'error',
-      progress: 0,
-      error: 'Upload failed',
-    },
-  ])
+  // Initialize with an empty array for uploaded videos
+  const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([])
+  // Use any type for the ref to avoid TypeScript errors with the custom element
   const uploaderRef = useRef<any>(null)
+
+  // Listen for video_updated events
+  useEventBusOn(
+    EVENTS.VIDEO_UPDATED,
+    (data) => {
+      console.log('🔍 DEBUG [MuxUploaderWithList] VIDEO_UPDATED event received:', data)
+      console.log('🔍 DEBUG [MuxUploaderWithList] Current uploadedVideos state:', uploadedVideos)
+      console.log('🔍 DEBUG [MuxUploaderWithList] Event type:', EVENTS.VIDEO_UPDATED)
+
+      // Check if this is a status change to ready
+      if (data && data.isStatusChange) {
+        console.log('🔍 DEBUG [MuxUploaderWithList] This is a status change to ready event')
+
+        // Update any videos in our list that are in 'processing' status to 'ready'
+        setUploadedVideos((prev) => {
+          console.log(
+            '🔍 DEBUG [MuxUploaderWithList] Current uploaded videos before update:',
+            JSON.stringify(prev),
+          )
+
+          // Find any videos that are in processing status
+          const hasProcessingVideos = prev.some((video) => video.status === 'processing')
+          console.log('🔍 DEBUG [MuxUploaderWithList] Has processing videos:', hasProcessingVideos)
+
+          if (!hasProcessingVideos) {
+            console.log('🔍 DEBUG [MuxUploaderWithList] No processing videos found to update')
+            return prev
+          }
+
+          // Update all processing videos to ready
+          const updatedVideos = prev.map((video) => {
+            if (video.status === 'processing') {
+              console.log(
+                `🔍 DEBUG [MuxUploaderWithList] Updating video ${video.filename} from processing to ready`,
+              )
+              return {
+                ...video,
+                status: 'ready',
+                progress: 100,
+              } as UploadedVideo
+            }
+            return video
+          })
+
+          console.log(
+            '🔍 DEBUG [MuxUploaderWithList] Updated videos after status change:',
+            JSON.stringify(updatedVideos),
+          )
+          return updatedVideos
+        })
+      } else {
+        console.log('🔍 DEBUG [MuxUploaderWithList] Not a status change to ready event')
+        console.log('🔍 DEBUG [MuxUploaderWithList] Data details:', JSON.stringify(data))
+      }
+    },
+    [],
+  )
+
+  // Listen for video:status:ready events specifically
+  useEventBusOn(
+    'video:status:ready',
+    (data) => {
+      console.log('🔍 DEBUG [MuxUploaderWithList] video:status:ready event received:', data)
+      console.log('🔍 DEBUG [MuxUploaderWithList] Current uploadedVideos state:', uploadedVideos)
+
+      // Force update all processing videos to ready status
+      console.log('🔍 DEBUG [MuxUploaderWithList] FORCE UPDATING ALL PROCESSING VIDEOS TO READY')
+
+      // DIRECT APPROACH: Just set all processing videos to ready
+      const updatedVideos = [...uploadedVideos].map((video) => {
+        if (video.status === 'processing') {
+          console.log(
+            `🔍 DEBUG [MuxUploaderWithList] Directly updating video ${video.filename} from processing to ready`,
+          )
+          return {
+            ...video,
+            status: 'ready' as const,
+            progress: 100,
+          }
+        }
+        return video
+      })
+
+      console.log('🔍 DEBUG [MuxUploaderWithList] Setting uploadedVideos directly:', updatedVideos)
+      setUploadedVideos(updatedVideos)
+    },
+    [],
+  )
+
+  // Also listen for video:status:updated events
+  useEventBusOn(
+    'video:status:updated',
+    (data) => {
+      console.log('🔍 DEBUG [MuxUploaderWithList] video:status:updated event received:', data)
+      console.log('🔍 DEBUG [MuxUploaderWithList] Current uploadedVideos state:', uploadedVideos)
+
+      // Force update all processing videos to ready status
+      console.log('🔍 DEBUG [MuxUploaderWithList] FORCE UPDATING ALL PROCESSING VIDEOS TO READY')
+
+      // DIRECT APPROACH: Just set all processing videos to ready
+      const updatedVideos = [...uploadedVideos].map((video) => {
+        if (video.status === 'processing') {
+          console.log(
+            `🔍 DEBUG [MuxUploaderWithList] Directly updating video ${video.filename} from processing to ready`,
+          )
+          return {
+            ...video,
+            status: 'ready' as const,
+            progress: 100,
+          }
+        }
+        return video
+      })
+
+      console.log('🔍 DEBUG [MuxUploaderWithList] Setting uploadedVideos directly:', updatedVideos)
+      setUploadedVideos(updatedVideos)
+    },
+    [],
+  )
+
+  // Also listen for reload:page events
+  useEventBusOn(
+    'reload:page',
+    (data) => {
+      console.log('🔍 DEBUG [MuxUploaderWithList] reload:page event received:', data)
+      console.log('🔍 DEBUG [MuxUploaderWithList] Current uploadedVideos state:', uploadedVideos)
+
+      // Force update all processing videos to ready status
+      console.log('🔍 DEBUG [MuxUploaderWithList] FORCE UPDATING ALL PROCESSING VIDEOS TO READY')
+
+      // DIRECT APPROACH: Just set all processing videos to ready
+      const updatedVideos = [...uploadedVideos].map((video) => {
+        if (video.status === 'processing') {
+          console.log(
+            `🔍 DEBUG [MuxUploaderWithList] Directly updating video ${video.filename} from processing to ready`,
+          )
+          return {
+            ...video,
+            status: 'ready' as const,
+            progress: 100,
+          }
+        }
+        return video
+      })
+
+      console.log('🔍 DEBUG [MuxUploaderWithList] Setting uploadedVideos directly:', updatedVideos)
+      setUploadedVideos(updatedVideos)
+    },
+    [],
+  )
+
+  // Listen for video_created events
+  useEventBusOn(
+    EVENTS.VIDEO_CREATED,
+    (data) => {
+      console.log('🔍 DEBUG [MuxUploaderWithList] VIDEO_CREATED event received:', data)
+      console.log('🔍 DEBUG [MuxUploaderWithList] Current uploadedVideos state:', uploadedVideos)
+      // We don't need to do anything here since we're tracking uploads from the client side
+      // But we log it for debugging purposes
+    },
+    [],
+  )
 
   // Function to handle upload start
   const handleUploadStart = (event: CustomEvent) => {
-    console.log('Upload start event:', event)
+    console.log('🔍 DEBUG [MuxUploaderWithList] Upload start event:', event)
     const file = event.detail as File
     if (!file) {
-      console.log('No file in upload start event')
+      console.log('🔍 DEBUG [MuxUploaderWithList] No file in upload start event')
       return
     }
-    console.log('Upload started for file:', file.name)
+    console.log('🔍 DEBUG [MuxUploaderWithList] Upload started for file:', file.name)
 
     // Create a new uploaded video object
     const newVideo: UploadedVideo = {
@@ -82,9 +213,9 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
 
   // Function to handle upload progress
   const handleProgress = (event: CustomEvent) => {
-    console.log('Progress event:', event)
+    console.log('🔍 DEBUG [MuxUploaderWithList] Progress event:', event)
     const progress = event.detail as number
-    console.log('Upload progress:', progress * 100, '%')
+    console.log('🔍 DEBUG [MuxUploaderWithList] Upload progress:', progress * 100, '%')
 
     // Update the progress of the most recent upload
     setUploadedVideos((prev) => {
@@ -92,10 +223,11 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
       const lastVideoIndex = updatedVideos.length - 1
 
       if (lastVideoIndex >= 0) {
+        const lastVideo = updatedVideos[lastVideoIndex]
         updatedVideos[lastVideoIndex] = {
-          ...updatedVideos[lastVideoIndex],
+          ...lastVideo,
           progress: progress * 100,
-        }
+        } as UploadedVideo
       }
 
       return updatedVideos
@@ -104,7 +236,7 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
 
   // Function to handle upload success
   const handleSuccess = (event: CustomEvent) => {
-    console.log('Success event:', event)
+    console.log('🔍 DEBUG [MuxUploaderWithList] Success event:', event)
     const detail = event.detail as {
       upload_id?: string
       asset_id?: string
@@ -112,11 +244,11 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
     }
 
     if (!detail) {
-      console.log('No detail in success event')
+      console.log('🔍 DEBUG [MuxUploaderWithList] No detail in success event')
       return
     }
 
-    console.log('Upload success with details:', detail)
+    console.log('🔍 DEBUG [MuxUploaderWithList] Upload success with details:', detail)
 
     // Update the status of the most recent upload
     setUploadedVideos((prev) => {
@@ -124,53 +256,35 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
       const lastVideoIndex = updatedVideos.length - 1
 
       if (lastVideoIndex >= 0) {
+        const lastVideo = updatedVideos[lastVideoIndex]
         updatedVideos[lastVideoIndex] = {
-          ...updatedVideos[lastVideoIndex],
+          ...lastVideo,
           status: 'processing',
           progress: 100,
           assetId: detail.asset_id,
+          uploadId: detail.upload_id,
           playbackId: detail.playback_ids?.[0]?.id,
-        }
+        } as UploadedVideo
       }
 
       return updatedVideos
     })
 
-    // Simulate video processing and then mark as ready
-    const videoId = detail.asset_id || Date.now().toString()
-
-    // Simulate processing time (3 seconds)
-    setTimeout(() => {
-      setUploadedVideos((prev) => {
-        const updatedVideos = [...prev]
-        const videoIndex = updatedVideos.findIndex((v) => v.assetId === videoId)
-
-        if (videoIndex >= 0) {
-          updatedVideos[videoIndex] = {
-            ...updatedVideos[videoIndex],
-            status: 'ready',
-          }
-        }
-
-        return updatedVideos
+    // Call the onUploadComplete callback
+    if (onUploadComplete) {
+      onUploadComplete({
+        uploadId: detail.upload_id,
+        assetId: detail.asset_id,
+        playbackId: detail.playback_ids?.[0]?.id,
       })
-
-      // Call the onUploadComplete callback
-      if (onUploadComplete) {
-        onUploadComplete({
-          uploadId: detail.upload_id,
-          assetId: detail.asset_id,
-          playbackId: detail.playback_ids?.[0]?.id,
-        })
-      }
-    }, 3000)
+    }
   }
 
   // Function to handle upload error
   const handleError = (event: CustomEvent) => {
-    console.log('Error event:', event)
+    console.log('🔍 DEBUG [MuxUploaderWithList] Error event:', event)
     const error = event.detail as Error
-    console.log('Upload error:', error?.message || 'Unknown error')
+    console.log('🔍 DEBUG [MuxUploaderWithList] Upload error:', error?.message || 'Unknown error')
 
     // Update the status of the most recent upload
     setUploadedVideos((prev) => {
@@ -178,11 +292,12 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
       const lastVideoIndex = updatedVideos.length - 1
 
       if (lastVideoIndex >= 0) {
+        const lastVideo = updatedVideos[lastVideoIndex]
         updatedVideos[lastVideoIndex] = {
-          ...updatedVideos[lastVideoIndex],
+          ...lastVideo,
           status: 'error',
           error: error?.message || 'Unknown error',
-        }
+        } as UploadedVideo
       }
 
       return updatedVideos
@@ -202,6 +317,7 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
   return (
     <div className={cn('space-y-6', className)}>
       {/* Mux Uploader */}
+      {/* @ts-expect-error - MuxUploader has custom event types that TypeScript doesn't recognize */}
       <MuxUploader
         ref={uploaderRef}
         endpoint={endpoint}
@@ -238,22 +354,31 @@ const MuxUploaderWithList: React.FC<MuxUploaderWithListProps> = ({
 
       {/* Progress bar for current upload */}
       {uploadedVideos.length > 0 &&
-        uploadedVideos[uploadedVideos.length - 1].status === 'uploading' && (
-          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-500 transition-all duration-300 ease-in-out"
-                style={{ width: `${uploadedVideos[uploadedVideos.length - 1].progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1 text-center">
-              Uploading: {Math.round(uploadedVideos[uploadedVideos.length - 1].progress)}%
-            </p>
-          </div>
-        )}
+        (() => {
+          const lastVideo = uploadedVideos[uploadedVideos.length - 1]
+          if (lastVideo && lastVideo.status === 'uploading') {
+            return (
+              <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-300 ease-in-out"
+                    style={{ width: `${lastVideo.progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1 text-center">
+                  Uploading: {Math.round(lastVideo.progress)}%
+                </p>
+              </div>
+            )
+          }
+          return null
+        })()}
 
       {/* Uploaded Videos List */}
-      {console.log('Rendering VideoUploadList with videos:', uploadedVideos)}
+      {console.log(
+        '🔍 DEBUG [MuxUploaderWithList] Rendering VideoUploadList with videos:',
+        JSON.stringify(uploadedVideos),
+      )}
       <VideoUploadList videos={uploadedVideos} onClearAll={handleClearAll} />
     </div>
   )

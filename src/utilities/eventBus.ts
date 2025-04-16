@@ -26,15 +26,27 @@ class EventBus {
    * @returns A function to unsubscribe
    */
   on<T = any>(event: string, callback: EventCallback<T>): () => void {
+    console.log(`🔍 DEBUG [EventBus] Subscribing to event: ${event}`)
+
     if (!this.events[event]) {
       this.events[event] = []
+      console.log(`🔍 DEBUG [EventBus] Created new event array for: ${event}`)
     }
+
     this.events[event].push(callback as EventCallback)
+    console.log(
+      `🔍 DEBUG [EventBus] Added callback to event: ${event}, total listeners: ${this.events[event].length}`,
+    )
 
     // Return unsubscribe function
     return () => {
+      console.log(`🔍 DEBUG [EventBus] Unsubscribing from event: ${event}`)
       if (this.events[event]) {
+        const prevLength = this.events[event].length
         this.events[event] = this.events[event].filter((cb) => cb !== callback)
+        console.log(
+          `🔍 DEBUG [EventBus] Removed callback from event: ${event}, listeners before: ${prevLength}, after: ${this.events[event].length}`,
+        )
       }
     }
   }
@@ -65,28 +77,42 @@ class EventBus {
    * @param data The data to pass to the callbacks
    */
   emit<T = any>(event: string, data?: T): void {
+    console.log(`🔍 DEBUG [EventBus] Emitting event: ${event}`, data)
+
     // Call regular subscribers
     if (this.events[event]) {
-      this.events[event].forEach((callback) => {
+      console.log(
+        `🔍 DEBUG [EventBus] Found ${this.events[event].length} regular listeners for event: ${event}`,
+      )
+      this.events[event].forEach((callback, index) => {
         try {
+          console.log(`🔍 DEBUG [EventBus] Calling regular listener #${index} for event: ${event}`)
           callback(data)
         } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error)
+          console.error(`🔍 DEBUG [EventBus] Error in event listener for ${event}:`, error)
         }
       })
+    } else {
+      console.log(`🔍 DEBUG [EventBus] No regular listeners found for event: ${event}`)
     }
 
     // Call once subscribers
     if (this.onceEvents[event]) {
+      console.log(
+        `🔍 DEBUG [EventBus] Found ${this.onceEvents[event].length} once listeners for event: ${event}`,
+      )
       const callbacks = [...this.onceEvents[event]]
       this.onceEvents[event] = []
-      callbacks.forEach((callback) => {
+      callbacks.forEach((callback, index) => {
         try {
+          console.log(`🔍 DEBUG [EventBus] Calling once listener #${index} for event: ${event}`)
           callback(data)
         } catch (error) {
-          console.error(`Error in once event listener for ${event}:`, error)
+          console.error(`🔍 DEBUG [EventBus] Error in once event listener for ${event}:`, error)
         }
       })
+    } else {
+      console.log(`🔍 DEBUG [EventBus] No once listeners found for event: ${event}`)
     }
   }
 
@@ -131,4 +157,3 @@ export const EVENTS = {
   NAVIGATION_START: 'navigation_start',
   NAVIGATION_END: 'navigation_end',
 }
-

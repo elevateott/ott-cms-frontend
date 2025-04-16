@@ -34,7 +34,10 @@ export const Videos: CollectionConfig = {
         '@/collections/Videos/components/DefaultListViewRefresher',
         '@/collections/Videos/components/ListViewRefreshButton',
         '@/collections/Videos/components/GlobalEventListener',
+        '@/collections/Videos/components/ListViewRefresher', // Add our new ListViewRefresher component
       ],
+      // We'll use the beforeList to add our VideoStatusProvider
+      // The provider will be added in the VideoManagementComponent
     },
   },
   fields: [
@@ -46,6 +49,17 @@ export const Videos: CollectionConfig = {
         components: {
           Cell: '@/collections/Videos/components/ThumbnailCell',
         },
+      },
+    },
+    {
+      name: 'status',
+      type: 'ui',
+      label: 'Status',
+      admin: {
+        components: {
+          Cell: '@/collections/Videos/components/StatusField',
+        },
+        position: 'sidebar',
       },
     },
     {
@@ -118,6 +132,9 @@ export const Videos: CollectionConfig = {
           admin: {
             readOnly: true,
             description: 'Current status of the Mux video',
+            components: {
+              Cell: '@/collections/Videos/components/StatusCell',
+            },
           },
         },
       ],

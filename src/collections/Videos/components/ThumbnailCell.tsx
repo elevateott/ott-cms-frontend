@@ -1,16 +1,32 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import type { DefaultCellComponentProps } from 'payload'
 import Image from 'next/image'
+import { useVideoStatus } from '@/context/VideoStatusContext'
 
 const ThumbnailCell = (props: DefaultCellComponentProps) => {
   const { rowData, className } = props
+  const { statusMap } = useVideoStatus()
 
+  const videoId = rowData?.id
   const thumbnail = rowData?.thumbnail?.url
   const muxThumbnail = rowData?.muxThumbnailUrl
-  const muxStatus = rowData?.muxData?.status
+
+  // Use status from context if available, otherwise fall back to rowData
+  const muxStatus = statusMap[videoId] || rowData?.muxData?.status
   const imageUrl = thumbnail || muxThumbnail || '/media/fallback-thumbnail-1-600x600.png'
+
+  // Log when status changes from context
+  useEffect(() => {
+    if (statusMap[videoId]) {
+      console.log(
+        `🔍 DEBUG [ThumbnailCell] Video ${videoId} status updated from context: ${statusMap[videoId]}`,
+      )
+    }
+  }, [statusMap, videoId])
+
+  console.log('muxStatus', muxStatus)
 
   const renderContent = () => {
     switch (muxStatus) {

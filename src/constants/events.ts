@@ -12,15 +12,16 @@ export const EVENTS = {
   MODAL_OPEN: 'modal:open',
   MODAL_CLOSE: 'modal:close',
   NOTIFICATION: 'notification',
+  REFRESH_LIST_VIEW: 'refresh:list:view',
 
   // Navigation events
   NAVIGATION_START: 'navigation:start',
   NAVIGATION_END: 'navigation:end',
-} as const;
+} as const
 
 export const MUX_WEBHOOK_EVENT_TYPES = {
   ASSET_CREATED: 'video.asset.created',
   ASSET_READY: 'video.asset.ready',
   UPLOAD_ASSET_CREATED: 'video.upload.asset_created',
   NON_STANDARD_INPUT_DETECTED: 'video.asset.non_standard_input_detected',
-} as const;
+} as const

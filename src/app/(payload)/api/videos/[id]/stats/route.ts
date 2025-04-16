@@ -2,10 +2,10 @@ import { NextRequest } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ): Promise<Response> {
   try {
-    const { id } = await context.params
+    const { _id } = await context.params
 
     // Generate mock data for demonstration purposes
     const daily = Array.from({ length: 7 }, (_, i) => {
@@ -32,12 +32,10 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error fetching video stats:', error instanceof Error ? error.message : 'Unknown error')
-    return Response.json(
-      { error: 'Failed to fetch video statistics' },
-      { status: 500 }
+    console.error(
+      'Error fetching video stats:',
+      error instanceof Error ? error.message : 'Unknown error',
     )
+    return Response.json({ error: 'Failed to fetch video statistics' }, { status: 500 })
   }
 }
-
-
