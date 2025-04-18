@@ -39,15 +39,15 @@ const VideoList: React.FC = () => {
 
   // Listen for all relevant events and refresh the list
   useEventBusOn(EVENTS.VIDEO_UPDATED, () => {
-    setTimeout(fetchVideos, 500)
+    setTimeout(fetchVideos, 1000)
   }, [fetchVideos])
 
   useEventBusOn('video:status:ready', () => {
-    setTimeout(fetchVideos, 500)
+    setTimeout(fetchVideos, 1000)
   }, [fetchVideos])
 
   useEventBusOn(EVENTS.REFRESH_LIST_VIEW, () => {
-    setTimeout(fetchVideos, 500)
+    setTimeout(fetchVideos, 1000)
   }, [fetchVideos])
 
   if (loading) {
@@ -66,7 +66,7 @@ const VideoList: React.FC = () => {
           <li key={video.id} className="py-4 flex justify-between items-center">
             <span>
               <span className="font-medium">{video.title}</span>
-              <span className="ml-2 text-sm text-gray-500">({video.status})</span>
+              <span className="ml-2 text-sm text-gray-1000">({video.status})</span>
             </span>
             {/* Add more video info/actions here if needed */}
           </li>

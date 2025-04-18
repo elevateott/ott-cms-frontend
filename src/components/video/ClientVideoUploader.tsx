@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import SimpleVideoUploader from './SimpleVideoUploader'
+import MuxVideoUploader from './MuxVideoUploader'
 
 interface ClientVideoUploaderProps {
   endpoint: (file?: File) => Promise<string>
@@ -26,7 +26,7 @@ const ClientVideoUploader: React.FC<ClientVideoUploaderProps> = (props) => {
     )
   }
 
-  return <SimpleVideoUploader {...props} />
+  return <MuxVideoUploader {...props} />
 }
 
 export default ClientVideoUploader

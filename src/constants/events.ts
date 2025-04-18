@@ -7,7 +7,8 @@ export const EVENTS = {
   VIDEO_UPLOAD_PROGRESS: 'video:upload:progress',
   VIDEO_UPLOAD_COMPLETED: 'video:upload:completed',
   VIDEO_UPLOAD_ERROR: 'video:upload:error',
-
+  VIDEO_STATUS_READY: 'video:status:ready',
+   
   // UI events
   MODAL_OPEN: 'modal:open',
   MODAL_CLOSE: 'modal:close',

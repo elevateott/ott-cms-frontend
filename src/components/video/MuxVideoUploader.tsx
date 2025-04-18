@@ -1,18 +1,91 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { useLocalStorage } from '@/hooks/useLocalStorage'
 import MuxUploader from '@mux/mux-uploader-react'
-import {
-  MuxUploaderDrop,
-  MuxUploaderFileSelect,
-  MuxUploaderProgress,
-} from '@mux/mux-uploader-react'
+import { MuxUploaderDrop, MuxUploaderFileSelect } from '@mux/mux-uploader-react'
 import { CheckCircle, XCircle, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 import { cn } from '@/utilities/ui'
 
+// Video list component
+const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll: () => void }) => {
+  if (videos.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+      <div className="p-4 bg-gray-100 flex justify-between items-center">
+        <h3 className="text-lg font-medium">Upload Status</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearAll}
+          className="text-xs flex items-center gap-1"
+        >
+          <Trash2 className="w-3 h-3" />
+          Clear All
+        </Button>
+      </div>
+
+      <div className="divide-y divide-gray-200">
+        {videos.map((video, index) => (
+          <div
+            key={`${video.id}-${index}`}
+            className="p-4 flex items-center justify-between bg-white"
+          >
+            <div className="flex items-center gap-3">
+              {/* Status Icon */}
+              {video.status === 'uploading' && (
+                <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+              )}
+              {video.status === 'processing' && (
+                <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />
+              )}
+              {video.status === 'ready' && <CheckCircle className="w-5 h-5 text-green-500" />}
+              {video.status === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
+
+              {/* Video Info */}
+              <div>
+                <p className="font-medium">{video.title}</p>
+                <p className="text-xs text-gray-500">{video.filename}</p>
+              </div>
+            </div>
+
+            {/* Status Badge */}
+            <div>
+              {video.status === 'uploading' && (
+                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                  Uploading
+                </span>
+              )}
+              {video.status === 'processing' && (
+                <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded-full">
+                  Processing
+                </span>
+              )}
+              {video.status === 'ready' && (
+                <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                  Ready
+                </span>
+              )}
+              {video.status === 'error' && (
+                <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                  Error
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // Define the upload status type
-type UploadStatus = 'uploading' | 'uploaded' | 'error'
+type UploadStatus = 'uploading' | 'processing' | 'ready' | 'error'
 
 // Define the uploaded video type
 interface UploadedVideo {
@@ -24,30 +97,39 @@ interface UploadedVideo {
   error?: string
   assetId?: string
   playbackId?: string
+  uploadUrl?: string
 }
 
-export interface EnhancedMuxUploaderProps {
+export interface MuxVideoUploaderProps {
   endpoint: (file?: File) => Promise<string>
   onUploadComplete?: (data: { uploadId?: string; assetId?: string; playbackId?: string }) => void
   onUploadError?: (error: Error) => void
   className?: string
 }
 
-const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
+const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   endpoint,
   onUploadComplete,
   onUploadError,
   className,
 }) => {
-  const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([])
+  const [uploadedVideos, setUploadedVideos] = useLocalStorage<UploadedVideo[]>(
+    'ott-cms-uploaded-videos',
+    [],
+  )
+  const [uploaderKey, setUploaderKey] = useState<number>(0)
   const uploaderRef = useRef<any>(null)
 
   // Function to handle upload start
   const handleUploadStart = (event: CustomEvent) => {
-    const file = event.detail as File
-    if (!file) return
+    console.log('Upload started:', event.detail)
+    const file = event.detail?.file || event.detail
 
-    // Create a new uploaded video object
+    if (!file || !file.name) {
+      console.error('File is undefined or missing name property:', event.detail)
+      return
+    }
+
     const newVideo: UploadedVideo = {
       id: Date.now().toString(),
       filename: file.name,
@@ -56,13 +138,15 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
       progress: 0,
     }
 
-    // Add the new video to the list
     setUploadedVideos((prev) => [...prev, newVideo])
+    console.log('New video added:', newVideo)
   }
 
   // Function to handle upload progress
   const handleProgress = (event: CustomEvent) => {
+    console.log('Progress event:', event)
     const progress = event.detail as number
+    console.log('Upload progress:', progress * 100, '%')
 
     // Update the progress of the most recent upload
     setUploadedVideos((prev) => {
@@ -82,15 +166,18 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
 
   // Function to handle upload success
   const handleSuccess = (event: CustomEvent) => {
+    if (!event.detail) {
+      console.error('Success event detail is missing:', event.detail)
+      return
+    }
+
+    console.log('Upload successful:', event.detail)
     const detail = event.detail as {
       upload_id?: string
       asset_id?: string
       playback_ids?: Array<{ id: string }>
     }
 
-    if (!detail) return
-
-    // Update the status of the most recent upload
     setUploadedVideos((prev) => {
       const updatedVideos = [...prev]
       const lastVideoIndex = updatedVideos.length - 1
@@ -98,17 +185,17 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
       if (lastVideoIndex >= 0) {
         updatedVideos[lastVideoIndex] = {
           ...updatedVideos[lastVideoIndex],
-          status: 'uploaded',
+          status: 'ready',
           progress: 100,
           assetId: detail.asset_id,
           playbackId: detail.playback_ids?.[0]?.id,
         }
+        console.log('Video status updated to ready:', updatedVideos[lastVideoIndex])
       }
 
       return updatedVideos
     })
 
-    // Call the onUploadComplete callback
     if (onUploadComplete) {
       onUploadComplete({
         uploadId: detail.upload_id,
@@ -116,13 +203,18 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
         playbackId: detail.playback_ids?.[0]?.id,
       })
     }
+
+    setTimeout(() => {
+      setUploaderKey((k) => k + 1)
+      console.log('Uploader reset with new key:', uploaderKey + 1)
+    }, 500)
   }
 
   // Function to handle upload error
   const handleError = (event: CustomEvent) => {
+    console.error('Upload error:', event.detail)
     const error = event.detail as Error
 
-    // Update the status of the most recent upload
     setUploadedVideos((prev) => {
       const updatedVideos = [...prev]
       const lastVideoIndex = updatedVideos.length - 1
@@ -133,12 +225,12 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
           status: 'error',
           error: error?.message || 'Unknown error',
         }
+        console.log('Video status updated to error:', updatedVideos[lastVideoIndex])
       }
 
       return updatedVideos
     })
 
-    // Call the onUploadError callback
     if (onUploadError) {
       onUploadError(error)
     }
@@ -147,13 +239,15 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
   // Function to clear all uploads
   const handleClearAll = () => {
     setUploadedVideos([])
+    console.log('All uploads cleared')
   }
 
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Custom Mux Uploader */}
-      <div className="w-full">
+      {/* Mux Uploader */}
+      <div>
         <MuxUploader
+          key={uploaderKey}
           ref={uploaderRef}
           endpoint={endpoint}
           onUploadStart={handleUploadStart as any}
@@ -188,83 +282,10 @@ const EnhancedMuxUploader: React.FC<EnhancedMuxUploaderProps> = ({
         </MuxUploader>
       </div>
 
-      {/* Progress bar for current upload */}
-      {uploadedVideos.length > 0 &&
-        uploadedVideos[uploadedVideos.length - 1].status === 'uploading' && (
-          <div className="p-4 bg-gray-900 mt-4 rounded-lg">
-            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-500 transition-all duration-300 ease-in-out"
-                style={{ width: `${uploadedVideos[uploadedVideos.length - 1].progress}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-300 mt-1 text-center">
-              Uploading: {Math.round(uploadedVideos[uploadedVideos.length - 1].progress)}%
-            </p>
-          </div>
-        )}
-
       {/* Uploaded Videos List */}
-      {uploadedVideos.length > 0 && (
-        <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-          <div className="p-4 bg-gray-100 dark:bg-gray-900 flex justify-between items-center">
-            <h3 className="text-lg font-medium">Uploaded Videos</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAll}
-              className="text-xs flex items-center gap-1"
-            >
-              <Trash2 className="w-3 h-3" />
-              Clear All
-            </Button>
-          </div>
-
-          <div className="divide-y divide-gray-200 dark:divide-gray-800">
-            {uploadedVideos.map((video) => (
-              <div key={video.id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Status Icon */}
-                  {video.status === 'uploading' && (
-                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                  )}
-                  {video.status === 'uploaded' && (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  )}
-                  {video.status === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
-
-                  {/* Video Info */}
-                  <div>
-                    <p className="font-medium">{video.title}</p>
-                    <p className="text-xs text-gray-500">{video.filename}</p>
-                  </div>
-                </div>
-
-                {/* Status Badge */}
-                <div>
-                  {video.status === 'uploading' && (
-                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded-full">
-                      Uploading
-                    </span>
-                  )}
-                  {video.status === 'uploaded' && (
-                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded-full">
-                      Uploaded
-                    </span>
-                  )}
-                  {video.status === 'error' && (
-                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 rounded-full">
-                      Error
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <VideoList videos={uploadedVideos} onClearAll={handleClearAll} />
     </div>
   )
 }
 
-export default EnhancedMuxUploader
+export default MuxVideoUploader

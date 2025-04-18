@@ -8,7 +8,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { cn } from '@/utilities/ui'
-import VideoUploader from './VideoUploaderNew'
+import VideoUploader from './VideoUploader'
 import { useEventBusEmit } from '@/hooks/useEventBus'
 import { EVENTS } from '@/utilities/eventBus'
 

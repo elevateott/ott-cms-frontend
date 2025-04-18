@@ -52,3 +52,4 @@ coverage/
 
 .augmentignore
 .editorconfig
+.vscode/settings.json

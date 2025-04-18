@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import VideoAdmin from '@/collections/Videos/components/VideoAdmin'
+import VideoAdmin from '@/components/video/VideoAdmin'
 import type { BeforeListClientProps } from 'payload'
 import { VideoStatusProvider } from '@/context/VideoStatusContext'
 

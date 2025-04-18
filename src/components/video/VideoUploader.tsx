@@ -7,7 +7,7 @@ import { API_ROUTES } from '@/constants/api'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import EnhancedMuxUploader from './EnhancedMuxUploader'
+import ClientVideoUploader from './ClientVideoUploader'
 import {
   Select,
   SelectContent,
@@ -88,9 +88,35 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
         console.log('Video document created:', createData)
 
         // Emit video created event
+        console.log('Emitting VIDEO_CREATED event with data:', {
+          id: createData.id,
+          uploadId: data.data.uploadId,
+        })
+
         emitEvent(EVENTS.VIDEO_CREATED, {
           id: createData.id,
           uploadId: data.data.uploadId,
+        })
+
+        // Also emit the event with the colon format for consistency
+        emitEvent('video:created', {
+          id: createData.id,
+          uploadId: data.data.uploadId,
+        })
+
+        // Emit the REFRESH_LIST_VIEW event to refresh the list view
+        console.log('Emitting REFRESH_LIST_VIEW event for new video')
+        emitEvent('REFRESH_LIST_VIEW', {
+          source: 'uploader',
+          action: 'video_created',
+          videoId: createData.id,
+        })
+
+        // Also emit refresh:list:view for consistency
+        emitEvent('refresh:list:view', {
+          source: 'uploader',
+          action: 'video_created',
+          videoId: createData.id,
         })
       } catch (createError) {
         console.error('Error creating video document:', createError)
@@ -135,11 +161,40 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       message: 'Video has been uploaded and is now processing.',
     })
 
+    // Emit video updated event if we have an ID
+    if (data.id) {
+      console.log('Emitting video_updated event with data:', data)
+      emitEvent(EVENTS.VIDEO_UPDATED, {
+        id: data.id,
+        isStatusChange: false,
+      })
+
+      // Also emit the event with the colon format for consistency
+      emitEvent('video:updated', {
+        id: data.id,
+        isStatusChange: false,
+      })
+    }
+
+    // Emit REFRESH_LIST_VIEW event
+    console.log('Emitting REFRESH_LIST_VIEW event')
+    emitEvent('REFRESH_LIST_VIEW', {
+      source: 'uploader',
+      action: 'upload_complete',
+      timestamp: Date.now(),
+    })
+
     if (refreshList) {
       console.log('Calling refreshList after 2 seconds')
       setTimeout(() => {
         console.log('Refreshing list now')
         refreshList()
+
+        // Call it again after a longer delay
+        setTimeout(() => {
+          console.log('Refreshing list again')
+          refreshList()
+        }, 3000)
       }, 2000)
     }
   }
@@ -201,9 +256,9 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
 
         {/* Mux Uploader */}
         {sourceType === 'mux' && (
-          <EnhancedMuxUploader
+          <ClientVideoUploader
             endpoint={(file?: File) => {
-              console.log('EnhancedMuxUploader endpoint called with file:', file?.name)
+              console.log('ClientVideoUploader endpoint called with file:', file?.name)
               return file
                 ? getUploadUrl(file).then((url) => {
                     console.log('Got upload URL:', url)
@@ -212,21 +267,21 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
                 : Promise.resolve('')
             }}
             onUploadComplete={(data) => {
-              console.log('EnhancedMuxUploader onUploadComplete called with data:', data)
+              console.log('ClientVideoUploader onUploadComplete called with data:', data)
               handleSuccess({
                 detail: {
                   upload_id: data.uploadId,
                   asset_id: data.assetId,
-                  playback_ids: data.playbackId ? [{ id: data.playbackId }] : undefined
-                }
+                  playback_ids: data.playbackId ? [{ id: data.playbackId }] : undefined,
+                },
               } as unknown as CustomEvent)
             }}
             onUploadError={(error) => {
-              console.error('EnhancedMuxUploader onUploadError called with error:', error)
+              console.error('ClientVideoUploader onUploadError called with error:', error)
               handleError(error)
             }}
           />
-        )
+        )}
 
         {/* Embedded URL Input */}
         {sourceType === 'embedded' && (
