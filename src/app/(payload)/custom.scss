@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure immediate styling for Mux Uploader button */
+mux-uploader button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgb(37, 99, 235); /* bg-blue-600 */
+  color: white;
+  border-radius: 0.375rem; /* rounded-md */
+  transition-property: background-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+mux-uploader button:hover {
+  background-color: rgb(29, 78, 216); /* bg-blue-700 */
+}
+
 /* Fix for table width issues with Tailwind */
 .table {
   display: block !important;

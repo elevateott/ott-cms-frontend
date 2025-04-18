@@ -10,6 +10,9 @@ import { Progress } from '@/components/ui/progress'
 import { cn } from '@/utilities/ui'
 import { eventBus } from '@/utilities/eventBus'
 import { EVENTS } from '@/constants/events'
+import styles from './MuxVideoUploader.module.css'
+import MuxUploaderStyles from './MuxUploaderStyles'
+import Script from 'next/script'
 
 // Video list component
 const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll: () => void }) => {
@@ -132,6 +135,17 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     [],
   )
   const [uploaderKey, setUploaderKey] = useState<number>(0)
+  const [isUploaderReady, setIsUploaderReady] = useState<boolean>(false)
+
+  // Effect to set the uploader ready state after a short delay
+  useEffect(() => {
+    // Set a timeout to show the uploader after a short delay
+    const timer = setTimeout(() => {
+      setIsUploaderReady(true)
+    }, 1000) // 1 second delay
+
+    return () => clearTimeout(timer)
+  }, [])
 
   // Effect to log when uploadedVideos changes and check for stalled uploads
   useEffect(() => {
@@ -228,7 +242,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
       return updatedVideos
     })
 
-     // Emit client-side event for upload completed
+    // Emit client-side event for upload completed
     eventBus.emit(EVENTS.VIDEO_UPLOAD_COMPLETED, {
       uploadId: upload_id,
       assetId: asset_id,
@@ -312,41 +326,84 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
 
   return (
     <div className={cn('space-y-6', className)}>
+      {/* Load preload script with highest priority */}
+      <Script
+        id="mux-uploader-preload"
+        strategy="afterInteractive"
+        src="/mux-uploader-preload.js"
+        onLoad={() => {
+          console.log('Mux Uploader preload script loaded')
+        }}
+      />
+
+      {/* Add the styles component */}
+      <MuxUploaderStyles />
+
       {/* Mux Uploader */}
-      <div>
-        <MuxUploader
-          key={uploaderKey}
-          endpoint={endpoint}
-          onUploadStart={handleUploadStart as any}
-          onProgress={handleProgress as any}
-          onSuccess={handleSuccess as any}
-          onError={handleError as any}
-        >
-          <div className="w-full h-48 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center hover:border-gray-500 transition-colors">
-            <MuxUploaderDrop className="w-full h-full flex flex-col items-center justify-center text-center">
-              <svg
-                className="w-12 h-12 text-gray-400 mb-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              <p className="text-sm text-gray-300 text-center">Drop your video file here or</p>
-              <MuxUploaderFileSelect>
-                <button className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                  Browse Files
-                </button>
-              </MuxUploaderFileSelect>
-            </MuxUploaderDrop>
+      <div className={cn(styles.muxUploaderContainer, 'mux-uploader')}>
+        {!isUploaderReady ? (
+          // Show loader while uploader is not ready
+          <div className="w-full h-48 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
+            <p className="text-sm text-gray-500">Loading video uploader...</p>
           </div>
-        </MuxUploader>
+        ) : (
+          // Show uploader when ready
+          <MuxUploader
+            key={uploaderKey}
+            endpoint={endpoint}
+            onUploadStart={handleUploadStart as any}
+            onProgress={handleProgress as any}
+            onSuccess={handleSuccess as any}
+            onError={handleError as any}
+          >
+            <div className={cn(styles.dropArea, 'flex flex-col items-center justify-center')}>
+              <MuxUploaderDrop className="w-full h-full flex flex-col items-center justify-center text-center">
+                <svg
+                  className="w-12 h-12 text-gray-400 mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                <p className="text-sm text-gray-300 text-center">Drop your video file here or</p>
+                <MuxUploaderFileSelect>
+                  <button
+                    className="mux-styled-button"
+                    style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem 1rem',
+                      backgroundColor: 'rgb(37, 99, 235)',
+                      color: 'white',
+                      borderRadius: '0.375rem',
+                      transition: 'background-color 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+                      fontFamily: 'inherit',
+                      fontSize: '0.875rem',
+                      lineHeight: '1.25rem',
+                      fontWeight: 500,
+                      visibility: 'visible',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgb(29, 78, 216)'
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgb(37, 99, 235)'
+                    }}
+                  >
+                    Browse Files
+                  </button>
+                </MuxUploaderFileSelect>
+              </MuxUploaderDrop>
+            </div>
+          </MuxUploader>
+        )}
       </div>
 
       {/* Uploaded Videos List */}
