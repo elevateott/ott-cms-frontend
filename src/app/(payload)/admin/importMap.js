@@ -22,7 +22,7 @@ import { default as default_4a693924dc6bcaf2cb86a4b715cfdcb5 } from '@/collectio
 import { default as default_c978f8026cc38bd159688b3b4035a082 } from '@/collections/Videos/components/StatusCell'
 import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
 import { default as default_de32723381581c2254257fe9606d9642 } from '@/collections/Videos/components/VideoManagementComponent'
-import { default as default_ac3b1d16ae128c37ac95ef590030c1dc } from '@/collections/Videos/components/GlobalEventListener'
+import { default as default_e4e90e70e2f2dedb1c73872c8d10cb69 } from '@/components/EventMonitor'
 import { default as default_45fabfc1a612e4c88db72a775402856c } from '@/collections/Videos/components/ListViewRefresher'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
@@ -57,7 +57,7 @@ export const importMap = {
   "@/collections/Videos/components/StatusCell#default": default_c978f8026cc38bd159688b3b4035a082,
   "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,
   "@/collections/Videos/components/VideoManagementComponent#default": default_de32723381581c2254257fe9606d9642,
-  "@/collections/Videos/components/GlobalEventListener#default": default_ac3b1d16ae128c37ac95ef590030c1dc,
+  "@/components/EventMonitor#default": default_e4e90e70e2f2dedb1c73872c8d10cb69,
   "@/collections/Videos/components/ListViewRefresher#default": default_45fabfc1a612e4c88db72a775402856c,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,

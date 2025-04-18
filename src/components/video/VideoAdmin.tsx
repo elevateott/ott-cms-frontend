@@ -8,54 +8,35 @@
 
 import React, { useState, useCallback } from 'react'
 import { cn } from '@/utilities/ui'
-import VideoUploader from './VideoUploader'
-import { useEventBusEmit } from '@/hooks/useEventBus'
-import { EVENTS } from '@/utilities/eventBus'
+import MuxVideoUploader from './MuxVideoUploader'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 export type VideoAdminProps = React.HTMLAttributes<HTMLDivElement>
 
 export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) => {
-  const [_refreshTrigger, setRefreshTrigger] = useState<number>(0)
-  const emitEvent = useEventBusEmit()
+  const [sourceType, setSourceType] = useState<'mux' | 'embedded'>('mux')
+  const [embeddedUrl, setEmbeddedUrl] = useState('')
 
-  // Handle refresh list
-  const handleRefreshList = useCallback(() => {
-    setRefreshTrigger((prev) => prev + 1)
-  }, [])
-
-  // Handle upload complete
-  const handleUploadComplete = useCallback(
-    (_data: Record<string, unknown>) => {
-      // Refresh the video list
-      handleRefreshList()
-
-      // Show a success notification
-      emitEvent(EVENTS.NOTIFICATION, {
-        type: 'success',
-        title: 'Upload Complete',
-        message: 'Video has been uploaded and is now processing.',
-      })
-    },
-    [handleRefreshList, emitEvent],
-  )
-
-  // Handle upload error
-  const handleUploadError = useCallback(
-    (error: Error) => {
-      // Show an error notification
-      emitEvent(EVENTS.NOTIFICATION, {
-        type: 'error',
-        title: 'Upload Failed',
-        message: error.message,
-      })
-    },
-    [emitEvent],
-  )
+  const handleEmbeddedUrlSubmit = () => {
+    if (!embeddedUrl.trim()) return
+    // Handle embedded URL submission here
+    // This could be an API call to create a new video entry with the embedded URL
+    console.log('Embedded URL submitted:', embeddedUrl)
+    setEmbeddedUrl('')
+  }
 
   return (
     <div
       className={cn('space-y-6 w-full max-w-full', className)}
-      style={{ width: '100%', maxWidth: '100%' }}
       {...props}
     >
       {/* Header */}
@@ -63,17 +44,70 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
         <h1 className="text-2xl font-bold">Video Management</h1>
       </div>
 
-      {/* Video uploader - always visible */}
-      <VideoUploader
-        onUploadComplete={handleUploadComplete}
-        onUploadError={handleUploadError}
-        refreshList={handleRefreshList}
-      />
+      {/* Source Type Selection */}
+      <div className="space-y-4 p-6 bg-white rounded-lg border">
+        <div className="space-y-2">
+          <Label htmlFor="sourceType">Video Source Type</Label>
+          <Select value={sourceType} onValueChange={(value: 'mux' | 'embedded') => setSourceType(value)}>
+            <SelectTrigger id="sourceType" className="w-48">
+              <SelectValue placeholder="Select source type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mux">Mux Upload</SelectItem>
+              <SelectItem value="embedded">Embedded URL</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            Upload a video file directly to Mux, or switch to Embedded URL to use an existing HLS stream.
+          </p>
+        </div>
 
-      {/* Video list */}
-      {/* <VideoList refreshTrigger={refreshTrigger} showRefreshButton={true} /> */}
+        {/* Mux Uploader */}
+        {sourceType === 'mux' && (
+          <MuxVideoUploader
+            endpoint={async (file?: File) => {
+              if (!file) return '' // Return empty string if no file provided
+
+              const response = await fetch('/api/mux/direct-upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: file.name }),
+              })
+
+              const result = await response.json()
+
+              if (!result.data?.url) {
+                throw new Error('Invalid upload URL response')
+              }
+
+              return result.data.url // Return the URL string directly
+            }}
+          />
+        )}
+
+        {/* Embedded URL Input */}
+        {sourceType === 'embedded' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="embeddedUrl">HLS Stream URL</Label>
+              <Input
+                id="embeddedUrl"
+                type="url"
+                placeholder="Enter HLS stream URL"
+                value={embeddedUrl}
+                onChange={(e) => setEmbeddedUrl(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleEmbeddedUrlSubmit}>Add Embedded Video</Button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
 export default VideoAdmin
+
+
+
+

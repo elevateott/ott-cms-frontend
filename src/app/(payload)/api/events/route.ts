@@ -22,6 +22,13 @@ export async function GET(req: NextRequest) {
     const clientId = crypto.randomUUID();
     console.log(`New client connection attempt: ${clientId}`);
 
+    // Set headers for SSE
+    const headers = new Headers({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
     const stream = new ReadableStream({
       start(controller) {
         try {
@@ -49,16 +56,9 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no'
-      },
-    });
+    return new Response(stream, { headers });
   } catch (error) {
-    console.error('Error in GET handler:', error);
+    console.error('Error in EventsAPI.GET:', error);
     logError(error, 'EventsAPI.GET');
     return new Response('Internal Server Error', { status: 500 });
   }

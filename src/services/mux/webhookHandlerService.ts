@@ -8,21 +8,31 @@ import { VideoRepository } from '@/repositories/videoRepository'
 import { IMuxService } from '@/services/mux/IMuxService'
 import { MuxWebhookEvent, MuxWebhookEventType } from '@/types/mux'
 import { logError } from '@/utils/errorHandler'
-import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
+import { EVENTS, MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
+import { EventService } from '../events/EventService'
+
+// Define all event constants
+const EVENTS = {
+  VIDEO_UPDATED: 'video_updated',
+  VIDEO_STATUS_READY: 'video_status_ready',
+  VIDEO_CREATED: 'video_created'
+} as const;
 
 export class WebhookHandlerService {
   private videoRepository: VideoRepository
   private muxService: IMuxService
-  private eventEmitter: (event: string, data: any) => void
+  private eventEmitter: (eventName: string, data: any) => void
+  private eventService: EventService
 
   constructor(
     videoRepository: VideoRepository,
     muxService: IMuxService,
-    eventEmitter: (event: string, data: any) => void,
+    eventEmitter: (eventName: string, data: any) => void
   ) {
     this.videoRepository = videoRepository
     this.muxService = muxService
     this.eventEmitter = eventEmitter
+    this.eventService = EventService.getInstance(eventEmitter)
   }
 
   private getThumbnailUrl(playbackId: string): string {
@@ -32,34 +42,33 @@ export class WebhookHandlerService {
   /**
    * Handle a webhook event
    */
-  async handleEvent(event: MuxWebhookEvent): Promise<void> {
+  public async handleEvent(event: any): Promise<void> {
     try {
-      const { type, data } = event
-
-      console.log(`Processing webhook event: ${type}`)
+      const { type, data } = event;
+      console.log(`🔔 WEBHOOK [${new Date().toISOString()}] Received webhook event: ${type}`);
 
       switch (type) {
         case MUX_WEBHOOK_EVENT_TYPES.ASSET_CREATED:
-          await this.handleAssetCreated(data)
-          break
+          await this.handleAssetCreated(data);
+          break;
 
         case MUX_WEBHOOK_EVENT_TYPES.ASSET_READY:
-          await this.handleAssetReady(data)
-          break
+          await this.handleAssetReady(data);
+          break;
 
         case MUX_WEBHOOK_EVENT_TYPES.UPLOAD_ASSET_CREATED:
-          await this.handleUploadAssetCreated(data)
-          break
+          await this.handleUploadAssetCreated(data);
+          break;
 
         case MUX_WEBHOOK_EVENT_TYPES.NON_STANDARD_INPUT_DETECTED:
-          await this.handleNonStandardInput(data)
-          break
+          await this.handleNonStandardInput(data);
+          break;
 
         default:
-          console.log(`Unhandled webhook event type: ${type}`)
+          console.log(`Unhandled webhook event type: ${type}`);
       }
     } catch (error) {
-      logError(error, 'WebhookHandlerService.handleEvent')
+      logError(error, 'WebhookHandlerService.handleEvent');
     }
   }
 
@@ -68,16 +77,49 @@ export class WebhookHandlerService {
    */
   private async handleAssetCreated(data: any): Promise<void> {
     try {
+      const timestamp = new Date().toISOString()
+      console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.created event`)
+
       const { id: assetId, playback_ids, upload_id } = data
+
+      console.log(`🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Upload ID: ${upload_id || 'N/A'}`)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Playback IDs:`,
+        JSON.stringify(playback_ids || [], null, 2),
+      )
 
       // If we have an upload_id, try to find an existing video
       if (upload_id) {
+        console.log(
+          `🔔 WEBHOOK [${timestamp}] Looking for existing video with upload ID: ${upload_id}`,
+        )
         const existingVideo = await this.videoRepository.findByMuxUploadId(upload_id)
+        console.log(
+          `🔔 WEBHOOK [${timestamp}] Existing video found: ${existingVideo ? 'Yes' : 'No'}`,
+        )
+        if (existingVideo) {
+          console.log(`🔔 WEBHOOK [${timestamp}] Existing video ID: ${existingVideo.id}`)
+          console.log(
+            `🔔 WEBHOOK [${timestamp}] Existing video title: ${existingVideo.title || 'N/A'}`,
+          )
+          console.log(
+            `🔔 WEBHOOK [${timestamp}] Existing video status: ${existingVideo.muxData?.status || 'N/A'}`,
+          )
+        }
 
         if (existingVideo) {
           const thumbnailUrl = playback_ids?.[0]?.id
             ? this.getThumbnailUrl(playback_ids[0].id)
             : undefined
+
+          console.log(`🔔 WEBHOOK [${timestamp}] Updating existing video with asset ID: ${assetId}`)
+          console.log(`🔔 WEBHOOK [${timestamp}] Updating video ID: ${existingVideo.id}`)
+          console.log(
+            `🔔 WEBHOOK [${timestamp}] Setting playback ID: ${playback_ids?.[0]?.id || 'N/A'}`,
+          )
+          console.log(`🔔 WEBHOOK [${timestamp}] Setting status: processing`)
+          console.log(`🔔 WEBHOOK [${timestamp}] Setting thumbnail URL: ${thumbnailUrl || 'N/A'}`)
 
           // Update the existing video with the asset ID
           const updatedVideo = await this.videoRepository.update(existingVideo.id, {
@@ -90,6 +132,10 @@ export class WebhookHandlerService {
             muxThumbnailUrl: thumbnailUrl,
           })
 
+          console.log(
+            `🔔 WEBHOOK [${timestamp}] Video update result: ${updatedVideo ? 'Success' : 'Failed'}`,
+          )
+
           if (updatedVideo) {
             this.emitVideoUpdated(updatedVideo.id)
           }
@@ -98,9 +144,21 @@ export class WebhookHandlerService {
       }
 
       // If no existing video found, create a new one
+      console.log(`🔔 WEBHOOK [${timestamp}] No existing video found, creating a new one`)
+
       const thumbnailUrl = playback_ids?.[0]?.id
         ? this.getThumbnailUrl(playback_ids[0].id)
         : undefined
+
+      console.log(`🔔 WEBHOOK [${timestamp}] Creating new video with asset ID: ${assetId}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting title: Untitled Video ${assetId}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting source type: mux`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting upload ID: ${upload_id || 'N/A'}`)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Setting playback ID: ${playback_ids?.[0]?.id || 'N/A'}`,
+      )
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting status: processing`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting thumbnail URL: ${thumbnailUrl || 'N/A'}`)
 
       const newVideo = await this.videoRepository.create({
         title: `Untitled Video ${assetId}`,
@@ -115,6 +173,13 @@ export class WebhookHandlerService {
         publishedAt: new Date().toISOString(),
       })
 
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Video creation result: ${newVideo ? 'Success' : 'Failed'}`,
+      )
+      if (newVideo) {
+        console.log(`🔔 WEBHOOK [${timestamp}] New video ID: ${newVideo.id}`)
+      }
+
       if (newVideo) {
         this.emitVideoCreated(newVideo.id)
       }
@@ -128,15 +193,26 @@ export class WebhookHandlerService {
    */
   private async handleAssetReady(data: any): Promise<void> {
     try {
+      const timestamp = new Date().toISOString()
+      console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.ready event`)
+
       const { id: assetId } = data
-      console.log(`Processing asset.ready event for assetId ${assetId}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId}`)
 
       // Extract useful metadata from the asset data
       const { duration, aspect_ratio: aspectRatio, playback_ids: playbackIds } = data
       const playbackId = playbackIds?.[0]?.id
 
+      console.log(`🔔 WEBHOOK [${timestamp}] Asset metadata:`, {
+        duration: duration || 'N/A',
+        aspectRatio: aspectRatio || 'N/A',
+        playbackId: playbackId || 'N/A',
+      })
+
       // Find video with this assetId
+      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video with asset ID: ${assetId}`)
       const video = await this.videoRepository.findByMuxAssetId(assetId)
+      console.log(`🔔 WEBHOOK [${timestamp}] Video found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
         console.log(`No video found for assetId ${assetId}`)
@@ -153,7 +229,7 @@ export class WebhookHandlerService {
         return
       }
 
-      console.log(`Updating video ${video.id} status to ready`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Updating video ${video.id} status to ready`)
 
       // Prepare update data with all available metadata
       const updateData: any = {}
@@ -161,10 +237,12 @@ export class WebhookHandlerService {
       // Add metadata fields if they're available and not already set
       if (duration && !video.duration) {
         updateData.duration = duration
+        console.log(`🔔 WEBHOOK [${timestamp}] Setting duration: ${duration}`)
       }
 
       if (aspectRatio && !video.aspectRatio) {
         updateData.aspectRatio = aspectRatio
+        console.log(`🔔 WEBHOOK [${timestamp}] Setting aspect ratio: ${aspectRatio}`)
       }
 
       // Always update muxData
@@ -172,19 +250,29 @@ export class WebhookHandlerService {
         ...video.muxData,
         status: 'ready',
       }
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting status: ready`)
 
       // Add playbackId if available and not already set
       if (playbackId && !video.muxData?.playbackId) {
         updateData.muxData.playbackId = playbackId
+        console.log(`🔔 WEBHOOK [${timestamp}] Setting playback ID: ${playbackId}`)
       }
 
       // Update thumbnail URL if we have a playback ID
       if (playbackId && !video.muxThumbnailUrl) {
-        updateData.muxThumbnailUrl = this.getThumbnailUrl(playbackId)
+        const thumbnailUrl = this.getThumbnailUrl(playbackId)
+        updateData.muxThumbnailUrl = thumbnailUrl
+        console.log(`🔔 WEBHOOK [${timestamp}] Setting thumbnail URL: ${thumbnailUrl}`)
       }
 
+      console.log(`🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
+
       // Update the video with the asset data
+      console.log(`🔔 WEBHOOK [${timestamp}] Updating video in database...`)
       const updatedVideo = await this.videoRepository.update(video.id, updateData)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Video update result: ${updatedVideo ? 'Success' : 'Failed'}`,
+      )
 
       if (updatedVideo) {
         console.log(
@@ -194,7 +282,7 @@ export class WebhookHandlerService {
         console.log(`Emitting video_updated event for video ${video.id}`)
 
         // Add a special flag to indicate that this is a status change to ready
-        this.emitVideoUpdated(video.id, true)
+        this.emitVideoUpdated(updatedVideo.id, true)
       } else {
         console.error(`Failed to update video ${video.id} status to ready`)
       }
@@ -208,25 +296,53 @@ export class WebhookHandlerService {
    */
   private async handleUploadAssetCreated(data: any): Promise<void> {
     try {
+      const timestamp = new Date().toISOString()
+      console.log(`🔔 WEBHOOK [${timestamp}] Processing upload.asset_created event`)
+
       const { id: uploadId, asset_id: assetId } = data
 
+      console.log(`🔔 WEBHOOK [${timestamp}] Upload ID: ${uploadId}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId || 'N/A'}`)
+
       // Find video with this uploadId
+      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video with upload ID: ${uploadId}`)
       const video = await this.videoRepository.findByMuxUploadId(uploadId)
+      console.log(`🔔 WEBHOOK [${timestamp}] Video found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
-        console.log(`No video found for uploadId ${uploadId}`)
+        console.log(
+          `🔔 WEBHOOK [${timestamp}] No video found for uploadId ${uploadId}, skipping update`,
+        )
         return
       }
 
-      // Update the video with the asset data
-      const updatedVideo = await this.videoRepository.update(video.id, {
+      console.log(`🔔 WEBHOOK [${timestamp}] Found video ID: ${video.id}`)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Current video status: ${video.muxData?.status || 'N/A'}`,
+      )
+
+      // Prepare update data
+      const updateStatus = video.muxData?.status !== 'ready'
+      console.log(`🔔 WEBHOOK [${timestamp}] Will update status: ${updateStatus ? 'Yes' : 'No'}`)
+
+      const updateData: any = {
         muxData: {
           ...video.muxData,
           assetId,
           // Only update the status if it's not already 'ready'
-          ...(video.muxData?.status !== 'ready' ? { status: 'processing' } : {}),
+          ...(updateStatus ? { status: 'processing' } : {}),
         },
-      })
+      }
+
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting asset ID: ${assetId}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
+
+      // Update the video with the asset data
+      console.log(`🔔 WEBHOOK [${timestamp}] Updating video in database...`)
+      const updatedVideo = await this.videoRepository.update(video.id, updateData)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Video update result: ${updatedVideo ? 'Success' : 'Failed'}`,
+      )
 
       if (updatedVideo) {
         console.log(`Updated video ${video.id} with Mux asset ID`)
@@ -242,15 +358,31 @@ export class WebhookHandlerService {
    */
   private async handleNonStandardInput(data: any): Promise<void> {
     try {
+      const timestamp = new Date().toISOString()
+      console.log(`🔔 WEBHOOK [${timestamp}] Processing non-standard input detected event`)
+
       const { upload_id, video_quality, tracks } = data
 
+      console.log(`🔔 WEBHOOK [${timestamp}] Upload ID: ${upload_id || 'N/A'}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Video Quality: ${video_quality || 'N/A'}`)
+      console.log(`🔔 WEBHOOK [${timestamp}] Tracks:`, JSON.stringify(tracks || [], null, 2))
+
       // Find the video with this upload ID
+      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video with upload ID: ${upload_id}`)
       const video = await this.videoRepository.findByMuxUploadId(upload_id)
+      console.log(`🔔 WEBHOOK [${timestamp}] Video found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
-        console.log(`No video found for uploadId ${upload_id}`)
+        console.log(
+          `🔔 WEBHOOK [${timestamp}] No video found for uploadId ${upload_id}, skipping update`,
+        )
         return
       }
+
+      console.log(`🔔 WEBHOOK [${timestamp}] Found video ID: ${video.id}`)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Current video status: ${video.muxData?.status || 'N/A'}`,
+      )
 
       // Update the video with the non-standard input information
       // Create a custom update object to avoid type issues
@@ -258,20 +390,32 @@ export class WebhookHandlerService {
         ...video.muxData,
         nonStandardInput: true,
       }
+      console.log(`🔔 WEBHOOK [${timestamp}] Setting nonStandardInput: true`)
 
       // Add video quality if available
       if (video_quality) {
         muxDataUpdate.videoQuality = video_quality
+        console.log(`🔔 WEBHOOK [${timestamp}] Setting videoQuality: ${video_quality}`)
       }
 
       // Add tracks if available
       if (tracks) {
         muxDataUpdate.tracks = tracks
+        console.log(`🔔 WEBHOOK [${timestamp}] Setting tracks:`, JSON.stringify(tracks, null, 2))
       }
 
-      const updatedVideo = await this.videoRepository.update(video.id, {
+      const updateData = {
         muxData: muxDataUpdate,
-      })
+      }
+
+      console.log(`🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
+
+      // Update the video with the non-standard input information
+      console.log(`🔔 WEBHOOK [${timestamp}] Updating video in database...`)
+      const updatedVideo = await this.videoRepository.update(video.id, updateData)
+      console.log(
+        `🔔 WEBHOOK [${timestamp}] Video update result: ${updatedVideo ? 'Success' : 'Failed'}`,
+      )
 
       if (updatedVideo) {
         console.log(`Updated video ${video.id} with non-standard input information`)
@@ -287,26 +431,20 @@ export class WebhookHandlerService {
    */
   private emitVideoCreated(id: string): void {
     try {
-      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video_created event for video ${id}`)
-      console.log(`🔍 DEBUG [WebhookHandlerService] Event data:`, { id })
-      this.eventEmitter('video_created', { id })
+      const timestamp = Date.now()
+      console.log(`🔔 WEBHOOK [${new Date(timestamp).toISOString()}] Emitting video_created event for video ${id}`)
 
-      // Also emit the event with the colon format for consistency
-      this.eventEmitter('video:created', { id })
-
-      // Emit the REFRESH_LIST_VIEW event to refresh the list view
-      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting refresh:list:view event for new video`)
-      this.eventEmitter('refresh:list:view', {
+      // Emit standardized video created event
+      this.eventEmitter(EVENTS.VIDEO_CREATED, {
+        id,
         source: 'webhook',
-        action: 'video_created',
-        videoId: id,
+        timestamp,
+        metadata: {
+          type: 'creation',
+          action: 'video_created'
+        }
       })
-
-      console.log(
-        `🔍 DEBUG [WebhookHandlerService] Successfully emitted video_created event for video ${id}`,
-      )
     } catch (error) {
-      console.error(`🔍 DEBUG [WebhookHandlerService] Error emitting video_created event:`, error)
       logError(error, 'WebhookHandlerService.emitVideoCreated')
     }
   }
@@ -318,51 +456,48 @@ export class WebhookHandlerService {
    */
   private emitVideoUpdated(id: string, isStatusChange: boolean = false): void {
     try {
-      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video_updated event for video ${id}`)
-      console.log(`🔍 DEBUG [WebhookHandlerService] Event data:`, { id, isStatusChange })
-      this.eventEmitter('video_updated', { id, isStatusChange })
-
-      // Also emit the event with the colon format to ensure compatibility
-      console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video:updated event for video ${id}`)
-      this.eventEmitter('video:updated', { id, isStatusChange })
-
-      // If this is a status change to ready, emit a special event
-      if (isStatusChange) {
-        console.log(
-          `🔍 DEBUG [WebhookHandlerService] Emitting video:status:ready event for video ${id}`,
-        )
-        console.log(`🔍 DEBUG [WebhookHandlerService] Status ready event data:`, { id })
-
-        // Emit the general status ready event
-        const statusReadyEventData = { id, status: 'ready', timestamp: Date.now() }
-        console.log(
-          `🔍 DEBUG [WebhookHandlerService] Status ready event payload:`,
-          statusReadyEventData,
-        )
-        this.eventEmitter('video:status:ready', statusReadyEventData)
-
-        // Emit a specific event for this video ID to update its status in the context
-        console.log(`🔍 DEBUG [WebhookHandlerService] Emitting video:${id}:status:ready event`)
-        const videoSpecificEventData = { id, status: 'ready', timestamp: Date.now() }
-        console.log(
-          `🔍 DEBUG [WebhookHandlerService] Video-specific event payload:`,
-          videoSpecificEventData,
-        )
-        this.eventEmitter(`video:${id}:status:ready`, videoSpecificEventData)
-
-        // Also emit a direct REFRESH_LIST_VIEW event to ensure the list view is updated
-        console.log(
-          `🔍 DEBUG [WebhookHandlerService] Emitting REFRESH_LIST_VIEW event for video ${id}`,
-        )
-        this.eventEmitter('REFRESH_LIST_VIEW', { id, status: 'ready', timestamp: Date.now() })
+      const timestamp = Date.now()
+      const eventData = {
+        id,
+        source: 'webhook',
+        timestamp,
+        metadata: {
+          type: 'update',
+          isStatusChange,
+          action: isStatusChange ? 'status_ready' : 'video_updated'
+        }
       }
 
-      console.log(
-        `🔍 DEBUG [WebhookHandlerService] Successfully emitted video_updated events for video ${id}`,
-      )
+      console.log('🔔 WebhookHandler: Emitting video updated event:', {
+        event: EVENTS.VIDEO_UPDATED,
+        data: eventData
+      })
+
+      this.eventEmitter(EVENTS.VIDEO_UPDATED, eventData)
+
+      if (isStatusChange) {
+        console.log('🔔 WebhookHandler: Emitting status ready event:', {
+          event: EVENTS.VIDEO_STATUS_READY,
+          data: eventData
+        })
+
+        this.eventEmitter(EVENTS.VIDEO_STATUS_READY, {
+          ...eventData,
+          metadata: {
+            ...eventData.metadata,
+            status: 'ready'
+          }
+        })
+      }
     } catch (error) {
-      console.error(`🔍 DEBUG [WebhookHandlerService] Error emitting video_updated event:`, error)
       logError(error, 'WebhookHandlerService.emitVideoUpdated')
     }
   }
 }
+
+
+
+
+
+
+

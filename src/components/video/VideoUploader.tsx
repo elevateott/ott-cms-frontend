@@ -311,16 +311,6 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           </div>
         )}
 
-        {uploadStatus === 'processing' && (
-          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="font-medium mb-2">Processing Video</div>
-            <p className="text-sm">
-              Your video has been uploaded and is being processed. This may take a few minutes
-              depending on the size. The video will appear in your library when ready.
-            </p>
-          </div>
-        )}
-
         {uploadStatus === 'error' && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="font-medium mb-2">Upload Error</div>

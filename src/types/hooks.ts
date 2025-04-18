@@ -41,17 +41,14 @@ export interface UseVideoListResult {
 
 // useEventSource types
 export interface UseEventSourceOptions {
-  url: string;
-  events: Record<string, (data: any) => void>;
-  onOpen?: () => void;
-  onError?: (error: Event) => void;
+  url?: string
+  events?: Record<string, (data: any) => void>
+  onOpen?: () => void
+  onError?: (error: Event) => void
 }
 
 export interface UseEventSourceResult {
-  connected: boolean;
-  error: Event | null;
-  reconnect: () => void;
-  close: () => void;
+  connected: boolean
 }
 
 // useDebounce types

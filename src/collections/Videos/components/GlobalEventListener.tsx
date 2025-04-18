@@ -1,7 +1,10 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { EVENTS } from '@/constants/events'
+import EventMonitor from '@/components/EventMonitor'
+import { useEventSource } from '@/hooks/useEventSource'
+import { API_ROUTES } from '@/constants/api'
 
 /**
  * GlobalEventListener
@@ -16,213 +19,102 @@ const GlobalEventListener: React.FC = () => {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [eventCount, setEventCount] = useState(0)
 
-  useEffect(() => {
-    console.log('GlobalEventListener mounted - adding direct event source listener')
+  // Function to refresh the list view - DISABLED FOR NOW
+  const refreshList = () => {
+    console.log('DISABLED: Would normally refresh list view due to direct event source event')
+    // Just update the last refreshed time without actually refreshing
+    setLastRefreshed(new Date())
+    setEventCount((prev) => prev + 1)
+  }
 
-    // Create an EventSource connection to the server
-    const eventSource = new EventSource('/api/events')
-
-    // Function to refresh the list view - DISABLED FOR NOW
-    const refreshList = () => {
-      console.log('DISABLED: Would normally refresh list view due to direct event source event')
-      // Just update the last refreshed time without actually refreshing
-      setLastRefreshed(new Date())
-      setEventCount((prev) => prev + 1)
-
-      // DISABLED REFRESH CODE
-      /*
-      try {
-        // Find the refresh button in the list view and click it
-        const refreshButton = document.querySelector(
-          '.collection-list button[title="Refresh"]',
-        ) as HTMLButtonElement
-        if (refreshButton) {
-          console.log('Found refresh button, clicking it')
-          refreshButton.click()
-          setLastRefreshed(new Date())
-          setEventCount((prev) => prev + 1)
-        } else {
-          console.log('Refresh button not found')
-        }
-      } catch (error) {
-        console.error('Error refreshing list:', error)
-      }
-      */
-    }
-
-    // Listen for video_created events
-    eventSource.addEventListener(EVENTS.VIDEO_CREATED, (event) => {
-      console.log('GlobalEventListener received direct video_created event:', event)
-      try {
-        const data = JSON.parse(event.data)
-        console.log('Parsed video_created event data:', data)
-      } catch (error) {
-        console.error('Error parsing video_created event data:', error)
-      }
-      // Add a small delay to ensure the database has been updated
-      setTimeout(() => {
-        console.log('Refreshing list due to video_created event')
+  // Use the useEventSource hook instead of direct EventSource
+  const { connected } = useEventSource({
+    url: API_ROUTES.EVENTS,
+    events: {
+      [EVENTS.VIDEO_CREATED]: (data) => {
+        console.log('🎧 GlobalEventListener received VIDEO_CREATED event:', data)
         refreshList()
-      }, 1000)
-    })
-
-    // Listen for video_updated events
-    eventSource.addEventListener(EVENTS.VIDEO_UPDATED, (event) => {
-      console.log('GlobalEventListener received direct video_updated event:', event)
-      try {
-        const data = JSON.parse(event.data)
-        console.log('Parsed video_updated event data:', data)
-
-        // Add a small delay to ensure the database has been updated
-        setTimeout(() => {
-          console.log('Refreshing list due to video_updated event')
-
-          // Try multiple refresh methods to ensure the list is updated
-          try {
-            // Method 1: Click the refresh button
-            refreshList()
-
-            // Method 2: Force a hard refresh of the collection list
-            const refreshButton = document.querySelector(
-              '.collection-list button[title="Refresh"]',
-            ) as HTMLButtonElement
-            if (refreshButton) {
-              console.log('Found refresh button, clicking it directly')
-              refreshButton.click()
-            }
-
-            // Method 3: Reload the page if the status was updated to 'ready' - DISABLED FOR NOW
-            if (data && data.id) {
-              console.log(
-                'DISABLED: Would normally check if we need to reload the page for video:',
-                data.id,
-              )
-              // DISABLED RELOAD CODE
-              /*
-              // If this is a status change to ready, force a page reload
-              fetch(`/api/videos/${data.id}`)
-                .then((response) => response.json())
-                .then((videoData) => {
-                  if (videoData && videoData.muxData && videoData.muxData.status === 'ready') {
-                    console.log('Video status is ready, reloading the page in 2 seconds')
-                    setTimeout(() => {
-                      console.log('Reloading page now')
-                      window.location.reload()
-                    }, 2000)
-                  }
-                })
-                .catch((err) => console.error('Error fetching video data:', err))
-              */
-            }
-          } catch (error) {
-            console.error('Error during refresh attempts:', error)
-          }
-        }, 1000)
-      } catch (error) {
-        console.error('Error parsing video_updated event data:', error)
+      },
+      [EVENTS.VIDEO_UPDATED]: (data) => {
+        console.log('🎧 GlobalEventListener received VIDEO_UPDATED event:', data)
+        refreshList()
+      },
+      [EVENTS.VIDEO_STATUS_READY]: (data) => {
+        console.log('🎧 GlobalEventListener received VIDEO_STATUS_READY event:', data)
+        refreshList()
+      },
+      'video:status:updated': (data) => {
+        console.log('🎧 GlobalEventListener received video:status:updated event:', data)
+        refreshList()
+      },
+      'reload:page': (data) => {
+        console.log('🎧 GlobalEventListener received reload:page event:', data)
+        refreshList()
       }
-    })
-
-    // Listen for reload:page events - DISABLED FOR NOW
-    eventSource.addEventListener('reload:page', (event) => {
-      console.log('GlobalEventListener received reload:page event:', event)
-      try {
-        const data = JSON.parse(event.data)
-        console.log('Parsed reload:page event data:', data)
-
-        // DISABLED RELOAD CODE
-        console.log('DISABLED: Would normally reload page due to reload:page event')
-        /*
-        // Reload the page after a short delay
-        setTimeout(() => {
-          console.log('Reloading page due to reload:page event')
-          window.location.reload()
-        }, 2000)
-        */
-      } catch (error) {
-        console.error('Error parsing reload:page event data:', error)
-      }
-    })
-
-    // Listen for video:status:ready events - DISABLED FOR NOW
-    eventSource.addEventListener('video:status:ready', (event) => {
-      console.log('GlobalEventListener received video:status:ready event:', event)
-      try {
-        const data = JSON.parse(event.data)
-        console.log('Parsed video:status:ready event data:', data)
-
-        // DISABLED RELOAD CODE
-        console.log('DISABLED: Would normally reload page due to video:status:ready event')
-        /*
-        // Reload the page after a short delay
-        setTimeout(() => {
-          console.log('Reloading page due to video:status:ready event')
-          window.location.reload()
-        }, 2000)
-        */
-      } catch (error) {
-        console.error('Error parsing video:status:ready event data:', error)
-      }
-    })
-
-    // Listen for connection events
-    eventSource.addEventListener('open', () => {
+    },
+    onOpen: () => {
       console.log('GlobalEventListener: EventSource connection opened')
       setConnectionStatus('connected')
-    })
-
-    // Listen for errors
-    eventSource.addEventListener('error', (error) => {
+    },
+    onError: (error) => {
       console.error('GlobalEventListener: EventSource error:', error)
       setConnectionStatus('disconnected')
-    })
-
-    return () => {
-      console.log('GlobalEventListener unmounted - closing event source')
-      eventSource.close()
-      setConnectionStatus('disconnected')
     }
-  }, [])
+  })
+
+  // Update connection status when connected changes
+  React.useEffect(() => {
+    setConnectionStatus(connected ? 'connected' : 'disconnected')
+  }, [connected])
 
   // This component now renders a visible indicator
   return (
-    <div className="p-2 mb-4 bg-yellow-50 border border-yellow-200 rounded-md">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-medium text-yellow-800">
-            Direct Event Source (Auto-Refresh Disabled)
-            <span
-              className="ml-2 px-2 py-0.5 text-xs rounded-full"
-              style={{
-                backgroundColor:
-                  connectionStatus === 'connected'
-                    ? '#10b981'
-                    : connectionStatus === 'connecting'
-                      ? '#f59e0b'
-                      : '#ef4444',
-                color: 'white',
-              }}
-            >
-              {connectionStatus}
-            </span>
-          </h3>
-          <p className="text-xs text-yellow-600">
-            Listening for server-sent events directly (refresh disabled).
-            {lastRefreshed && (
-              <span className="ml-1">Last event: {lastRefreshed.toLocaleTimeString()}</span>
-            )}
-            {eventCount > 0 && <span className="ml-1">Events received: {eventCount}</span>}
-          </p>
+    <>
+      <div className="p-2 mb-4 bg-yellow-50 border border-yellow-200 rounded-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-yellow-800">
+              Direct Event Source (Auto-Refresh Disabled)
+              <span
+                className="ml-2 px-2 py-0.5 text-xs rounded-full"
+                style={{
+                  backgroundColor:
+                    connectionStatus === 'connected'
+                      ? '#10b981'
+                      : connectionStatus === 'connecting'
+                        ? '#f59e0b'
+                        : '#ef4444',
+                  color: 'white',
+                }}
+              >
+                {connectionStatus}
+              </span>
+            </h3>
+            <p className="text-xs text-yellow-600">
+              Listening for server-sent events directly (refresh disabled).
+              {lastRefreshed && (
+                <span className="ml-1">Last event: {lastRefreshed.toLocaleTimeString()}</span>
+              )}
+              {eventCount > 0 && <span className="ml-1">Events received: {eventCount}</span>}
+            </p>
+          </div>
+          <button
+            onClick={() => console.log('DISABLED: Would normally reconnect')}
+            className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+          >
+            Manual Refresh
+          </button>
         </div>
-        <button
-          onClick={() => console.log('DISABLED: Would normally reconnect')}
-          className="px-3 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
-        >
-          Manual Refresh
-        </button>
       </div>
-    </div>
+
+      {/* Add the EventMonitor component */}
+      <EventMonitor />
+    </>
   )
 }
 
 export default GlobalEventListener
+
+
+
+

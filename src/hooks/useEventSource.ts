@@ -18,142 +18,61 @@ export function useEventSource(
   },
 ): UseEventSourceResult {
   const { url = API_ROUTES.EVENTS, events = {}, onOpen, onError } = options
-
-  const [connected, setConnected] = useState<boolean>(false)
-  const [error, setError] = useState<Event | null>(null)
+  const [connected, setConnected] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const mountedRef = useRef<boolean>(true)
 
   useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
+    // If we already have a connection, don't create a new one
+    if (eventSourceRef.current) {
+      console.log('🔌 EventSource: Connection already exists, skipping initialization')
+      return
     }
-  }, [])
 
-  const connect = useCallback(() => {
-    if (!mountedRef.current) return
+    console.log('🔌 EventSource: Initializing connection to:', url)
+    console.log('🔌 EventSource: Registering event handlers for:', Object.keys(events))
 
-    try {
-      if (eventSourceRef.current?.readyState === EventSource.OPEN) {
-        return
-      }
+    const eventSource = new EventSource(url)
+    eventSourceRef.current = eventSource
 
+    eventSource.onopen = () => {
+      console.log('🔌 EventSource: Connection opened')
+      setConnected(true)
+      if (onOpen) onOpen()
+    }
+
+    eventSource.onerror = (error) => {
+      console.error('🔌 EventSource: Connection error:', error)
+      setConnected(false)
+      if (onError) onError(error)
+    }
+
+    // Register event handlers
+    Object.entries(events).forEach(([eventName, handler]) => {
+      console.log(`🔌 EventSource: Adding listener for event: ${eventName}`)
+
+      eventSource.addEventListener(eventName, (event: MessageEvent) => {
+        console.log(`🔌 EventSource: Received event: ${eventName}`, event.data)
+        try {
+          const data = event.data ? JSON.parse(event.data) : {}
+          handler(data)
+        } catch (error) {
+          console.error(`🔌 EventSource: Error handling event ${eventName}:`, error)
+          handler(event.data)
+        }
+      })
+    })
+
+    return () => {
+      console.log('🔌 EventSource: Cleaning up connection')
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null
       }
-
-      const eventSource = new EventSource(url)
-      eventSourceRef.current = eventSource
-
-      eventSource.onopen = () => {
-        if (!mountedRef.current) {
-          eventSource.close()
-          return
-        }
-
-        console.log('EventSource connected')
-        setConnected(true)
-        setError(null)
-        if (onOpen) onOpen()
-
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current)
-          reconnectTimeoutRef.current = undefined
-        }
-      }
-
-      eventSource.onerror = (event) => {
-        if (!mountedRef.current) return
-
-        console.error('EventSource error:', event)
-        setError(event)
-        setConnected(false)
-        if (onError) onError(event)
-
-        eventSource.close()
-        eventSourceRef.current = null
-
-        if (!reconnectTimeoutRef.current && mountedRef.current) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (mountedRef.current) {
-              reconnectTimeoutRef.current = undefined
-              connect()
-            }
-          }, 5000)
-        }
-      }
-
-      Object.entries(events).forEach(([eventName, handler]) => {
-        eventSource.addEventListener(eventName, (event) => {
-          if (!mountedRef.current) return
-
-          try {
-            const data = event.data ? JSON.parse(event.data) : {}
-            handler(data)
-          } catch (error) {
-            console.error(`Error handling event ${eventName}:`, error)
-            handler(event.data)
-          }
-        })
-      })
-
-      eventSource.addEventListener('connected', () => {
-        if (!mountedRef.current) return
-
-        console.log('Received connected event from server')
-        setConnected(true)
-      })
-    } catch (error) {
-      if (!mountedRef.current) return
-
-      console.error('Error setting up EventSource:', error)
-      setError(error as Event)
       setConnected(false)
     }
-  }, [url, events, onOpen, onError])
+  }, []) // Empty dependency array - only run once on mount
 
-  useEffect(() => {
-    connect()
-
-    return () => {
-      mountedRef.current = false
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-      }
-      if (eventSourceRef.current) {
-        console.log('Closing EventSource connection')
-        eventSourceRef.current.close()
-        eventSourceRef.current = null
-      }
-    }
-  }, [connect])
-
-  const reconnect = useCallback(() => {
-    if (!mountedRef.current) return
-
-    console.log('Manually reconnecting to EventSource')
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close()
-      eventSourceRef.current = null
-    }
-    connect()
-  }, [connect])
-
-  const close = useCallback(() => {
-    if (eventSourceRef.current) {
-      console.log('Manually closing EventSource connection')
-      eventSourceRef.current.close()
-      eventSourceRef.current = null
-      setConnected(false)
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current)
-      reconnectTimeoutRef.current = undefined
-    }
-  }, [])
-
-  return { connected, error, reconnect, close }
+  return { connected }
 }
+
+

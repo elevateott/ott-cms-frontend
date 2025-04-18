@@ -8,21 +8,17 @@ export const EVENTS = {
   VIDEO_UPLOAD_COMPLETED: 'video:upload:completed',
   VIDEO_UPLOAD_ERROR: 'video:upload:error',
   VIDEO_STATUS_READY: 'video:status:ready',
-   
+  VIDEO_STATUS_UPDATED: 'video:status:updated',
+  RELOAD_PAGE: 'reload:page',
+
   // UI events
   MODAL_OPEN: 'modal:open',
   MODAL_CLOSE: 'modal:close',
   NOTIFICATION: 'notification',
-  REFRESH_LIST_VIEW: 'refresh:list:view',
 
   // Navigation events
   NAVIGATION_START: 'navigation:start',
   NAVIGATION_END: 'navigation:end',
 } as const
 
-export const MUX_WEBHOOK_EVENT_TYPES = {
-  ASSET_CREATED: 'video.asset.created',
-  ASSET_READY: 'video.asset.ready',
-  UPLOAD_ASSET_CREATED: 'video.upload.asset_created',
-  NON_STANDARD_INPUT_DETECTED: 'video.asset.non_standard_input_detected',
-} as const
+

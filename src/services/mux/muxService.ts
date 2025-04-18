@@ -56,7 +56,7 @@ export class MuxService implements IMuxService {
       }
 
       // Log available properties for debugging
-      console.log('Mux video client properties:', Object.keys(this.video))
+      //console.log('Mux video client properties:', Object.keys(this.video))
 
       // Check for uploads property (could be lowercase or uppercase)
       const hasUploads = this.video.uploads || this.video.Uploads

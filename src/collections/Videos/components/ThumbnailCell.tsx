@@ -70,7 +70,9 @@ const ThumbnailCell = (props: DefaultCellComponentProps) => {
                 fill="currentFill"
               />
             </svg>
-            <span className="capitalize">{muxStatus}...</span>
+            <span className="capitalize">
+              {muxStatus == 'uploading' ? 'Uploading...' : 'Encoding...'}
+            </span>
           </div>
         )
 

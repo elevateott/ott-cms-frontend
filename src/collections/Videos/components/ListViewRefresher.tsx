@@ -12,7 +12,8 @@ import { useRouter } from 'next/navigation'
  * when videos are created or updated. It listens for events and triggers a refresh
  * of the list view without reloading the entire page.
  */
-const POLL_INTERVAL = 5000 // 5 seconds
+
+const POLL_INTERVAL = 10000 // 10 seconds
 
 const ListViewRefresher: React.FC = () => {
   const router = useRouter()
@@ -51,51 +52,51 @@ const ListViewRefresher: React.FC = () => {
     }
   }
 
-  // Listen for video created events
-  useEventBusOn(EVENTS.VIDEO_CREATED, (data) => {
-    const videoId = data?.id
-    console.log('[ListViewRefresher] Received event: VIDEO_CREATED', data)
-    if (videoId) {
-      pendingVideosRef.current.add(videoId)
-      startPolling()
-    }
-    setTimeout(() => {
-      forceRefresh('VIDEO_CREATED', data)
-    }, 3000)
-  })
+  // Unified event list (matches EventMonitor)
+  const refresherEvents = [
+    EVENTS.VIDEO_CREATED,
+    EVENTS.VIDEO_UPDATED,
+    EVENTS.VIDEO_STATUS_READY,
+    EVENTS.VIDEO_STATUS_UPDATED,
+    EVENTS.VIDEO_UPLOAD_STARTED,
+    EVENTS.VIDEO_UPLOAD_PROGRESS,
+    EVENTS.VIDEO_UPLOAD_COMPLETED,
+    EVENTS.VIDEO_UPLOAD_ERROR,
+    EVENTS.RELOAD_PAGE,
+  ]
 
-  // Listen for video ready events
-  useEventBusOn(EVENTS.VIDEO_STATUS_READY, (data) => {
-    const videoId = data?.id
-    console.log('[ListViewRefresher] Received event: video:status:ready', data)
-    if (videoId) {
-      pendingVideosRef.current.delete(videoId)
-      if (pendingVideosRef.current.size === 0) {
-        stopPolling()
+  // Set up listeners for all relevant events
+  refresherEvents.forEach((eventName) => {
+    useEventBusOn(eventName, (data) => {
+      if (eventName === EVENTS.VIDEO_CREATED) {
+        const videoId = data?.id
+        if (videoId) {
+          pendingVideosRef.current.add(videoId)
+          startPolling()
+        }
+        setTimeout(() => {
+          forceRefresh('VIDEO_CREATED', data)
+        }, 3000)
+      } else if (eventName === EVENTS.VIDEO_STATUS_READY) {
+        const videoId = data?.id
+        if (videoId) {
+          pendingVideosRef.current.delete(videoId)
+          if (pendingVideosRef.current.size === 0) {
+            stopPolling()
+          }
+        }
+        forceRefresh(EVENTS.VIDEO_STATUS_READY, data)
+      } else if (eventName === EVENTS.VIDEO_UPDATED && data?.isStatusChange) {
+        setTimeout(() => {
+          forceRefresh('VIDEO_UPDATED', data)
+        }, 3000)
+      } else {
+        // For all other events, just refresh immediately
+        forceRefresh(eventName, data)
       }
-    }
-    forceRefresh(EVENTS.VIDEO_STATUS_READY, data)
-  })
-  // useEventBusOn('video_updated', (data) => {
-  //   console.log('[ListViewRefresher] Received event: video_updated', data)
-  //   if (data?.isStatusChange) {
-  //     forceRefresh('video_updated', data)
-  //   }
-  // })
-  useEventBusOn(EVENTS.VIDEO_UPDATED, (data) => {
-    console.log('[ListViewRefresher] Received event: VIDEO_UPDATED', data)
-    if (data?.isStatusChange) {
-      setTimeout(() => {
-        forceRefresh('VIDEO_UPDATED', data)
-      }, 3000)
-    }
-  })
-  useEventBusOn(EVENTS.REFRESH_LIST_VIEW, (data) => {
-    console.log('[ListViewRefresher] Received event: REFRESH_LIST_VIEW', data)
-    forceRefresh('REFRESH_LIST_VIEW', data)
+    })
   })
 
-  // Clean up polling on unmount
   useEffect(() => {
     return () => {
       stopPolling()

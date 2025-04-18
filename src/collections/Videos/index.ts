@@ -31,10 +31,8 @@ export const Videos: CollectionConfig = {
       // Add our custom components before the default list view
       beforeList: [
         '@/collections/Videos/components/VideoManagementComponent',
-        //'@/collections/Videos/components/DefaultListViewRefresher',
-        //'@/collections/Videos/components/ListViewRefreshButton',
-        '@/collections/Videos/components/GlobalEventListener',
-        '@/collections/Videos/components/ListViewRefresher', // Add our new ListViewRefresher component
+        '@/components/EventMonitor',
+        '@/collections/Videos/components/ListViewRefresher',
       ],
       // We'll use the beforeList to add our VideoStatusProvider
       // The provider will be added in the VideoManagementComponent
