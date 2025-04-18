@@ -33,13 +33,8 @@ const ListViewRefresher: React.FC = () => {
   const startPolling = () => {
     if (!pollingRef.current) {
       pollingRef.current = setInterval(() => {
-        if (pendingVideosRef.current.size > 0) {
-          console.log(
-            '[ListViewRefresher] Polling refresh for pending videos:',
-            Array.from(pendingVideosRef.current),
-          )
-          forceRefresh('polling')
-        }
+        console.log('[ListViewRefresher] Polling refresh (no pendingVideos check)')
+        forceRefresh('polling')
       }, POLL_INTERVAL)
     }
   }
@@ -69,30 +64,23 @@ const ListViewRefresher: React.FC = () => {
   refresherEvents.forEach((eventName) => {
     useEventBusOn(eventName, (data) => {
       if (eventName === EVENTS.VIDEO_CREATED) {
-        const videoId = data?.id
-        if (videoId) {
-          pendingVideosRef.current.add(videoId)
-          startPolling()
-        }
+        startPolling()
         setTimeout(() => {
-          forceRefresh('VIDEO_CREATED', data)
+          forceRefresh('VIDEO_CREATED')
         }, 3000)
+      } else if (eventName === EVENTS.VIDEO_UPLOAD_COMPLETED) {
+        // Client-side event from uploader: just start polling, no delay or forceRefresh needed
+        startPolling()
       } else if (eventName === EVENTS.VIDEO_STATUS_READY) {
-        const videoId = data?.id
-        if (videoId) {
-          pendingVideosRef.current.delete(videoId)
-          if (pendingVideosRef.current.size === 0) {
-            stopPolling()
-          }
-        }
-        forceRefresh(EVENTS.VIDEO_STATUS_READY, data)
+        stopPolling()
+        forceRefresh(EVENTS.VIDEO_STATUS_READY)
       } else if (eventName === EVENTS.VIDEO_UPDATED && data?.isStatusChange) {
         setTimeout(() => {
-          forceRefresh('VIDEO_UPDATED', data)
+          forceRefresh('VIDEO_UPDATED')
         }, 3000)
       } else {
         // For all other events, just refresh immediately
-        forceRefresh(eventName, data)
+        forceRefresh(eventName)
       }
     })
   })

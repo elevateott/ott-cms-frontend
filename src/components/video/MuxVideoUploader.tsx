@@ -8,6 +8,8 @@ import { CheckCircle, XCircle, Loader2, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/utilities/ui'
+import { eventBus } from '@/utilities/eventBus'
+import { EVENTS } from '@/constants/events'
 
 // Video list component
 const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll: () => void }) => {
@@ -224,6 +226,15 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
       }
 
       return updatedVideos
+    })
+
+     // Emit client-side event for upload completed
+    eventBus.emit(EVENTS.VIDEO_UPLOAD_COMPLETED, {
+      uploadId: upload_id,
+      assetId: asset_id,
+      playbackId: playback_ids?.[0]?.id,
+      timestamp: Date.now(),
+      source: 'client',
     })
 
     if (onUploadComplete) {
