@@ -1,5 +1,8 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import StreamingSources from './globals/streamingSources'
+import OTTSettings from './globals/OTTSettings'
+import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 
 import sharp from 'sharp' // sharp-import
 import path from 'path'
@@ -11,6 +14,9 @@ import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
+// Import new collections
+import { Videos } from './collections/Videos'
+import { MuxWebhookJobs } from './collections/MuxWebhookJobs'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { plugins } from './plugins'
@@ -22,6 +28,22 @@ const dirname = path.dirname(filename)
 
 export default buildConfig({
   admin: {
+    meta: {
+      titleSuffix: '- OTT CMS',
+      icons: [
+        {
+          rel: 'icon',
+          url: '/favicon.ico',
+        },
+      ],
+      openGraph: {
+        images: [
+          {
+            url: '/og-image.png',
+          },
+        ],
+      },
+    },
     components: {
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below and the import `BeforeLogin` statement on line 15.
@@ -29,6 +51,10 @@ export default buildConfig({
       // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
       // Feel free to delete this at any time. Simply remove the line below and the import `BeforeDashboard` statement on line 15.
       beforeDashboard: ['@/components/BeforeDashboard'],
+      // Add our custom event provider to the admin panel
+      providers: ['@/components/AdminEventProvider'],
+      // No custom views at the global level
+      // Custom components are configured at the collection level
     },
     importMap: {
       baseDir: path.resolve(dirname),
@@ -62,17 +88,21 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  collections: [Pages, Posts, Media, Categories, Users],
+  collections: [Pages, Posts, Media, Categories, Users, Videos, MuxWebhookJobs],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, StreamingSources, OTTSettings],
   plugins: [
     ...plugins,
+    payloadCloudPlugin(),
     // storage-adapter-placeholder
   ],
   secret: process.env.PAYLOAD_SECRET,
   sharp,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
+  },
+  graphQL: {
+    schemaOutputFile: path.resolve(dirname, 'generated-schema.graphql'),
   },
   jobs: {
     access: {

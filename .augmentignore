@@ -1,0 +1,10 @@
+# Ignore generated files
+.next/
+node_modules/
+dist/
+build/
+src/payload-types.ts
+
+# Ignore temporary files
+*.tmp
+*.bak

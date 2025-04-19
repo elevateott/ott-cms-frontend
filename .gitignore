@@ -11,3 +11,45 @@ public/media/
 
 public/robots.txt
 public/sitemap*.xml
+
+# Files added for AI conext
+ai-context
+
+# VSCode settings
+.vscode/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Local environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js build output
+out/
+
+# Payload CMS cache and uploads (if you use a custom uploads dir)
+payload-cache/
+uploads/
+
+# Coverage reports
+coverage/
+
+# TypeScript build output
+*.tsbuildinfo
+
+.augmentignore
+.editorconfig
+.vscode/settings.json

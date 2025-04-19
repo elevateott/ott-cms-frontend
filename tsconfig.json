@@ -4,7 +4,7 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    
+
     "baseUrl": ".",
     "esModuleInterop": true,
     "target": "ES2022",
@@ -31,15 +31,12 @@
       }
     ],
     "paths": {
-      "@payload-config": [
-        "./src/payload.config.ts"
-      ],
-      "react": [
-        "./node_modules/@types/react"
-      ],
       "@/*": [
         "./src/*"
       ],
+      "@payload-config": [
+        "./src/payload.config.ts"
+      ]
     }
   },
   "include": [
@@ -49,8 +46,10 @@
     "redirects.js",
     "next.config.js",
     "next-sitemap.config.cjs"
-  ],
+, "src/collections/Videos/components/VideoList.tsx.bak", "src/components/video/MuxUploaderWithList.tsx.bak", "src/collections/Videos/components/VideoAdmin.tsx.bak", "src/components/video/VideoAdmin.tsx.bak", "src/collections/Videos/components/DefaultListViewRefresher.tsx.bak"  ],
   "exclude": [
     "node_modules"
   ]
 }
+
+

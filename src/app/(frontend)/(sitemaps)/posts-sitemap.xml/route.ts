@@ -1,6 +1,6 @@
 import { getServerSideSitemap } from 'next-sitemap'
 import { getPayload } from 'payload'
-import config from '@payload-config'
+import config from '@/payload.config'
 import { unstable_cache } from 'next/cache'
 
 const getPostsSitemap = unstable_cache(
@@ -50,6 +50,7 @@ const getPostsSitemap = unstable_cache(
 
 export async function GET() {
   const sitemap = await getPostsSitemap()
-
   return getServerSideSitemap(sitemap)
 }
+
+

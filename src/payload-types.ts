@@ -72,6 +72,8 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
+    videos: Video;
+    'mux-webhook-jobs': MuxWebhookJob;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -88,6 +90,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    videos: VideosSelect<false> | VideosSelect<true>;
+    'mux-webhook-jobs': MuxWebhookJobsSelect<false> | MuxWebhookJobsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -103,10 +107,14 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'streaming-sources': StreamingSource;
+    'ott-settings': OttSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'streaming-sources': StreamingSourcesSelect<false> | StreamingSourcesSelect<true>;
+    'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -353,8 +361,22 @@ export interface Media {
 export interface Category {
   id: string;
   title: string;
+  description?: string | null;
   slug?: string | null;
   slugLock?: boolean | null;
+  thumbnail?: (string | null) | Media;
+  /**
+   * Used for manual sorting in menus or grids
+   */
+  order?: number | null;
+  /**
+   * Optional parent category for hierarchical organization
+   */
+  parentCategory?: (string | null) | Category;
+  /**
+   * Control where this category is featured
+   */
+  featuredOn?: ('none' | 'home' | 'nav' | 'both') | null;
   parent?: (string | null) | Category;
   breadcrumbs?:
     | {
@@ -729,6 +751,104 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videos".
+ */
+export interface Video {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Choose how this video is delivered
+   */
+  sourceType: 'mux' | 'embedded';
+  muxData?: {
+    /**
+     * Mux Upload ID (automatically populated)
+     */
+    uploadId?: string | null;
+    /**
+     * Mux Asset ID (automatically populated)
+     */
+    assetId?: string | null;
+    /**
+     * Mux Playback ID (automatically populated)
+     */
+    playbackId?: string | null;
+    /**
+     * Current status of the Mux video
+     */
+    status?: ('uploading' | 'processing' | 'ready' | 'error') | null;
+  };
+  /**
+   * Enter an HLS stream URL (e.g., from Vimeo or DaCast)
+   */
+  embeddedUrl?: string | null;
+  /**
+   * Video duration in seconds (automatically populated for Mux videos)
+   */
+  duration?: number | null;
+  /**
+   * Video aspect ratio (automatically populated for Mux videos)
+   */
+  aspectRatio?: string | null;
+  /**
+   * Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)
+   */
+  thumbnail?: (string | null) | Media;
+  muxThumbnailUrl?: string | null;
+  category?: (string | null) | Category;
+  tags?: (string | Category)[] | null;
+  /**
+   * Feature this video on the homepage or category pages
+   */
+  featured?: boolean | null;
+  publishedAt?: string | null;
+  /**
+   * Control who can view this video
+   */
+  visibility?: ('public' | 'members' | 'premium' | 'private') | null;
+  /**
+   * Schedule when this video will be available
+   */
+  releaseDate?: string | null;
+  /**
+   * Suggest related videos to watch next
+   */
+  relatedVideos?: (string | Video)[] | null;
+  /**
+   * Add this video to a series
+   */
+  series?: (string | null) | Category;
+  /**
+   * Episode number (if part of a series)
+   */
+  episodeNumber?: number | null;
+  /**
+   * Season number (if part of a series)
+   */
+  seasonNumber?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mux-webhook-jobs".
+ */
+export interface MuxWebhookJob {
+  id: string;
+  videoId: string;
+  assetId: string;
+  status: 'pending' | 'complete' | 'failed';
+  attemptCount?: number | null;
+  lastAttempt?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -918,6 +1038,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: string | User;
+      } | null)
+    | ({
+        relationTo: 'videos';
+        value: string | Video;
+      } | null)
+    | ({
+        relationTo: 'mux-webhook-jobs';
+        value: string | MuxWebhookJob;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1246,8 +1374,13 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
+  description?: T;
   slug?: T;
   slugLock?: T;
+  thumbnail?: T;
+  order?: T;
+  parentCategory?: T;
+  featuredOn?: T;
   parent?: T;
   breadcrumbs?:
     | T
@@ -1275,6 +1408,56 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videos_select".
+ */
+export interface VideosSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  sourceType?: T;
+  muxData?:
+    | T
+    | {
+        uploadId?: T;
+        assetId?: T;
+        playbackId?: T;
+        status?: T;
+      };
+  embeddedUrl?: T;
+  duration?: T;
+  aspectRatio?: T;
+  thumbnail?: T;
+  muxThumbnailUrl?: T;
+  category?: T;
+  tags?: T;
+  featured?: T;
+  publishedAt?: T;
+  visibility?: T;
+  releaseDate?: T;
+  relatedVideos?: T;
+  series?: T;
+  episodeNumber?: T;
+  seasonNumber?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mux-webhook-jobs_select".
+ */
+export interface MuxWebhookJobsSelect<T extends boolean = true> {
+  videoId?: T;
+  assetId?: T;
+  status?: T;
+  attemptCount?: T;
+  lastAttempt?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1590,6 +1773,108 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "streaming-sources".
+ */
+export interface StreamingSource {
+  id: string;
+  /**
+   * Control which video source types are allowed in the system
+   */
+  allowedSources: 'Mux' | 'Embedded' | 'Both';
+  /**
+   * Mux configuration settings
+   */
+  muxSettings?: {
+    /**
+     * Automatically generate thumbnails from Mux videos
+     */
+    autoGenerateThumbnails?: boolean | null;
+    /**
+     * Default playback policy for new Mux videos
+     */
+    defaultPlaybackPolicy?: ('public' | 'signed') | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ott-settings".
+ */
+export interface OttSetting {
+  id: string;
+  general: {
+    siteName: string;
+    siteDescription?: string | null;
+    logo?: (string | null) | Media;
+    favicon?: (string | null) | Media;
+  };
+  features?: {
+    /**
+     * Enable paid membership and subscription features
+     */
+    enableMembershipFeatures?: boolean | null;
+    /**
+     * Allow users to download videos for offline viewing
+     */
+    enableDownloads?: boolean | null;
+    /**
+     * Allow users to comment on videos
+     */
+    enableComments?: boolean | null;
+    /**
+     * Allow users to rate videos
+     */
+    enableRatings?: boolean | null;
+  };
+  player?: {
+    /**
+     * Automatically play videos when the page loads
+     */
+    autoplay?: boolean | null;
+    /**
+     * Automatically play the next video in a series
+     */
+    enableAutoNext?: boolean | null;
+    /**
+     * Default video quality for the player
+     */
+    defaultPlayerQuality?: ('auto' | '480p' | '720p' | '1080p' | '2160p') | null;
+  };
+  monetization?: {
+    /**
+     * Set up subscription plans for your platform
+     */
+    plans?:
+      | {
+          name: string;
+          price: number;
+          interval?: ('month' | 'year') | null;
+          features?:
+            | {
+                feature?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  analytics?: {
+    /**
+     * Google Analytics Measurement ID (e.g., G-XXXXXXXXXX)
+     */
+    googleAnalyticsId?: string | null;
+    /**
+     * Enable advanced video analytics with Mux Data
+     */
+    enableMuxAnalytics?: boolean | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -1629,6 +1914,78 @@ export interface FooterSelect<T extends boolean = true> {
               label?: T;
             };
         id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "streaming-sources_select".
+ */
+export interface StreamingSourcesSelect<T extends boolean = true> {
+  allowedSources?: T;
+  muxSettings?:
+    | T
+    | {
+        autoGenerateThumbnails?: T;
+        defaultPlaybackPolicy?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ott-settings_select".
+ */
+export interface OttSettingsSelect<T extends boolean = true> {
+  general?:
+    | T
+    | {
+        siteName?: T;
+        siteDescription?: T;
+        logo?: T;
+        favicon?: T;
+      };
+  features?:
+    | T
+    | {
+        enableMembershipFeatures?: T;
+        enableDownloads?: T;
+        enableComments?: T;
+        enableRatings?: T;
+      };
+  player?:
+    | T
+    | {
+        autoplay?: T;
+        enableAutoNext?: T;
+        defaultPlayerQuality?: T;
+      };
+  monetization?:
+    | T
+    | {
+        plans?:
+          | T
+          | {
+              name?: T;
+              price?: T;
+              interval?: T;
+              features?:
+                | T
+                | {
+                    feature?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+      };
+  analytics?:
+    | T
+    | {
+        googleAnalyticsId?: T;
+        enableMuxAnalytics?: T;
       };
   updatedAt?: T;
   createdAt?: T;
