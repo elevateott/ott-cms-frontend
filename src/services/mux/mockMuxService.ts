@@ -177,6 +177,139 @@ export class MockMuxService implements IMuxService {
       throw new Error('Failed to generate mock signed playback URL')
     }
   }
+
+  /**
+   * Create a Mux thumbnail for an asset
+   */
+  async createMuxThumbnail(assetId: string, time: number = 0): Promise<{ url: string }> {
+    try {
+      // Get the mock asset
+      const asset = await this.getAsset(assetId)
+      if (!asset) {
+        throw new Error('Asset not found')
+      }
+
+      const playbackId = asset.playbackIds?.[0]?.id
+
+      if (!playbackId) {
+        throw new Error('No playback ID found for asset')
+      }
+
+      // Return the thumbnail URL
+      const thumbnailUrl = this.getThumbnailUrl(playbackId, { time })
+
+      return { url: thumbnailUrl }
+    } catch (error) {
+      logError(error, 'MockMuxService.createMuxThumbnail')
+      throw new Error('Failed to create Mux thumbnail')
+    }
+  }
+
+  /**
+   * Get a limited number of assets for deletion
+   * @param limit Maximum number of assets to return
+   */
+  async getAllAssets(limit: number = 20): Promise<MuxAsset[]> {
+    try {
+      // Only return mock assets on the first call
+      if (this._assetsReturned) {
+        return []
+      }
+
+      // Mark that we've returned assets
+      this._assetsReturned = true
+
+      // Return a few mock assets (limited by the limit parameter)
+      const mockAssets = [
+        {
+          id: `mock-asset-1`,
+          playbackIds: [{ id: 'mock-playback-1', policy: 'public' }],
+          status: 'ready',
+          duration: 120,
+          aspectRatio: '16:9',
+          createdAt: new Date().toISOString(),
+        } as unknown as MuxAsset,
+        {
+          id: `mock-asset-2`,
+          playbackIds: [{ id: 'mock-playback-2', policy: 'public' }],
+          status: 'ready',
+          duration: 180,
+          aspectRatio: '16:9',
+          createdAt: new Date().toISOString(),
+        } as unknown as MuxAsset,
+      ]
+
+      return mockAssets.slice(0, limit)
+    } catch (error) {
+      logError(error, 'MockMuxService.getAllAssets')
+      return []
+    }
+  }
+
+  // Track if we've already returned assets
+  private _assetsReturned = false
+
+  /**
+   * Delete all Mux assets recursively
+   * @param previousResults Optional results from previous recursive calls
+   * @param recursionDepth Current recursion depth to prevent infinite loops
+   */
+  async deleteAllMuxAssets(
+    previousResults?: {
+      successCount: number
+      failureCount: number
+      totalCount: number
+    },
+    recursionDepth: number = 0,
+  ): Promise<{
+    success: boolean
+    count: number
+    failedCount: number
+    totalCount: number
+  }> {
+    try {
+      // Initialize results if this is the first call
+      const currentResults = previousResults || {
+        successCount: 0,
+        failureCount: 0,
+        totalCount: 0,
+      }
+
+      // If this is the first call, simulate finding and deleting assets
+      if (!previousResults) {
+        // Simulate successful deletion of assets
+        const batchResults = {
+          successCount: 2,
+          failureCount: 0,
+          totalCount: 2,
+        }
+
+        // Update the running totals
+        const updatedResults = {
+          successCount: currentResults.successCount + batchResults.successCount,
+          failureCount: currentResults.failureCount + batchResults.failureCount,
+          totalCount: currentResults.totalCount + batchResults.totalCount,
+        }
+
+        // Return the results
+        return {
+          success: true,
+          count: updatedResults.successCount,
+          failedCount: updatedResults.failureCount,
+          totalCount: updatedResults.totalCount,
+        }
+      }
+
+      // If this is a recursive call, simulate no more assets found
+      return {
+        success: true,
+        count: currentResults.successCount,
+        failedCount: currentResults.failureCount,
+        totalCount: currentResults.totalCount,
+      }
+    } catch (error) {
+      logError(error, 'MockMuxService.deleteAllMuxAssets')
+      throw new Error('Failed to delete all Mux assets')
+    }
+  }
 }
-
-

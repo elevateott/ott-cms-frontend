@@ -9,7 +9,7 @@ export const EVENTS = {
   VIDEO_UPLOAD_ERROR: 'video:upload:error',
   VIDEO_STATUS_READY: 'video:status:ready',
   VIDEO_STATUS_UPDATED: 'video:status:updated',
-  RELOAD_PAGE: 'reload:page',
+  VIDEO_LIST_REFRESH: 'video:list:refresh',
 
   // UI events
   MODAL_OPEN: 'modal:open',
@@ -20,5 +20,3 @@ export const EVENTS = {
   NAVIGATION_START: 'navigation:start',
   NAVIGATION_END: 'navigation:end',
 } as const
-
-

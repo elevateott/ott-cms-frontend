@@ -33,3 +33,12 @@ export const STORAGE_KEYS = {
   THEME: 'theme',
 } as const;
 
+export const MUX_WEBHOOK_EVENT_TYPES = {
+  ASSET_CREATED: 'video.asset.created',
+  ASSET_READY: 'video.asset.ready',
+  ASSET_DELETED: 'video.asset.deleted',
+  UPLOAD_ASSET_CREATED: 'video.upload.asset.created',
+  NON_STANDARD_INPUT_DETECTED: 'video.input.quality.low',
+  VIDEO_UPLOAD_CREATED: 'video.upload.created'
+} as const
+

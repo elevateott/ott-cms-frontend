@@ -8,8 +8,8 @@ import { NextRequest } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
-import { createMuxService, createWebhookHandlerService } from '@/services/serviceFactory'
-import { sendEventToClients } from '@/services/events/eventEmitter'
+import { createMuxService } from '@/services/serviceFactory'
+import { webhookHandlerService } from '@/services/mux/webhookHandlerService'
 import { logError } from '@/utils/errorHandler'
 
 /**
@@ -56,17 +56,13 @@ export async function POST(req: NextRequest) {
         playback_ids: event.data.playback_ids,
         status: event.data.status,
         created_at: event.data.created_at,
-        updated_at: event.data.updated_at,
       })
     }
 
     // Initialize Payload
     const payload = await getPayload({ config: configPromise })
 
-    // Create webhook handler service
-    const webhookHandlerService = createWebhookHandlerService(payload, sendEventToClients)
-
-    // Handle the event
+    // Handle the event using the singleton instance
     await webhookHandlerService.handleEvent(event)
 
     return createApiResponse({ success: true })

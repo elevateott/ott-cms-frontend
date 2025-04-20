@@ -78,7 +78,7 @@ const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll
       </div>
       <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
         <p>
-          <strong>Note:</strong> Videos will appear in the list below once they have been processed.
+          <strong>Note:</strong> Videos will appear in the list below once they have been uploaded.
           This may take a few minutes depending on the file size.
         </p>
       </div>

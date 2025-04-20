@@ -1,57 +1,63 @@
-import { createMuxService } from '@/services/mux';
+/**
+ * Mux Utilities
+ *
+ * This file provides utility functions for working with Mux.
+ * These functions ensure the MuxService is properly initialized before use.
+ */
 
-const muxService = createMuxService();
+import { createMuxService } from '@/services/mux'
+import { MuxAsset } from '@/types/mux'
 
+// Initialize the Mux service
+const getMuxService = () => createMuxService()
+
+/**
+ * Create a Mux upload
+ */
 export const createMuxUpload = async (options?: {
   metadata?: Record<string, string>
   passthrough?: Record<string, string>
 }) => {
-  try {
-    console.log('Creating Mux upload with options:', options)
-    return await muxService.createDirectUpload(options);
-  } catch (error) {
-    console.error('Error creating Mux upload:', error)
-    throw error
-  }
+  const muxService = getMuxService()
+  return muxService.createDirectUpload(options)
 }
 
-export const getMuxAsset = async (assetId: string) => {
-  try {
-    return await muxService.getAsset(assetId);
-  } catch (error) {
-    console.error(`Error fetching Mux asset ${assetId}:`, error)
-    throw new Error('Failed to fetch Mux asset')
-  }
+/**
+ * Get a Mux asset
+ */
+export const getMuxAsset = async (assetId: string): Promise<MuxAsset | null> => {
+  const muxService = getMuxService()
+  return muxService.getAsset(assetId)
 }
 
-export const createMuxThumbnail = async (assetId: string, time: number = 0) => {
-  try {
-    // For now, we'll just return the URL to the thumbnail
-    // In a real implementation, you would use the Mux API to create a thumbnail
-    // and then upload it to your media collection
-    const playbackId = (await getMuxAsset(assetId)).playback_ids?.[0]?.id
-
-    if (!playbackId) {
-      throw new Error('No playback ID found for asset')
-    }
-
-    // Return the thumbnail URL
-    const thumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg?time=${time}`
-
-    return { url: thumbnailUrl }
-  } catch (error) {
-    console.error(`Error creating Mux thumbnail for asset ${assetId}:`, error)
-    throw new Error('Failed to create Mux thumbnail')
-  }
+/**
+ * Create a Mux thumbnail
+ */
+export const createMuxThumbnail = async (
+  assetId: string,
+  time: number = 0,
+): Promise<{ url: string }> => {
+  const muxService = getMuxService()
+  return muxService.createMuxThumbnail(assetId, time)
 }
 
-export const deleteMuxAsset = async (assetId: string) => {
-  try {
-    await video.assets.delete(assetId)
-    return true
-  } catch (error) {
-    console.error(`Error deleting Mux asset ${assetId}:`, error)
-    throw new Error('Failed to delete Mux asset')
-  }
+/**
+ * Delete a Mux asset
+ */
+export const deleteMuxAsset = async (assetId: string): Promise<boolean> => {
+  const muxService = getMuxService()
+  return muxService.deleteAsset(assetId)
 }
 
+/**
+ * Delete all Mux assets
+ */
+export const deleteAllMuxAssets = async (): Promise<{
+  success: boolean
+  count: number
+  failedCount: number
+  totalCount: number
+}> => {
+  const muxService = getMuxService()
+  return muxService.deleteAllMuxAssets()
+}

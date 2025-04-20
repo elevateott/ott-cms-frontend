@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { EVENTS } from '@/constants/events'
 import { useEventSource } from '@/hooks/useEventSource'
 import { API_ROUTES } from '@/constants/api'
@@ -16,7 +16,7 @@ interface EventLog {
 
 export function EventMonitor() {
   const [logs, setLogs] = useState<EventLog[]>([])
-  const [connectionStatus, setConnectionStatus] = useState<string>('connecting')
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'error'>('connecting')
   const [isExpanded, setIsExpanded] = useState(false)
   const [filter, setFilter] = useState('')
   const logsEndRef = useRef<HTMLDivElement>(null)
@@ -48,7 +48,7 @@ export function EventMonitor() {
     return source === 'server' ? 'text-purple-600' : 'text-orange-600'
   }
 
-  const logEvent = (eventName: string, data: any, source: 'server' | 'client') => {
+  const logEvent = useCallback((eventName: string, data: any, source: 'server' | 'client') => {
     console.log(`🎯 EventMonitor: Logging ${source} event:`, { eventName, data })
 
     setLogs((prevLogs) => [
@@ -61,7 +61,7 @@ export function EventMonitor() {
         source,
       },
     ])
-  }
+  }, [])
 
   // Set up event source for server-sent events
   const { connected } = useEventSource({
@@ -71,18 +71,18 @@ export function EventMonitor() {
         console.log('🎯 EventMonitor: Connected to event source', data)
         logEvent('connected', data, 'server')
       },
-      [EVENTS.VIDEO_CREATED]: (data) => {
-        console.log('🎯 EventMonitor: Received VIDEO_CREATED event', data)
-        logEvent(EVENTS.VIDEO_CREATED, data, 'server')
+      ping: (data) => {
+        console.log('🎯 EventMonitor: Received ping', data)
       },
-      [EVENTS.VIDEO_UPDATED]: (data) => {
-        console.log('🎯 EventMonitor: Received VIDEO_UPDATED event', data)
-        logEvent(EVENTS.VIDEO_UPDATED, data, 'server')
-      },
-      [EVENTS.VIDEO_STATUS_READY]: (data) => {
-        console.log('🎯 EventMonitor: Received VIDEO_STATUS_READY event', data)
-        logEvent(EVENTS.VIDEO_STATUS_READY, data, 'server')
-      },
+      ...Object.fromEntries(
+        Object.values(EVENTS).map(eventName => [
+          eventName,
+          (data: any) => {
+            console.log(`🎯 EventMonitor: Received ${eventName} event`, data)
+            logEvent(eventName, data, 'server')
+          }
+        ])
+      )
     },
     onOpen: () => {
       console.log('🎯 EventMonitor: SSE Connection opened')
@@ -212,6 +212,11 @@ export function EventMonitor() {
 }
 
 export default EventMonitor
+
+
+
+
+
 
 
 

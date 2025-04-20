@@ -1,7 +1,7 @@
 // src/cron/importMuxThumbnails.ts
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
-import { createMuxThumbnail } from '@/utilities/mux'
+import { createMuxService } from '@/services/mux'
 
 export async function importMuxThumbnails() {
   try {
@@ -37,8 +37,11 @@ export async function importMuxThumbnails() {
         // Skip if no asset ID
         if (!video.muxData?.assetId) continue
 
+        // Initialize the Mux service
+        const muxService = createMuxService()
+
         // Create a thumbnail
-        const thumbnail = await createMuxThumbnail(video.muxData.assetId, 1) // 1 second in
+        const thumbnail = await muxService.createMuxThumbnail(video.muxData.assetId, 1) // 1 second in
 
         // Download the thumbnail and create a media item
         const response = await fetch(thumbnail.url)

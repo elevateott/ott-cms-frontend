@@ -14,11 +14,16 @@ export const formatSlugHook =
     }
 
     if (operation === 'create' || !data?.slug) {
-      const fallbackData = data?.[fallback] || data?.[fallback]
+      const fallbackData = data?.[fallback]
 
       if (fallbackData && typeof fallbackData === 'string') {
         return formatSlug(fallbackData)
       }
+    }
+
+    // Default to a random slug if no value is provided
+    if (operation === 'create' && !value) {
+      return `video-${Math.floor(Math.random() * 1000000)}`
     }
 
     return value

@@ -2,8 +2,7 @@
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { NextRequest, NextResponse } from 'next/server'
-import { createMuxUpload } from '@/utilities/mux'
-// No need for the utility function anymore
+import { createMuxService } from '@/services/mux'
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,8 +26,11 @@ export async function POST(req: NextRequest) {
     const results = await Promise.all(
       videos.map(async (videoData) => {
         try {
+          // Initialize the Mux service
+          const muxService = createMuxService()
+
           // Create a Mux upload URL for each video
-          const { url, uploadId } = await createMuxUpload()
+          const { url, uploadId } = await muxService.createDirectUpload()
 
           // Create a video document in Payload
           const video = await payload.create({

@@ -1,13 +1,16 @@
-// Updating src/collections/Videos/index.ts with more features
+// Videos collection with all features
 import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
-import { deleteAssetOnVideoDelete } from '@/hooks/mux/deleteAssetOnVideoDelete'
+// We don't delete Mux assets when videos are deleted in the app
 import { fetchMuxMetadata } from '@/hooks/mux/updateVideoOnWebhook'
-//import { TestCustomCell } from '@/collections/Videos/components/TestCustomCell'
 
 export const Videos: CollectionConfig = {
-  slug: 'videos',
+  slug: 'ott-videos',
+  labels: {
+    singular: 'Video',
+    plural: 'Videos',
+  },
   defaultSort: ['-createdAt'],
   access: {
     read: () => true,
@@ -30,12 +33,12 @@ export const Videos: CollectionConfig = {
     components: {
       // Add our custom components before the default list view
       beforeList: [
-        '@/collections/Videos/components/VideoManagementComponent',
+        '@/collections/Videos/components/VideoManagement',
         '@/components/EventMonitor',
         '@/collections/Videos/components/ListViewRefresher',
       ],
       // We'll use the beforeList to add our VideoStatusProvider
-      // The provider will be added in the VideoManagementComponent
+      // The provider will be added in the VideoManagement
     },
   },
   fields: [
@@ -84,18 +87,18 @@ export const Videos: CollectionConfig = {
         description: 'Choose how this video is delivered',
       },
     },
-    // We don't need the muxUploaderField anymore
+
     {
       name: 'muxData',
       type: 'group',
       admin: {
-        // Use a simple className instead of a condition
         className: 'mux-data-group',
+        condition: (data) => data.sourceType === 'mux',
       },
       fields: [
         {
           name: 'uploadId',
-          type: 'text' as const,
+          type: 'text',
           admin: {
             readOnly: true,
             description: 'Mux Upload ID (automatically populated)',
@@ -103,7 +106,7 @@ export const Videos: CollectionConfig = {
         },
         {
           name: 'assetId',
-          type: 'text' as const,
+          type: 'text',
           admin: {
             readOnly: true,
             description: 'Mux Asset ID (automatically populated)',
@@ -111,7 +114,7 @@ export const Videos: CollectionConfig = {
         },
         {
           name: 'playbackId',
-          type: 'text' as const,
+          type: 'text',
           admin: {
             readOnly: true,
             description: 'Mux Playback ID (automatically populated)',
@@ -119,7 +122,7 @@ export const Videos: CollectionConfig = {
         },
         {
           name: 'status',
-          type: 'select' as const,
+          type: 'select',
           options: [
             { label: 'Uploading', value: 'uploading' },
             { label: 'Processing', value: 'processing' },
@@ -141,12 +144,10 @@ export const Videos: CollectionConfig = {
       name: 'embeddedUrl',
       type: 'text',
       admin: {
-        // Use a simple className instead of a condition
         className: 'embedded-url-field',
         description: 'Enter an HLS stream URL (e.g., from Vimeo or DaCast)',
+        condition: (data) => data.sourceType === 'embedded',
       },
-      // Remove the validate function for now as it's causing type issues
-      // We'll add it back later with proper typing
     },
     {
       name: 'duration',
@@ -252,7 +253,7 @@ export const Videos: CollectionConfig = {
     {
       name: 'relatedVideos',
       type: 'relationship',
-      relationTo: 'videos',
+      relationTo: 'ott-videos',
       hasMany: true,
       admin: {
         description: 'Suggest related videos to watch next',
@@ -264,7 +265,6 @@ export const Videos: CollectionConfig = {
       relationTo: 'categories',
       admin: {
         description: 'Add this video to a series',
-        // Remove the condition for now
       },
     },
     {
@@ -272,7 +272,6 @@ export const Videos: CollectionConfig = {
       type: 'number',
       admin: {
         description: 'Episode number (if part of a series)',
-        // Use a simple className instead of a condition
         className: 'episode-number-field',
       },
     },
@@ -281,19 +280,18 @@ export const Videos: CollectionConfig = {
       type: 'number',
       admin: {
         description: 'Season number (if part of a series)',
-        // Use a simple className instead of a condition
         className: 'season-number-field',
       },
     },
     {
       name: 'createdAt',
       type: 'date',
-      label: 'Added', // 👈 Custom label
+      label: 'Added',
       admin: {
+        position: 'sidebar',
         components: {
           Cell: '@/components/FormattedDateCell',
         },
-        position: 'sidebar', // optional: keeps it in the sidebar in the edit view
       },
       access: {
         create: () => false,
@@ -317,10 +315,7 @@ export const Videos: CollectionConfig = {
       // Add hook to handle Mux metadata updates
       fetchMuxMetadata,
     ],
-    beforeDelete: [
-      // Add hook to clean up Mux assets
-      deleteAssetOnVideoDelete,
-    ],
+    // We don't need a beforeDelete hook since we don't want to delete Mux assets when videos are deleted
   },
 }
 

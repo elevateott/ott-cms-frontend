@@ -72,8 +72,8 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
-    videos: Video;
     'mux-webhook-jobs': MuxWebhookJob;
+    'ott-videos': OttVideo;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -90,8 +90,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    videos: VideosSelect<false> | VideosSelect<true>;
     'mux-webhook-jobs': MuxWebhookJobsSelect<false> | MuxWebhookJobsSelect<true>;
+    'ott-videos': OttVideosSelect<false> | OttVideosSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -751,9 +751,24 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "videos".
+ * via the `definition` "mux-webhook-jobs".
  */
-export interface Video {
+export interface MuxWebhookJob {
+  id: string;
+  videoId: string;
+  assetId: string;
+  status: 'pending' | 'complete' | 'failed';
+  attemptCount?: number | null;
+  lastAttempt?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ott-videos".
+ */
+export interface OttVideo {
   id: string;
   title: string;
   description?: string | null;
@@ -816,7 +831,7 @@ export interface Video {
   /**
    * Suggest related videos to watch next
    */
-  relatedVideos?: (string | Video)[] | null;
+  relatedVideos?: (string | OttVideo)[] | null;
   /**
    * Add this video to a series
    */
@@ -831,21 +846,6 @@ export interface Video {
   seasonNumber?: number | null;
   createdAt: string;
   updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "mux-webhook-jobs".
- */
-export interface MuxWebhookJob {
-  id: string;
-  videoId: string;
-  assetId: string;
-  status: 'pending' | 'complete' | 'failed';
-  attemptCount?: number | null;
-  lastAttempt?: string | null;
-  error?: string | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1040,12 +1040,12 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
-        relationTo: 'videos';
-        value: string | Video;
-      } | null)
-    | ({
         relationTo: 'mux-webhook-jobs';
         value: string | MuxWebhookJob;
+      } | null)
+    | ({
+        relationTo: 'ott-videos';
+        value: string | OttVideo;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1411,9 +1411,23 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "videos_select".
+ * via the `definition` "mux-webhook-jobs_select".
  */
-export interface VideosSelect<T extends boolean = true> {
+export interface MuxWebhookJobsSelect<T extends boolean = true> {
+  videoId?: T;
+  assetId?: T;
+  status?: T;
+  attemptCount?: T;
+  lastAttempt?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ott-videos_select".
+ */
+export interface OttVideosSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   slug?: T;
@@ -1444,20 +1458,6 @@ export interface VideosSelect<T extends boolean = true> {
   seasonNumber?: T;
   createdAt?: T;
   updatedAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "mux-webhook-jobs_select".
- */
-export interface MuxWebhookJobsSelect<T extends boolean = true> {
-  videoId?: T;
-  assetId?: T;
-  status?: T;
-  attemptCount?: T;
-  lastAttempt?: T;
-  error?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -32,6 +32,103 @@ interface MuxVideoClient {
 }
 
 export class MuxService implements IMuxService {
+  // Static instance for utility methods
+  private static instance: MuxService | null = null
+
+  /**
+   * Get the singleton instance of MuxService
+   */
+  private static getInstance(): MuxService {
+    if (!MuxService.instance) {
+      throw new Error('MuxService not initialized. Call createMuxService() first.')
+    }
+    return MuxService.instance
+  }
+
+  /**
+   * Set the singleton instance
+   */
+  static setInstance(instance: MuxService): void {
+    MuxService.instance = instance
+  }
+
+  /**
+   * Create a Mux upload (static utility method)
+   */
+  static async createMuxUpload(options?: {
+    metadata?: Record<string, string>
+    passthrough?: Record<string, string>
+  }): Promise<{ uploadId: string; url: string }> {
+    try {
+      console.log('Creating Mux upload with options:', options)
+      return await MuxService.getInstance().createDirectUpload(options)
+    } catch (error) {
+      console.error('Error creating Mux upload:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get a Mux asset (static utility method)
+   */
+  static async getMuxAsset(assetId: string): Promise<MuxAsset | null> {
+    try {
+      return await MuxService.getInstance().getAsset(assetId)
+    } catch (error) {
+      console.error(`Error fetching Mux asset ${assetId}:`, error)
+      throw new Error('Failed to fetch Mux asset')
+    }
+  }
+
+  /**
+   * Create a Mux thumbnail (static utility method)
+   */
+  static async createMuxThumbnail(assetId: string, time: number = 0): Promise<{ url: string }> {
+    try {
+      return await MuxService.getInstance().createMuxThumbnail(assetId, time)
+    } catch (error) {
+      console.error(`Error creating Mux thumbnail for asset ${assetId}:`, error)
+      throw new Error('Failed to create Mux thumbnail')
+    }
+  }
+
+  /**
+   * Delete a Mux asset (static utility method)
+   */
+  static async deleteMuxAsset(assetId: string): Promise<boolean> {
+    try {
+      return await MuxService.getInstance().deleteAsset(assetId)
+    } catch (error) {
+      console.error(`Error deleting Mux asset ${assetId}:`, error)
+      throw new Error('Failed to delete Mux asset')
+    }
+  }
+
+  /**
+   * Delete all Mux assets (static utility method)
+   * @param previousResults Optional results from previous recursive calls
+   * @param recursionDepth Current recursion depth to prevent infinite loops
+   */
+  static async deleteAllMuxAssets(
+    previousResults?: {
+      successCount: number
+      failureCount: number
+      totalCount: number
+    },
+    recursionDepth: number = 0,
+  ): Promise<{
+    success: boolean
+    count: number
+    failedCount: number
+    totalCount: number
+  }> {
+    try {
+      return await MuxService.getInstance().deleteAllMuxAssets(previousResults, recursionDepth)
+    } catch (error) {
+      console.error('Error deleting all Mux assets:', error)
+      throw new Error('Failed to delete all Mux assets')
+    }
+  }
   private video: MuxVideoClient
 
   constructor({ tokenId, tokenSecret }: { tokenId: string; tokenSecret: string }) {
@@ -213,26 +310,103 @@ export class MuxService implements IMuxService {
   }
 
   /**
+   * Get a limited number of assets for deletion
+   * @param limit Maximum number of assets to return
+   */
+  async getAllAssets(limit: number = 100): Promise<MuxAsset[]> {
+    try {
+      console.log(`Fetching up to ${limit} Mux assets for deletion`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        console.log(`Rate limiting: Waiting ${delay}ms before fetching Mux assets`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Get assets directly with a single request and a reasonable limit
+      const response = await this.video._client.get('/video/v1/assets', {
+        params: {
+          limit,
+          page: 1, // Always start with page 1
+        },
+      })
+
+      if (!response || !response.data) {
+        console.log('No assets found or invalid response format')
+        return []
+      }
+
+      if (!Array.isArray(response.data)) {
+        console.log('Invalid response format - expected an array')
+        return []
+      }
+
+      const assets = response.data.map((asset: any) => ({
+        id: asset.id,
+        playbackIds: asset.playback_ids,
+        status: asset.status,
+        duration: asset.duration,
+        aspectRatio: asset.aspect_ratio,
+        maxResolution: asset.max_resolution,
+        maxStoredResolution: asset.max_stored_resolution,
+        uploadId: asset.upload_id,
+        createdAt: asset.created_at,
+        tracks: asset.tracks,
+      })) as MuxAsset[]
+
+      console.log(`Found ${assets.length} Mux assets to delete`)
+      return assets
+    } catch (error) {
+      console.error('Error fetching all Mux assets:', error)
+      logError(error, 'MuxService.getAllAssets')
+      return []
+    }
+  }
+
+  /**
    * Delete an asset
    */
   async deleteAsset(assetId: string): Promise<boolean> {
     try {
-      // Check if video.assets exists (lowercase 'a')
-      if (this.video.assets) {
+      console.log(`Deleting Mux asset ${assetId}...`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        console.log(`Rate limiting: Waiting ${delay}ms before deleting Mux asset ${assetId}`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // First try using the SDK methods if available
+      if (this.video.assets && typeof this.video.assets.del === 'function') {
+        console.log(`Using video.assets.del for asset ${assetId}`)
         await this.video.assets.del(assetId)
+        console.log(`Successfully deleted Mux asset ${assetId} using SDK method`)
         return true
       }
       // Fallback to video.Assets if it exists (capital 'A')
-      else if (this.video.Assets) {
+      else if (this.video.Assets && typeof this.video.Assets.del === 'function') {
+        console.log(`Using video.Assets.del for asset ${assetId}`)
         await this.video.Assets.del(assetId)
+        console.log(`Successfully deleted Mux asset ${assetId} using SDK method`)
         return true
       }
-      // Log error if neither exists
+      // Fallback to direct API call if SDK methods are not available
       else {
-        console.error('Mux video client is missing assets property', this.video)
-        return false
+        console.log(`Using direct API call for deleting asset ${assetId}`)
+        await this.video._client.delete(`/video/v1/assets/${assetId}`)
+        console.log(`Successfully deleted Mux asset ${assetId} using direct API call`)
+        return true
       }
     } catch (error) {
+      console.error(`Error deleting Mux asset ${assetId}:`, error)
       logError(error, 'MuxService.deleteAsset')
       return false
     }
@@ -386,4 +560,221 @@ export class MuxService implements IMuxService {
       throw new Error('Failed to generate signed playback URL')
     }
   }
+
+  /**
+   * Create a Mux thumbnail for an asset
+   */
+  async createMuxThumbnail(assetId: string, time: number = 0): Promise<{ url: string }> {
+    try {
+      // Get the asset
+      const asset = await this.getAsset(assetId)
+      if (!asset) {
+        throw new Error('Asset not found')
+      }
+
+      const playbackId = asset.playbackIds?.[0]?.id
+
+      if (!playbackId) {
+        throw new Error('No playback ID found for asset')
+      }
+
+      // Return the thumbnail URL
+      const thumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg?time=${time}`
+
+      return { url: thumbnailUrl }
+    } catch (error) {
+      console.error(`Error creating Mux thumbnail for asset ${assetId}:`, error)
+      throw new Error('Failed to create Mux thumbnail')
+    }
+  }
+
+  /**
+   * Helper function to delete a batch of Mux assets
+   * @param assets Array of Mux assets to delete
+   * @returns Results of the deletion operation
+   */
+  private async deleteBatchOfAssets(assets: MuxAsset[]): Promise<{
+    results: Array<{ status: string; value?: boolean; reason?: Error | unknown }>
+    successCount: number
+    failureCount: number
+    totalCount: number
+  }> {
+    try {
+      if (assets.length === 0) {
+        return { results: [], successCount: 0, failureCount: 0, totalCount: 0 }
+      }
+
+      console.log(`Processing ${assets.length} assets for deletion`)
+
+      // Log the first few asset IDs to avoid overwhelming the console
+      const assetIdsToLog = assets.slice(0, 10).map((asset) => asset.id)
+      console.log(`Asset IDs to delete: ${assetIdsToLog.join(', ')}`)
+      if (assets.length > 10) {
+        console.log(`...and ${assets.length - 10} more assets`)
+      }
+
+      // Delete assets in batches to avoid overwhelming the system
+      const results: Array<{ status: string; value?: boolean; reason?: Error | unknown }> = []
+      const BATCH_SIZE = 20
+
+      // Process assets in batches
+      for (let i = 0; i < assets.length; i += BATCH_SIZE) {
+        const batch = assets.slice(i, i + BATCH_SIZE)
+        console.log(
+          `Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(assets.length / BATCH_SIZE)} (${batch.length} assets)`,
+        )
+
+        // Process each asset in the batch sequentially
+        for (const asset of batch) {
+          console.log(`Deleting asset ${asset.id}...`)
+          try {
+            const success = await this.deleteAsset(asset.id)
+            results.push({ status: 'fulfilled', value: success })
+            console.log(`Asset ${asset.id} deletion ${success ? 'succeeded' : 'failed'}`)
+          } catch (error) {
+            console.error(`Error deleting asset ${asset.id}:`, error)
+            results.push({ status: 'rejected', reason: error })
+          }
+        }
+
+        // Add a shorter delay between batches to avoid overwhelming the API
+        if (i + BATCH_SIZE < assets.length) {
+          console.log('Short pause between batches to avoid rate limiting...')
+          await new Promise((resolve) => setTimeout(resolve, 500))
+        }
+      }
+
+      // Count successful deletions
+      const successCount = results.filter(
+        (result) => result.status === 'fulfilled' && result.value,
+      ).length
+      const failureCount = results.length - successCount
+
+      console.log(
+        `Batch deletion complete. Successfully deleted ${successCount} Mux assets, failed to delete ${failureCount}`,
+      )
+
+      return {
+        results,
+        successCount,
+        failureCount,
+        totalCount: assets.length,
+      }
+    } catch (error) {
+      console.error('Error in deleteBatchOfAssets:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Delete all Mux assets recursively
+   * @param previousResults Optional results from previous recursive calls
+   * @param recursionDepth Current recursion depth to prevent infinite loops
+   * @returns Results of the deletion operation
+   */
+  async deleteAllMuxAssets(
+    previousResults?: {
+      successCount: number
+      failureCount: number
+      totalCount: number
+    },
+    recursionDepth: number = 0,
+  ): Promise<{
+    success: boolean
+    count: number
+    failedCount: number
+    totalCount: number
+  }> {
+    try {
+      // Maximum recursion depth to prevent infinite loops
+      const MAX_RECURSION_DEPTH = 20
+
+      // Check if we've reached the maximum recursion depth
+      if (recursionDepth >= MAX_RECURSION_DEPTH) {
+        console.log(
+          `Maximum recursion depth (${MAX_RECURSION_DEPTH}) reached. Stopping to prevent infinite loops.`,
+        )
+        return {
+          success: true,
+          count: previousResults?.successCount || 0,
+          failedCount: previousResults?.failureCount || 0,
+          totalCount: previousResults?.totalCount || 0,
+        }
+      }
+
+      // Initialize results if this is the first call
+      const currentResults = previousResults || {
+        successCount: 0,
+        failureCount: 0,
+        totalCount: 0,
+      }
+
+      console.log(`Starting deletion of all Mux assets... (recursion depth: ${recursionDepth})`)
+      console.log(
+        `Current totals: ${currentResults.successCount} deleted, ${currentResults.failureCount} failed, ${currentResults.totalCount} processed`,
+      )
+
+      // Get all assets from Mux with pagination
+      console.log('Fetching Mux assets...')
+      const assets = await this.getAllAssets()
+      console.log(`Fetch complete. Found ${assets.length} Mux assets.`)
+
+      if (assets.length === 0) {
+        console.log('No more Mux assets found to delete')
+        return {
+          success: true,
+          count: currentResults.successCount,
+          failedCount: currentResults.failureCount,
+          totalCount: currentResults.totalCount,
+        }
+      }
+
+      // Delete this batch of assets
+      const batchResults = await this.deleteBatchOfAssets(assets)
+
+      // Update the running totals
+      const updatedResults = {
+        successCount: currentResults.successCount + batchResults.successCount,
+        failureCount: currentResults.failureCount + batchResults.failureCount,
+        totalCount: currentResults.totalCount + batchResults.totalCount,
+      }
+
+      console.log(
+        `Running totals: ${updatedResults.successCount} deleted, ${updatedResults.failureCount} failed, ${updatedResults.totalCount} processed`,
+      )
+
+      // Check if we're making progress before recursing
+      if (assets.length > 0 && batchResults.successCount > 0) {
+        console.log(
+          `Successfully deleted ${batchResults.successCount} assets, checking for more...`,
+        )
+        // Add a delay to avoid rate limiting
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        return this.deleteAllMuxAssets(updatedResults, recursionDepth + 1)
+      } else if (assets.length > 0 && batchResults.successCount === 0) {
+        // We found assets but couldn't delete any - avoid infinite recursion
+        console.log(
+          'Warning: Found assets but could not delete any. Stopping to avoid infinite recursion.',
+        )
+        return {
+          success: true,
+          count: updatedResults.successCount,
+          failedCount: updatedResults.failureCount,
+          totalCount: updatedResults.totalCount,
+        }
+      }
+
+      // No more assets to delete
+      return {
+        success: true,
+        count: updatedResults.successCount,
+        failedCount: updatedResults.failureCount,
+        totalCount: updatedResults.totalCount,
+      }
+    } catch (error) {
+      console.error('Error deleting all Mux assets:', error)
+      throw new Error('Failed to delete all Mux assets')
+    }
+  }
 }
+
