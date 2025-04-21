@@ -1,7 +1,6 @@
 // src/hooks/mux/deleteAssetOnVideoDelete.ts
-import { CollectionBeforeDeleteHook } from 'payload'
+import type { CollectionBeforeDeleteHook } from 'payload'
 import { createMuxService } from '@/services/mux'
-import { VideoDocument } from '@/types/payload'
 
 /**
  * Hook to delete a Mux asset when a video is deleted in the CMS
@@ -13,15 +12,15 @@ export const deleteAssetOnVideoDelete: CollectionBeforeDeleteHook = async ({
   req,
   collection,
 }) => {
-  if (collection.slug === 'ott-videos') {
+  if (collection.slug === 'videoassets') {
     try {
       const { payload } = req
 
       // Get the video data
       const video = (await payload.findByID({
-        collection: 'ott-videos',
+        collection: 'videoassets',
         id,
-      })) as VideoDocument
+      })) as any // Use proper type when available
 
       // Check if it's a Mux video with an asset ID
       if (video?.sourceType === 'mux' && video?.muxData?.assetId) {

@@ -5,8 +5,19 @@ import React, { useState, useEffect } from 'react'
 import Hls from 'hls.js'
 import MuxVideo from '@mux/mux-video-react'
 
+type VideoAsset = {
+  id: string
+  title: string
+  sourceType: 'mux' | 'embedded'
+  muxData?: {
+    playbackId?: string
+    status?: string
+  }
+  embeddedUrl?: string
+}
+
 type VideoPlayerProps = {
-  video: any // Your Video type
+  video: any // Can be either old Video type or new VideoAsset type
   autoplay?: boolean
   loop?: boolean
   muted?: boolean
@@ -56,8 +67,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   if (!video) return null
 
   // Handle different video source types
-  const isMuxVideo = video.sourceType === 'mux' && video.muxData?.playbackId
-  const isEmbeddedVideo = video.sourceType === 'embedded' && video.embeddedUrl
+  const isMuxVideo = video?.sourceType === 'mux' && video?.muxData?.playbackId
+  const isEmbeddedVideo = video?.sourceType === 'embedded' && video?.embeddedUrl
 
   if (isMuxVideo) {
     return (

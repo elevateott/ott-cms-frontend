@@ -19,10 +19,10 @@ const ListViewRefresher: React.FC = () => {
   const router = useRouter()
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [refreshCount, setRefreshCount] = useState(0)
-  const pendingVideosRef = useRef<Set<string>>(new Set())
+  // Track polling interval
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  const forceRefresh = (source?: string, data?: Record<string, unknown>): void => {
+  const forceRefresh = (source?: string): void => {
     console.log(`[ListViewRefresher] forceRefresh called${source ? ` from ${source}` : ''}`)
     router.refresh()
     setLastRefreshed(new Date())
@@ -57,33 +57,41 @@ const ListViewRefresher: React.FC = () => {
     EVENTS.VIDEO_UPLOAD_PROGRESS,
     EVENTS.VIDEO_UPLOAD_COMPLETED,
     EVENTS.VIDEO_UPLOAD_ERROR,
-    EVENTS.RELOAD_PAGE,
+    // Custom event for manual refresh
+    'RELOAD_PAGE' as string,
   ]
 
-  // Set up listeners for all relevant events
-  refresherEvents.forEach((eventName) => {
-    useEventBusOn(eventName, (data) => {
-      if (eventName === EVENTS.VIDEO_CREATED) {
-        startPolling()
-        setTimeout(() => {
-          forceRefresh('VIDEO_CREATED')
-        }, 3000)
-      } else if (eventName === EVENTS.VIDEO_UPLOAD_COMPLETED) {
-        // Client-side event from uploader: just start polling, no delay or forceRefresh needed
-        startPolling()
-      } else if (eventName === EVENTS.VIDEO_STATUS_READY) {
-        stopPolling()
-        forceRefresh(EVENTS.VIDEO_STATUS_READY)
-      } else if (eventName === EVENTS.VIDEO_UPDATED && data?.isStatusChange) {
-        setTimeout(() => {
-          forceRefresh('VIDEO_UPDATED')
-        }, 3000)
-      } else {
-        // For all other events, just refresh immediately
-        forceRefresh(eventName)
-      }
+  // Set up listeners for all relevant events in a useEffect
+  useEffect(() => {
+    // Set up event handlers
+    refresherEvents.forEach((eventName) => {
+      useEventBusOn(
+        eventName,
+        (data) => {
+          if (eventName === EVENTS.VIDEO_CREATED) {
+            startPolling()
+            setTimeout(() => {
+              forceRefresh('VIDEO_CREATED')
+            }, 3000)
+          } else if (eventName === EVENTS.VIDEO_UPLOAD_COMPLETED) {
+            // Client-side event from uploader: just start polling, no delay or forceRefresh needed
+            startPolling()
+          } else if (eventName === EVENTS.VIDEO_STATUS_READY) {
+            stopPolling()
+            forceRefresh(EVENTS.VIDEO_STATUS_READY)
+          } else if (eventName === EVENTS.VIDEO_UPDATED && data?.isStatusChange) {
+            setTimeout(() => {
+              forceRefresh('VIDEO_UPDATED')
+            }, 3000)
+          } else {
+            // For all other events, just refresh immediately
+            forceRefresh(eventName)
+          }
+        },
+        [startPolling, stopPolling, forceRefresh],
+      )
     })
-  })
+  }, [refresherEvents, startPolling, stopPolling, forceRefresh])
 
   useEffect(() => {
     return () => {

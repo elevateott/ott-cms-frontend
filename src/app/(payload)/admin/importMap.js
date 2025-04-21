@@ -17,13 +17,13 @@ import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 }
 import { SlugComponent as SlugComponent_92cc057d0a2abb4f6cf0307edf59f986 } from '@/fields/slug/SlugComponent'
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { default as default_d46ab6bfc842515651b5f3fd26db0f94 } from '@/collections/Videos/components/ThumbnailCell'
-import { default as default_4a693924dc6bcaf2cb86a4b715cfdcb5 } from '@/collections/Videos/components/StatusField'
-import { default as default_c978f8026cc38bd159688b3b4035a082 } from '@/collections/Videos/components/StatusCell'
+import { default as default_7365299d83dfa761a1edff1100fe1231 } from '@/collections/VideoAssets/components/ThumbnailCell'
+import { default as default_7e5679f467cca64e427803cb4bd4bfc5 } from '@/collections/VideoAssets/components/StatusField'
+import { default as default_3015ae6f5ca8b3e35eef170b626e5e37 } from '@/collections/VideoAssets/components/StatusCell'
 import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
-import { default as default_1bc43ae45facc344a6234830d4fc04dc } from '@/collections/Videos/components/VideoManagement'
+import { default as default_103936ce4210ac65790b25e3a792d754 } from '@/collections/VideoAssets/components/VideoManagement'
 import { default as default_e4e90e70e2f2dedb1c73872c8d10cb69 } from '@/components/EventMonitor'
-import { default as default_45fabfc1a612e4c88db72a775402856c } from '@/collections/Videos/components/ListViewRefresher'
+import { default as default_75412e40a17b9fc2b0e06c87153b4090 } from '@/collections/VideoAssets/components/ListViewRefresher'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -52,13 +52,13 @@ export const importMap = {
   "@/fields/slug/SlugComponent#SlugComponent": SlugComponent_92cc057d0a2abb4f6cf0307edf59f986,
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@/collections/Videos/components/ThumbnailCell#default": default_d46ab6bfc842515651b5f3fd26db0f94,
-  "@/collections/Videos/components/StatusField#default": default_4a693924dc6bcaf2cb86a4b715cfdcb5,
-  "@/collections/Videos/components/StatusCell#default": default_c978f8026cc38bd159688b3b4035a082,
+  "@/collections/VideoAssets/components/ThumbnailCell#default": default_7365299d83dfa761a1edff1100fe1231,
+  "@/collections/VideoAssets/components/StatusField#default": default_7e5679f467cca64e427803cb4bd4bfc5,
+  "@/collections/VideoAssets/components/StatusCell#default": default_3015ae6f5ca8b3e35eef170b626e5e37,
   "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,
-  "@/collections/Videos/components/VideoManagement#default": default_1bc43ae45facc344a6234830d4fc04dc,
+  "@/collections/VideoAssets/components/VideoManagement#default": default_103936ce4210ac65790b25e3a792d754,
   "@/components/EventMonitor#default": default_e4e90e70e2f2dedb1c73872c8d10cb69,
-  "@/collections/Videos/components/ListViewRefresher#default": default_45fabfc1a612e4c88db72a775402856c,
+  "@/collections/VideoAssets/components/ListViewRefresher#default": default_75412e40a17b9fc2b0e06c87153b4090,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,

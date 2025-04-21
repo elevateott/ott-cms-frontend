@@ -8,8 +8,8 @@ import { NextRequest } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
-import { createMuxService } from '@/services/serviceFactory'
-import { webhookHandlerService } from '@/services/mux/webhookHandlerService'
+import { createMuxService } from '@/services/mux'
+import VideoAssetWebhookHandler from '@/services/mux/videoAssetWebhookHandler'
 import { logError } from '@/utils/errorHandler'
 
 /**
@@ -59,11 +59,14 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Initialize Payload
+    // Initialize Payload (needed for the webhook handlers to access the database)
     const payload = await getPayload({ config: configPromise })
 
-    // Handle the event using the singleton instance
-    await webhookHandlerService.handleEvent(event)
+    // Create a new instance of the webhook handler with the payload context
+    const webhookHandler = new VideoAssetWebhookHandler(payload)
+
+    // Handle the event
+    await webhookHandler.handleEvent(event)
 
     return createApiResponse({ success: true })
   } catch (error: unknown) {

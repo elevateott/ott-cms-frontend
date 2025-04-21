@@ -73,7 +73,8 @@ export interface Config {
     categories: Category;
     users: User;
     'mux-webhook-jobs': MuxWebhookJob;
-    'ott-videos': OttVideo;
+    videoassets: Videoasset;
+    content: Content;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -91,7 +92,8 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'mux-webhook-jobs': MuxWebhookJobsSelect<false> | MuxWebhookJobsSelect<true>;
-    'ott-videos': OttVideosSelect<false> | OttVideosSelect<true>;
+    videoassets: VideoassetsSelect<false> | VideoassetsSelect<true>;
+    content: ContentSelect<false> | ContentSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -766,12 +768,11 @@ export interface MuxWebhookJob {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ott-videos".
+ * via the `definition` "videoassets".
  */
-export interface OttVideo {
+export interface Videoasset {
   id: string;
   title: string;
-  description?: string | null;
   slug?: string | null;
   slugLock?: boolean | null;
   /**
@@ -813,39 +814,52 @@ export interface OttVideo {
    */
   thumbnail?: (string | null) | Media;
   muxThumbnailUrl?: string | null;
-  category?: (string | null) | Category;
-  tags?: (string | Category)[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content".
+ */
+export interface Content {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
   /**
-   * Feature this video on the homepage or category pages
+   * Main poster image for this content
    */
-  featured?: boolean | null;
-  publishedAt?: string | null;
+  posterImage: string | Media;
   /**
-   * Control who can view this video
-   */
-  visibility?: ('public' | 'members' | 'premium' | 'private') | null;
-  /**
-   * Schedule when this video will be available
+   * When this content was or will be released
    */
   releaseDate?: string | null;
   /**
-   * Suggest related videos to watch next
+   * The main video for this content
    */
-  relatedVideos?: (string | OttVideo)[] | null;
+  mainVideo: string | Videoasset;
   /**
-   * Add this video to a series
+   * Optional trailer video for this content
    */
-  series?: (string | null) | Category;
+  trailerVideo?: (string | null) | Videoasset;
   /**
-   * Episode number (if part of a series)
+   * Additional bonus videos for this content
    */
-  episodeNumber?: number | null;
+  bonusVideos?:
+    | {
+        title: string;
+        description?: string | null;
+        video: string | Videoasset;
+        id?: string | null;
+      }[]
+    | null;
   /**
-   * Season number (if part of a series)
+   * Categories this content belongs to
    */
-  seasonNumber?: number | null;
-  createdAt: string;
+  categories?: (string | Category)[] | null;
   updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1044,8 +1058,12 @@ export interface PayloadLockedDocument {
         value: string | MuxWebhookJob;
       } | null)
     | ({
-        relationTo: 'ott-videos';
-        value: string | OttVideo;
+        relationTo: 'videoassets';
+        value: string | Videoasset;
+      } | null)
+    | ({
+        relationTo: 'content';
+        value: string | Content;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1425,11 +1443,10 @@ export interface MuxWebhookJobsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ott-videos_select".
+ * via the `definition` "videoassets_select".
  */
-export interface OttVideosSelect<T extends boolean = true> {
+export interface VideoassetsSelect<T extends boolean = true> {
   title?: T;
-  description?: T;
   slug?: T;
   slugLock?: T;
   sourceType?: T;
@@ -1446,18 +1463,33 @@ export interface OttVideosSelect<T extends boolean = true> {
   aspectRatio?: T;
   thumbnail?: T;
   muxThumbnailUrl?: T;
-  category?: T;
-  tags?: T;
-  featured?: T;
-  publishedAt?: T;
-  visibility?: T;
-  releaseDate?: T;
-  relatedVideos?: T;
-  series?: T;
-  episodeNumber?: T;
-  seasonNumber?: T;
   createdAt?: T;
   updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content_select".
+ */
+export interface ContentSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  posterImage?: T;
+  releaseDate?: T;
+  mainVideo?: T;
+  trailerVideo?: T;
+  bonusVideos?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        video?: T;
+        id?: T;
+      };
+  categories?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

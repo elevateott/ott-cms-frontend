@@ -251,15 +251,6 @@ export const Videos: CollectionConfig = {
       },
     },
     {
-      name: 'relatedVideos',
-      type: 'relationship',
-      relationTo: 'ott-videos',
-      hasMany: true,
-      admin: {
-        description: 'Suggest related videos to watch next',
-      },
-    },
-    {
       name: 'series',
       type: 'relationship',
       relationTo: 'categories',
@@ -311,10 +302,7 @@ export const Videos: CollectionConfig = {
         return data
       },
     ],
-    afterChange: [
-      // Add hook to handle Mux metadata updates
-      fetchMuxMetadata,
-    ],
+    afterChange: [fetchMuxMetadata],
     // We don't need a beforeDelete hook since we don't want to delete Mux assets when videos are deleted
   },
 }
