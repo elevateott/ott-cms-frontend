@@ -1,5 +1,6 @@
 'use client'
 
+// src\components\EventMonitor\EventMonitor.tsx
 import React, { useEffect, useState } from 'react'
 import { useEventBusMulti } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
@@ -30,10 +31,13 @@ export const EventMonitor: React.FC = () => {
 
   // Subscribe to all relevant events
   useEventBusMulti(
-    Object.entries(EVENTS).reduce((acc, [_, eventName]) => ({
-      ...acc,
-      [eventName]: (data: any) => addEvent(eventName, data)
-    }), {})
+    Object.entries(EVENTS).reduce(
+      (acc, [_, eventName]) => ({
+        ...acc,
+        [eventName]: (data: any) => addEvent(eventName, data),
+      }),
+      {},
+    ),
   )
 
   if (!isExpanded) {
@@ -69,4 +73,3 @@ export const EventMonitor: React.FC = () => {
 }
 
 export default EventMonitor
-

@@ -1,4 +1,4 @@
-import { emitSSE } from '@/app/api/events/route'
+import { emitSSE } from '@/app/api/events/stream/route'
 
 export class EventService {
   private static instance: EventService
@@ -34,7 +34,7 @@ export class EventService {
       videoId,
       status,
       timestamp: new Date().toISOString(),
-      ...data
+      ...data,
     })
   }
 
@@ -45,7 +45,7 @@ export class EventService {
     this.emit('video:created', {
       videoId,
       timestamp: new Date().toISOString(),
-      ...data
+      ...data,
     })
   }
 
@@ -55,7 +55,7 @@ export class EventService {
   emitVideoDeleted(videoId: string): void {
     this.emit('video:deleted', {
       videoId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
   }
 
@@ -66,11 +66,10 @@ export class EventService {
     this.emit('video:upload:progress', {
       videoId,
       progress,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
   }
 }
 
 // Export singleton instance
 export const eventService = EventService.getInstance()
-

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { EventBridge } from '../EventBridge'
+import EventBridge from '@/components/EventProvider/EventBridge'
 import { eventBus, EVENTS } from '@/utilities/eventBus'
 
 export function AdminEventProvider({ children }: { children: React.ReactNode }) {

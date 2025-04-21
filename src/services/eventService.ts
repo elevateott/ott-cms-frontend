@@ -1,5 +1,8 @@
+// src\services\eventService.ts
+
 import { EVENTS } from '@/constants/events'
 import { eventBus } from '@/utilities/eventBus'
+import { connectionManager } from '@/services/events/eventEmitter'
 
 /**
  * Service for handling event emission across the application
@@ -23,21 +26,19 @@ export class EventService {
    */
   async emit(event: keyof typeof EVENTS, data: any): Promise<void> {
     try {
-      console.log(`📢 EventService: Emitting event ${event}`, data)
-
-      // Emit to client-side event bus
-      eventBus.emit(event, {
+      const enriched = {
         ...data,
         timestamp: new Date().toISOString(),
         source: 'server',
-      })
+      }
 
-      // Here you could add additional event handling:
-      // - WebSocket broadcasting
-      // - Server-sent events (SSE)
-      // - External message queues
-      // - etc.
+      console.log(`📢 Emitting event: ${event}`, enriched)
 
+      // In-app listeners
+      eventBus.emit(event, enriched)
+
+      // SSE clients
+      connectionManager.sendEventToClients(event, enriched) // ✅ This makes the client see it
     } catch (error) {
       console.error(`Error emitting event ${event}:`, error)
       throw error
@@ -49,15 +50,17 @@ export class EventService {
    * @param events Array of event objects containing event name and data
    */
   async emitMultiple(events: Array<{ event: keyof typeof EVENTS; data: any }>): Promise<void> {
-    try {
-      await Promise.all(events.map(({ event, data }) => this.emit(event, data)))
-    } catch (error) {
-      console.error('Error emitting multiple events:', error)
-      throw error
+    const results = await Promise.allSettled(
+      events.map(({ event, data }) => this.emit(event, data)),
+    )
+
+    const errors = results.filter((r) => r.status === 'rejected')
+    if (errors.length > 0) {
+      console.error(`❌ ${errors.length} emit(s) failed`)
+      throw new Error(`${errors.length} events failed to emit`)
     }
   }
 }
 
 // Export singleton instance
 export const eventService = EventService.getInstance()
-

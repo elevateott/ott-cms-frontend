@@ -1,3 +1,5 @@
+// src\components\EventProvider\EventBridge.tsx
+
 import { useEffect } from 'react'
 import { eventBus } from '@/utilities/eventBus'
 import { EVENTS } from '@/constants/events'

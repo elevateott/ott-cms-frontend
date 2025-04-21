@@ -7,6 +7,8 @@
 import { ReadableStreamController } from 'node:stream/web'
 import { logError } from '@/utils/errorHandler'
 import { EVENTS } from '@/constants/events'
+import { EventEmitter } from 'events'
+export const eventBus = new EventEmitter()
 
 // Store active connections with cleanup
 class ConnectionManager {
@@ -71,16 +73,18 @@ class ConnectionManager {
     const standardizedEvent = event.replace(/_/g, ':')
 
     if (this.clients.size === 0) {
-      console.warn(`🔍 DEBUG [EventEmitter] No clients connected to receive event: ${standardizedEvent}`)
+      console.warn(
+        `🔍 DEBUG [EventEmitter] No clients connected to receive event: ${standardizedEvent}`,
+      )
       return
     }
 
     this.clients.forEach((controller, id) => {
       try {
         console.log(`🔍 DEBUG [EventEmitter] Sending event ${standardizedEvent} to client ${id}`)
-        controller.enqueue(encoder.encode(
-          `event: ${standardizedEvent}\ndata: ${JSON.stringify(data)}\n\n`
-        ))
+        controller.enqueue(
+          encoder.encode(`event: ${standardizedEvent}\ndata: ${JSON.stringify(data)}\n\n`),
+        )
       } catch (error) {
         console.error(
           `🔍 DEBUG [EventEmitter] Error sending event ${standardizedEvent} to client ${id}:`,
@@ -119,5 +123,3 @@ export function emitVideoUpdated(id: string, isStatusChange: boolean = false): v
   console.log(`🔍 DEBUG [EventEmitter] isStatusChange: ${isStatusChange}`)
   sendEventToClients(EVENTS.VIDEO_UPDATED, { id, isStatusChange })
 }
-
-
