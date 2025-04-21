@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useEventBusOn } from '@/hooks/useEventBus'
+import { useEventBusMulti } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
 
 /**
@@ -47,41 +47,22 @@ const ListViewRefresher: React.FC = () => {
     }
   }
 
-  // Handle VIDEO_CREATED events
-  useEventBusOn(
-    EVENTS.VIDEO_CREATED,
-    () => {
+  // Use useEventBusMulti to handle all events
+  useEventBusMulti({
+    [EVENTS.VIDEO_CREATED]: () => {
       startPolling()
       setTimeout(() => {
         forceRefresh('VIDEO_CREATED')
       }, 3000)
     },
-    [startPolling, forceRefresh]
-  )
-
-  // Handle VIDEO_UPLOAD_COMPLETED events
-  useEventBusOn(
-    EVENTS.VIDEO_UPLOAD_COMPLETED,
-    () => {
+    [EVENTS.VIDEO_UPLOAD_COMPLETED]: () => {
       startPolling()
     },
-    [startPolling]
-  )
-
-  // Handle VIDEO_STATUS_READY events
-  useEventBusOn(
-    EVENTS.VIDEO_STATUS_READY,
-    () => {
+    [EVENTS.VIDEO_STATUS_READY]: () => {
       stopPolling()
       forceRefresh(EVENTS.VIDEO_STATUS_READY)
     },
-    [stopPolling, forceRefresh]
-  )
-
-  // Handle VIDEO_UPDATED events
-  useEventBusOn(
-    EVENTS.VIDEO_UPDATED,
-    (data) => {
+    [EVENTS.VIDEO_UPDATED]: (data) => {
       if (data?.isStatusChange) {
         setTimeout(() => {
           forceRefresh('VIDEO_UPDATED')
@@ -90,53 +71,22 @@ const ListViewRefresher: React.FC = () => {
         forceRefresh(EVENTS.VIDEO_UPDATED)
       }
     },
-    [forceRefresh]
-  )
-
-  // Handle VIDEO_STATUS_UPDATED events
-  useEventBusOn(
-    EVENTS.VIDEO_STATUS_UPDATED,
-    () => {
+    [EVENTS.VIDEO_STATUS_UPDATED]: () => {
       forceRefresh(EVENTS.VIDEO_STATUS_UPDATED)
     },
-    [forceRefresh]
-  )
-
-  // Handle VIDEO_UPLOAD_STARTED events
-  useEventBusOn(
-    EVENTS.VIDEO_UPLOAD_STARTED,
-    () => {
+    [EVENTS.VIDEO_UPLOAD_STARTED]: () => {
       forceRefresh(EVENTS.VIDEO_UPLOAD_STARTED)
     },
-    [forceRefresh]
-  )
-
-  // Handle VIDEO_UPLOAD_PROGRESS events
-  useEventBusOn(
-    EVENTS.VIDEO_UPLOAD_PROGRESS,
-    () => {
+    [EVENTS.VIDEO_UPLOAD_PROGRESS]: () => {
       forceRefresh(EVENTS.VIDEO_UPLOAD_PROGRESS)
     },
-    [forceRefresh]
-  )
-
-  // Handle VIDEO_UPLOAD_ERROR events
-  useEventBusOn(
-    EVENTS.VIDEO_UPLOAD_ERROR,
-    () => {
+    [EVENTS.VIDEO_UPLOAD_ERROR]: () => {
       forceRefresh(EVENTS.VIDEO_UPLOAD_ERROR)
     },
-    [forceRefresh]
-  )
-
-  // Handle RELOAD_PAGE events
-  useEventBusOn(
-    'RELOAD_PAGE',
-    () => {
+    RELOAD_PAGE: () => {
       forceRefresh('RELOAD_PAGE')
     },
-    [forceRefresh]
-  )
+  })
 
   useEffect(() => {
     return () => {
@@ -163,6 +113,3 @@ const ListViewRefresher: React.FC = () => {
 }
 
 export default ListViewRefresher
-
-
-
