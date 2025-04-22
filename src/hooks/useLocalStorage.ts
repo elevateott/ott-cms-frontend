@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/utils/logger'
+
 import { useState, useEffect, useRef } from 'react'
 
 // Hook for using localStorage with React
@@ -23,7 +25,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         setStoredValue(value)
       }
     } catch (error) {
-      console.error(`Error reading localStorage key "${key}":`, error)
+      logger.error({ context: 'LocalStorage' }, `Error reading localStorage key "${key}":`, error)
     }
 
     // Mark that we've done the first render
@@ -45,7 +47,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         window.localStorage.setItem(key, JSON.stringify(valueToStore))
       }
     } catch (error) {
-      console.error(`Error setting localStorage key "${key}":`, error)
+      logger.error({ context: 'LocalStorage' }, `Error setting localStorage key "${key}":`, error)
     }
   }
 

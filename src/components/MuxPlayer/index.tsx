@@ -1,5 +1,7 @@
-// src/components/MuxPlayer.tsx
 'use client'
+
+// src/components/MuxPlayer.tsx
+
 
 import React, { useEffect, useRef, useState } from 'react'
 import MuxVideoReact from '@mux/mux-video-react'

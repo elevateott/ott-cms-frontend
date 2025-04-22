@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { NextResponse } from 'next/server'
 import payload from 'payload'
 
@@ -57,7 +58,7 @@ export async function POST() {
       message: 'Collection created successfully' 
     })
   } catch (error) {
-    console.error('Error initializing collections:', error)
+    logger.error({ context: 'init-collections/route' }, 'Error initializing collections:', error)
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

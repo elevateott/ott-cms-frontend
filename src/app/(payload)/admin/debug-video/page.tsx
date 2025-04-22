@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,7 +52,7 @@ export default function DebugVideoPage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating video:', err)
+      clientLogger.error('Error creating video:', err, 'debug-video/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)
@@ -78,7 +81,7 @@ export default function DebugVideoPage() {
       })
 
       const data = await response.json()
-      console.log('Direct Payload API response:', data)
+      clientLogger.info('Direct Payload API response:', data, 'debug-video/page')
 
       if (response.ok) {
         setResult(data)
@@ -87,7 +90,7 @@ export default function DebugVideoPage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating video:', err)
+      clientLogger.error('Error creating video:', err, 'debug-video/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)

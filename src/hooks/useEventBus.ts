@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * useEventBus Hook
  *
@@ -23,11 +24,11 @@ export function useEventBusOn<T = any>(
   const memoizedCallback = useCallback(callback, deps)
 
   useEffect(() => {
-    console.log(`🔍 DEBUG [useEventBusOn] Subscribing to event: ${event}`)
+    logger.info({ context: 'EventBus' }, `🔍 DEBUG [useEventBusOn] Subscribing to event: ${event}`)
 
     // Create a wrapper function that will be called when the event is emitted
     const eventHandler = (data?: T) => {
-      console.log(`🔍 DEBUG [useEventBusOn] Event received: ${event}`, data)
+      logger.info({ context: 'EventBus' }, `🔍 DEBUG [useEventBusOn] Event received: ${event}`, data)
       memoizedCallback(data)
     }
 
@@ -36,7 +37,7 @@ export function useEventBusOn<T = any>(
 
     // Unsubscribe when the component unmounts or the dependencies change
     return () => {
-      console.log(`🔍 DEBUG [useEventBusOn] Unsubscribing from event: ${event}`)
+      logger.info({ context: 'EventBus' }, `🔍 DEBUG [useEventBusOn] Unsubscribing from event: ${event}`)
       unsubscribe()
     }
   }, [event, memoizedCallback])
@@ -75,7 +76,7 @@ export function useEventBusOnce<T = any>(
  */
 export function useEventBusEmit(): <T = any>(event: string, data?: T) => void {
   return useCallback(<T = any>(event: string, data?: T) => {
-    console.log(`🔍 DEBUG [useEventBusEmit] Emitting event: ${event}`, data)
+    logger.info({ context: 'EventBus' }, `🔍 DEBUG [useEventBusEmit] Emitting event: ${event}`, data)
     eventBus.emit<T>(event, data)
   }, [])
 }

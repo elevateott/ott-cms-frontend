@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { getPayload } from '@/utils/getPayload'
 
 export class VideoAssetRepository {
@@ -13,7 +14,7 @@ export class VideoAssetRepository {
     try {
       return await this.findByField('muxData.uploadId', uploadId)
     } catch (error) {
-      console.error('❌ Error in findByMuxUploadId:', error)
+      logger.error({ context: 'repositories/videoAssetRepository' }, '❌ Error in findByMuxUploadId:', error)
       throw error
     }
   }
@@ -22,7 +23,7 @@ export class VideoAssetRepository {
     try {
       return await this.findByField('muxData.assetId', assetId)
     } catch (error) {
-      console.error('❌ Error in findByMuxAssetId:', error)
+      logger.error({ context: 'repositories/videoAssetRepository' }, '❌ Error in findByMuxAssetId:', error)
       throw error
     }
   }
@@ -40,7 +41,7 @@ export class VideoAssetRepository {
 
       return result
     } catch (error) {
-      console.error(`Failed to update video asset ${id}:`, error)
+      logger.error({ context: 'repositories/videoAssetRepository' }, `Failed to update video asset ${id}:`, error)
       throw error
     }
   }
@@ -57,7 +58,7 @@ export class VideoAssetRepository {
 
       return result
     } catch (error) {
-      console.error('Failed to create video asset:', error)
+      logger.error({ context: 'repositories/videoAssetRepository' }, 'Failed to create video asset:', error)
       throw error
     }
   }
@@ -74,7 +75,7 @@ export class VideoAssetRepository {
 
       return true
     } catch (error) {
-      console.error(`Failed to delete video asset ${id}:`, error)
+      logger.error({ context: 'repositories/videoAssetRepository' }, `Failed to delete video asset ${id}:`, error)
       return false
     }
   }
@@ -95,7 +96,7 @@ export class VideoAssetRepository {
 
       return result.docs[0] || null
     } catch (error) {
-      console.error(`Failed to find video asset by ${field}:`, error)
+      logger.error({ context: 'repositories/videoAssetRepository' }, `Failed to find video asset by ${field}:`, error)
       return null
     }
   }

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { NextRequest } from 'next/server'
 
 export async function GET(
@@ -32,7 +33,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error(
+    logger.error({ context: 'stats/route' }, 
       'Error fetching video stats:',
       error instanceof Error ? error.message : 'Unknown error',
     )

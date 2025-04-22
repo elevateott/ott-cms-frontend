@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Utility to directly update the status in the list view
  * This is a workaround for when the React state updates don't trigger a re-render
@@ -7,12 +8,12 @@
  * Find all status cells in the list view and update them if they match the given video ID
  */
 export const updateStatusInListView = (videoId: string, newStatus: string): boolean => {
-  console.log(`🔍 DEBUG [directStatusUpdate] Attempting to update status for video ${videoId} to ${newStatus}`)
+  logger.info({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Attempting to update status for video ${videoId} to ${newStatus}`)
   
   try {
     // Find all links in the list view that might contain the video ID
     const videoLinks = document.querySelectorAll('a[href*="/admin/collections/videos/"]')
-    console.log(`🔍 DEBUG [directStatusUpdate] Found ${videoLinks.length} video links in the list view`)
+    logger.info({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Found ${videoLinks.length} video links in the list view`)
     
     let updated = false
     
@@ -20,12 +21,12 @@ export const updateStatusInListView = (videoId: string, newStatus: string): bool
     videoLinks.forEach(link => {
       const href = link.getAttribute('href')
       if (href && href.includes(videoId)) {
-        console.log(`🔍 DEBUG [directStatusUpdate] Found link for video ${videoId}: ${href}`)
+        logger.info({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Found link for video ${videoId}: ${href}`)
         
         // Find the row that contains this link
         const row = link.closest('tr')
         if (row) {
-          console.log(`🔍 DEBUG [directStatusUpdate] Found row for video ${videoId}`)
+          logger.info({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Found row for video ${videoId}`)
           
           // Find all cells in this row
           const cells = row.querySelectorAll('td')
@@ -38,7 +39,7 @@ export const updateStatusInListView = (videoId: string, newStatus: string): bool
               cellText.includes('ready') || 
               cellText.includes('error')
             ) {
-              console.log(`🔍 DEBUG [directStatusUpdate] Found status cell at index ${index} with text: ${cellText}`)
+              logger.info({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Found status cell at index ${index} with text: ${cellText}`)
               
               // Create a new status badge based on the new status
               let badgeHTML = ''
@@ -61,7 +62,7 @@ export const updateStatusInListView = (videoId: string, newStatus: string): bool
               
               // Update the cell content
               cell.innerHTML = badgeHTML
-              console.log(`🔍 DEBUG [directStatusUpdate] Updated status cell for video ${videoId} to ${newStatus}`)
+              logger.info({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Updated status cell for video ${videoId} to ${newStatus}`)
               updated = true
             }
           })
@@ -71,7 +72,7 @@ export const updateStatusInListView = (videoId: string, newStatus: string): bool
     
     return updated
   } catch (error) {
-    console.error(`🔍 DEBUG [directStatusUpdate] Error updating status in list view:`, error)
+    logger.error({ context: 'utils/directStatusUpdate' }, `🔍 DEBUG [directStatusUpdate] Error updating status in list view:`, error)
     return false
   }
 }

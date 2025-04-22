@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,7 +47,7 @@ export default function TestVideoPage() {
       })
 
       const data = await response.json()
-      console.log('API response:', data)
+      clientLogger.info('API response:', data, 'test-video/page')
 
       if (response.ok) {
         setResult(data)
@@ -53,7 +56,7 @@ export default function TestVideoPage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating video:', err)
+      clientLogger.error('Error creating video:', err, 'test-video/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)

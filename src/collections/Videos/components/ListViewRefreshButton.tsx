@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useEffect, useState } from 'react'
 import { useEventBusOn } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
@@ -16,7 +19,7 @@ const ListViewRefreshButton: React.FC = () => {
 
   // Function to refresh the list view - DISABLED FOR NOW
   const refreshList = () => {
-    console.log('DISABLED: Would normally refresh list view due to Mux webhook event')
+    clientLogger.info('DISABLED: Would normally refresh list view due to Mux webhook event', 'components/ListViewRefreshButton')
     // Just update the last refreshed time without actually refreshing
     setLastRefreshed(new Date())
 
@@ -28,16 +31,16 @@ const ListViewRefreshButton: React.FC = () => {
         '.collection-list button[title="Refresh"]',
       ) as HTMLButtonElement
       if (refreshButton) {
-        console.log('Found refresh button, clicking it')
+        clientLogger.info('Found refresh button, clicking it', 'components/ListViewRefreshButton')
         refreshButton.click()
         setLastRefreshed(new Date())
       } else {
-        console.log('Refresh button not found')
+        clientLogger.info('Refresh button not found', 'components/ListViewRefreshButton')
         // Fallback to window.location.reload()
         window.location.reload()
       }
     } catch (error) {
-      console.error('Error refreshing list:', error)
+      clientLogger.error('Error refreshing list:', error, 'components/ListViewRefreshButton')
     }
     */
   }
@@ -53,13 +56,13 @@ const ListViewRefreshButton: React.FC = () => {
     EVENTS.VIDEO_CREATED,
     (data) => {
       setEventCounts((prev) => ({ ...prev, created: prev.created + 1 }))
-      console.log(
-        `ListViewRefreshButton received video_created event (${eventCounts.created + 1}):`,
+      clientLogger.info(
+        `ListViewRefreshButton received video_created event (${eventCounts.created + 1}, 'components/ListViewRefreshButton'):`,
         data,
       )
       // Add a small delay to ensure the database has been updated
       setTimeout(() => {
-        console.log('Refreshing list due to video_created event')
+        clientLogger.info('Refreshing list due to video_created event', 'components/ListViewRefreshButton')
         refreshList()
         setLastRefreshed(new Date())
       }, 1000)
@@ -72,13 +75,13 @@ const ListViewRefreshButton: React.FC = () => {
     EVENTS.VIDEO_UPDATED,
     (data) => {
       setEventCounts((prev) => ({ ...prev, updated: prev.updated + 1 }))
-      console.log(
-        `ListViewRefreshButton received video_updated event (${eventCounts.updated + 1}):`,
+      clientLogger.info(
+        `ListViewRefreshButton received video_updated event (${eventCounts.updated + 1}, 'components/ListViewRefreshButton'):`,
         data,
       )
       // Add a small delay to ensure the database has been updated
       setTimeout(() => {
-        console.log('Refreshing list due to video_updated event')
+        clientLogger.info('Refreshing list due to video_updated event', 'components/ListViewRefreshButton')
 
         // Try multiple refresh methods to ensure the list is updated
         try {
@@ -91,29 +94,29 @@ const ListViewRefreshButton: React.FC = () => {
             '.collection-list button[title="Refresh"]',
           ) as HTMLButtonElement
           if (refreshButton) {
-            console.log('Found refresh button, clicking it directly')
+            clientLogger.info('Found refresh button, clicking it directly', 'components/ListViewRefreshButton')
             refreshButton.click()
           }
 
           // Method 3: Reload the page if the status was updated to 'ready'
           if (data && data.id) {
-            console.log('Checking if we need to reload the page for video:', data.id)
+            clientLogger.info('Checking if we need to reload the page for video:', data.id, 'components/ListViewRefreshButton')
             // If this is a status change to ready, force a page reload
             fetch(`/api/videos/${data.id}`)
               .then((response) => response.json())
               .then((videoData) => {
                 if (videoData && videoData.muxData && videoData.muxData.status === 'ready') {
-                  console.log('Video status is ready, reloading the page in 2 seconds')
+                  clientLogger.info('Video status is ready, reloading the page in 2 seconds', 'components/ListViewRefreshButton')
                   setTimeout(() => {
-                    console.log('Reloading page now')
+                    clientLogger.info('Reloading page now', 'components/ListViewRefreshButton')
                     window.location.reload()
                   }, 2000)
                 }
               })
-              .catch((err) => console.error('Error fetching video data:', err))
+              .catch((err) => clientLogger.error('Error fetching video data:', err), 'components/ListViewRefreshButton')
           }
         } catch (error) {
-          console.error('Error during refresh attempts:', error)
+          clientLogger.error('Error during refresh attempts:', error, 'components/ListViewRefreshButton')
         }
       }, 1000)
     },
@@ -122,7 +125,7 @@ const ListViewRefreshButton: React.FC = () => {
 
   // Add a button to the list view toolbar when the component mounts
   useEffect(() => {
-    console.log('ListViewRefreshButton mounted - listening for video events')
+    clientLogger.info('ListViewRefreshButton mounted - listening for video events', 'components/ListViewRefreshButton')
 
     // Create a function to add the button to the toolbar
     const addButtonToToolbar = () => {
@@ -132,7 +135,7 @@ const ListViewRefreshButton: React.FC = () => {
       )
 
       if (toolbar && !document.getElementById('mux-auto-refresh-button')) {
-        console.log('Found toolbar, adding button')
+        clientLogger.info('Found toolbar, adding button', 'components/ListViewRefreshButton')
 
         // Create the button
         const button = document.createElement('button')
@@ -148,7 +151,7 @@ const ListViewRefreshButton: React.FC = () => {
         toolbar.appendChild(button)
         setIsVisible(true)
       } else {
-        console.log('Toolbar not found or button already exists')
+        clientLogger.info('Toolbar not found or button already exists', 'components/ListViewRefreshButton')
       }
     }
 
@@ -161,7 +164,7 @@ const ListViewRefreshButton: React.FC = () => {
     // Try again every 2 seconds until the button is added
     const intervalId = setInterval(() => {
       if (!document.getElementById('mux-auto-refresh-button')) {
-        console.log('Retrying to add button to toolbar')
+        clientLogger.info('Retrying to add button to toolbar', 'components/ListViewRefreshButton')
         addButtonToToolbar()
       } else {
         clearInterval(intervalId)
@@ -169,7 +172,7 @@ const ListViewRefreshButton: React.FC = () => {
     }, 2000)
 
     return () => {
-      console.log('ListViewRefreshButton unmounted')
+      clientLogger.info('ListViewRefreshButton unmounted', 'components/ListViewRefreshButton')
       clearTimeout(timeoutId)
       clearInterval(intervalId)
 

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useEffect } from 'react'
 
 const HideCreateButton: React.FC = () => {
@@ -12,7 +15,7 @@ const HideCreateButton: React.FC = () => {
         if (button.textContent?.includes('Create New')) {
           // Hide the button
           button.style.display = 'none'
-          console.log('Hid the "Create New" button')
+          clientLogger.info('Hid the "Create New" button', 'components/HideCreateButton')
           break
         }
       }

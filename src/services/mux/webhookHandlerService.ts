@@ -8,7 +8,8 @@ import { EventService } from '@/services/eventService'
 import { EVENTS } from '@/constants/events'
 import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
 import VideoAssetRepository from '@/repositories/videoAssetRepository'
-import { logError } from '@/utilities/errorLogging'
+import { logError } from '@/utils/errorHandler'
+import { logger } from '@/utils/logger'
 
 export class WebhookHandlerService {
   private static instance: WebhookHandlerService
@@ -32,9 +33,9 @@ export class WebhookHandlerService {
       this.eventService = EventService.getInstance()
       this.videoAssetRepository = new VideoAssetRepository()
       this.initialized = true
-      console.log('✅ WebhookHandlerService initialized successfully')
+      logger.info({ context: 'WebhookHandlerService' }, 'Service initialized successfully')
     } catch (error) {
-      console.error('❌ Error initializing WebhookHandlerService:', error)
+      logger.error({ context: 'WebhookHandlerService', error }, 'Error initializing service')
       throw error
     }
   }
@@ -61,7 +62,10 @@ export class WebhookHandlerService {
 
     const timestamp = new Date().toISOString()
     const { type, data } = event
-    console.log(`🔔 WEBHOOK [${timestamp}] Received webhook event: ${type}`)
+    logger.info(
+      { context: 'WebhookHandlerService', type, timestamp },
+      `Received webhook event: ${type}`,
+    )
 
     switch (type) {
       case MUX_WEBHOOK_EVENT_TYPES.ASSET_CREATED:
@@ -85,7 +89,10 @@ export class WebhookHandlerService {
         break
 
       default:
-        console.log(`🔔 WEBHOOK [${timestamp}] Unhandled webhook event type: ${type}`)
+        logger.info(
+          { context: 'WebhookHandlerService', type, timestamp },
+          `Unhandled webhook event type: ${type}`,
+        )
     }
   }
 
@@ -94,7 +101,10 @@ export class WebhookHandlerService {
    */
   private async handleAssetCreated(data: any): Promise<void> {
     const timestamp = new Date().toISOString()
-    console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.created event`)
+    logger.info(
+      { context: 'WebhookHandlerService', timestamp, eventType: 'asset.created' },
+      'Processing asset.created event',
+    )
 
     try {
       const { id: assetId, playback_ids, upload_id } = data
@@ -151,7 +161,10 @@ export class WebhookHandlerService {
 
       await this.emitEvent(EVENTS.VIDEO_CREATED, newAsset)
     } catch (error) {
-      console.error(`🔔 WEBHOOK [${timestamp}] Error handling asset created:`, error)
+      logger.error(
+        { context: 'WebhookHandlerService', timestamp, error },
+        'Error handling asset.created event',
+      )
       throw error
     }
   }
@@ -161,7 +174,10 @@ export class WebhookHandlerService {
    */
   private async handleAssetReady(data: any): Promise<void> {
     const timestamp = new Date().toISOString()
-    console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.ready event`)
+    logger.info(
+      { context: 'WebhookHandlerService', timestamp, eventType: 'asset.ready' },
+      'Processing asset.ready event',
+    )
 
     try {
       const { id: assetId, duration, aspect_ratio: aspectRatio, playback_ids: playbackIds } = data
@@ -169,7 +185,10 @@ export class WebhookHandlerService {
 
       const asset = await this.videoAssetRepository.findByMuxAssetId(assetId)
       if (!asset) {
-        console.log(`🔔 WEBHOOK [${timestamp}] No asset found for assetId ${assetId}`)
+        logger.warn(
+          { context: 'WebhookHandlerService', timestamp, assetId },
+          `No asset found for assetId ${assetId}`,
+        )
         return
       }
 
@@ -192,7 +211,10 @@ export class WebhookHandlerService {
         await this.emitEvent(EVENTS.VIDEO_STATUS_READY, updatedAsset)
       }
     } catch (error) {
-      console.error(`🔔 WEBHOOK [${timestamp}] Error handling asset ready:`, error)
+      logger.error(
+        { context: 'WebhookHandlerService', timestamp, error },
+        'Error handling asset.ready event',
+      )
       throw error
     }
   }
@@ -202,14 +224,20 @@ export class WebhookHandlerService {
    */
   private async handleAssetDeleted(data: any): Promise<void> {
     const timestamp = new Date().toISOString()
-    console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.deleted event`)
+    logger.info(
+      { context: 'WebhookHandlerService', timestamp, eventType: 'asset.deleted' },
+      'Processing asset.deleted event',
+    )
 
     try {
       const { id: assetId } = data
       const asset = await this.videoAssetRepository.findByMuxAssetId(assetId)
 
       if (!asset) {
-        console.log(`🔔 WEBHOOK [${timestamp}] No asset found for assetId ${assetId}`)
+        logger.warn(
+          { context: 'WebhookHandlerService', timestamp, assetId },
+          `No asset found for assetId ${assetId}`,
+        )
         return
       }
 
@@ -227,14 +255,20 @@ export class WebhookHandlerService {
    */
   private async handleUploadAssetCreated(data: any): Promise<void> {
     const timestamp = new Date().toISOString()
-    console.log(`🔔 WEBHOOK [${timestamp}] Processing upload.asset_created event`)
+    logger.info(
+      { context: 'WebhookHandlerService', timestamp, eventType: 'upload.asset_created' },
+      'Processing upload.asset_created event',
+    )
 
     try {
       const { id: uploadId, asset_id: assetId } = data
       const asset = await this.videoAssetRepository.findByMuxUploadId(uploadId)
 
       if (!asset) {
-        console.log(`🔔 WEBHOOK [${timestamp}] No asset found for uploadId ${uploadId}`)
+        logger.warn(
+          { context: 'WebhookHandlerService', timestamp, uploadId },
+          `No asset found for uploadId ${uploadId}`,
+        )
         return
       }
 
@@ -251,7 +285,10 @@ export class WebhookHandlerService {
         await this.emitEvent(EVENTS.VIDEO_UPDATED, updatedAsset)
       }
     } catch (error) {
-      console.error(`🔔 WEBHOOK [${timestamp}] Error in handleUploadAssetCreated:`, error)
+      logger.error(
+        { context: 'WebhookHandlerService', timestamp, error },
+        'Error in handleUploadAssetCreated',
+      )
     }
   }
 
@@ -260,14 +297,20 @@ export class WebhookHandlerService {
    */
   private async handleNonStandardInput(data: any): Promise<void> {
     const timestamp = new Date().toISOString()
-    console.log(`🔔 WEBHOOK [${timestamp}] Processing non_standard_input event`)
+    logger.info(
+      { context: 'WebhookHandlerService', timestamp, eventType: 'non_standard_input_detected' },
+      'Processing non_standard_input event',
+    )
 
     try {
       const { upload_id, video_quality, tracks } = data
       const asset = await this.videoAssetRepository.findByMuxUploadId(upload_id)
 
       if (!asset) {
-        console.log(`🔔 WEBHOOK [${timestamp}] No asset found for uploadId ${upload_id}`)
+        logger.warn(
+          { context: 'WebhookHandlerService', timestamp, uploadId: upload_id },
+          `No asset found for uploadId ${upload_id}`,
+        )
         return
       }
 
@@ -285,13 +328,13 @@ export class WebhookHandlerService {
         await this.emitEvent(EVENTS.VIDEO_UPDATED, updatedAsset)
       }
     } catch (error) {
-      console.error(`🔔 WEBHOOK [${timestamp}] Error in handleNonStandardInput:`, error)
+      logger.error(
+        { context: 'WebhookHandlerService', timestamp, error },
+        'Error in handleNonStandardInput',
+      )
     }
   }
 }
 
 // Export singleton instance
 export const webhookHandlerService = WebhookHandlerService.getInstance()
-
-
-

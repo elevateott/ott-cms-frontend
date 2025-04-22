@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { BeforeSync, DocToSync } from '@payloadcms/plugin-search/types'
 
 export const beforeSyncWithSearch: BeforeSync = async ({ originalDoc, searchDoc }) => {
@@ -34,7 +35,7 @@ export const beforeSyncWithSearch: BeforeSync = async ({ originalDoc, searchDoc 
 
       modifiedDoc.categories = mappedCategories
     } catch (_err) {
-      console.error(
+      logger.error({ context: 'search/beforeSync' }, 
         `Failed. Category not found when syncing collection '${collection}' with id: '${id}' to search.`,
       )
     }

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Video Asset Webhook Handler Service
  *
@@ -25,9 +26,9 @@ export class VideoAssetWebhookHandler {
       this.eventService = EventService.getInstance()
       this.videoAssetRepository = new VideoAssetRepository({ payload })
       this.initialized = true
-      console.log('✅ VideoAssetWebhookHandler initialized successfully')
+      logger.info({ context: 'muxService' }, '✅ VideoAssetWebhookHandler initialized successfully')
     } catch (error) {
-      console.error('❌ Error initializing VideoAssetWebhookHandler:', error)
+      logger.error({ context: 'muxService' }, '❌ Error initializing VideoAssetWebhookHandler:', error)
       throw error
     }
   }
@@ -41,13 +42,13 @@ export class VideoAssetWebhookHandler {
    */
   public async handleEvent(event: any): Promise<void> {
     if (!this.initialized) {
-      console.error('❌ VideoAssetWebhookHandler not properly initialized')
+      logger.error({ context: 'muxService' }, '❌ VideoAssetWebhookHandler not properly initialized')
       throw new Error('Service not initialized')
     }
 
     try {
       const { type, data } = event
-      console.log(`🔔 WEBHOOK [${new Date().toISOString()}] Received webhook event: ${type}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${new Date().toISOString()}] Received webhook event: ${type}`)
 
       switch (type) {
         case MUX_WEBHOOK_EVENT_TYPES.ASSET_CREATED:
@@ -68,7 +69,7 @@ export class VideoAssetWebhookHandler {
 
         case 'video.upload.created':
           // Log but no action needed - we'll handle the asset creation
-          console.log('🔔 WEBHOOK: Received video.upload.created event')
+          logger.info({ context: 'muxService' }, '🔔 WEBHOOK: Received video.upload.created event')
           break
 
         case MUX_WEBHOOK_EVENT_TYPES.NON_STANDARD_INPUT_DETECTED:
@@ -76,10 +77,10 @@ export class VideoAssetWebhookHandler {
           break
 
         default:
-          console.log(`Unhandled webhook event type: ${type}`)
+          logger.info({ context: 'muxService' }, `Unhandled webhook event type: ${type}`)
       }
     } catch (error) {
-      console.error('Error handling webhook event:', error)
+      logger.error({ context: 'muxService' }, 'Error handling webhook event:', error)
       throw error
     }
   }
@@ -98,7 +99,7 @@ export class VideoAssetWebhookHandler {
   private async handleAssetCreated(data: any): Promise<void> {
     try {
       const timestamp = new Date().toISOString()
-      console.log(`🔍 DEBUG [${timestamp}] Starting handleAssetCreated`)
+      logger.info({ context: 'muxService' }, `🔍 DEBUG [${timestamp}] Starting handleAssetCreated`)
 
       const { id: assetId, playback_ids, upload_id } = data
 
@@ -110,10 +111,10 @@ export class VideoAssetWebhookHandler {
       })
 
       if (upload_id) {
-        console.log(`🔍 DEBUG [${timestamp}] Searching for video asset with upload_id:`, upload_id)
+        logger.info({ context: 'muxService' }, `🔍 DEBUG [${timestamp}] Searching for video asset with upload_id:`, upload_id)
         try {
           const existingVideo = await this.videoAssetRepository.findByMuxUploadId(upload_id)
-          console.log(`🔍 DEBUG [${timestamp}] Search result:`, existingVideo)
+          logger.info({ context: 'muxService' }, `🔍 DEBUG [${timestamp}] Search result:`, existingVideo)
           if (existingVideo) {
             const thumbnailUrl = playback_ids?.[0]?.id
               ? this.getThumbnailUrl(playback_ids[0].id)
@@ -135,7 +136,7 @@ export class VideoAssetWebhookHandler {
             return
           }
         } catch (error) {
-          console.error(`🔍 DEBUG [${timestamp}] Error finding video asset by upload_id:`, error)
+          logger.error({ context: 'muxService' }, `🔍 DEBUG [${timestamp}] Error finding video asset by upload_id:`, error)
         }
       }
 
@@ -158,7 +159,7 @@ export class VideoAssetWebhookHandler {
 
       await this.emitEvent(EVENTS.VIDEO_CREATED, newVideo)
     } catch (error) {
-      console.error('Error handling asset created:', error)
+      logger.error({ context: 'muxService' }, 'Error handling asset created:', error)
       throw error
     }
   }
@@ -168,29 +169,29 @@ export class VideoAssetWebhookHandler {
    */
   private async handleAssetReady(data: any): Promise<void> {
     const timestamp = new Date().toISOString()
-    console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.ready event`)
+    logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Processing asset.ready event`)
 
     try {
       const { id: assetId } = data
-      console.log(`🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId}`)
 
       // Extract useful metadata from the asset data
       const { duration, aspect_ratio: aspectRatio, playback_ids: playbackIds } = data
       const playbackId = playbackIds?.[0]?.id
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Asset metadata:`, {
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Asset metadata:`, {
         duration: duration || 'N/A',
         aspectRatio: aspectRatio || 'N/A',
         playbackId: playbackId || 'N/A',
       })
 
       // Find video with this assetId
-      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video asset with asset ID: ${assetId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Looking for video asset with asset ID: ${assetId}`)
       let video
       try {
         video = await this.videoAssetRepository.findByMuxAssetId(assetId)
       } catch (findError) {
-        console.error(
+        logger.error({ context: 'muxService' }, 
           `🔔 WEBHOOK [${timestamp}] Database error while finding video asset:`,
           findError,
         )
@@ -204,10 +205,10 @@ export class VideoAssetWebhookHandler {
         return
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
-        console.log(
+        logger.info({ context: 'muxService' }, 
           `🔔 WEBHOOK [${timestamp}] No video asset found for assetId ${assetId}, creating placeholder`,
         )
         // Optionally create a placeholder video record
@@ -227,7 +228,7 @@ export class VideoAssetWebhookHandler {
           })
           await this.emitEvent(EVENTS.VIDEO_CREATED, newVideo)
         } catch (createError) {
-          console.error(
+          logger.error({ context: 'muxService' }, 
             `🔔 WEBHOOK [${timestamp}] Error creating placeholder video asset:`,
             createError,
           )
@@ -241,17 +242,17 @@ export class VideoAssetWebhookHandler {
         return
       }
 
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `Found video asset ${video.id} for assetId ${assetId}, current status: ${video.muxData?.status}`,
       )
 
       // Only update if status is not already 'ready'
       if (video.muxData?.status === 'ready') {
-        console.log(`Video asset ${video.id} is already in ready state, skipping update`)
+        logger.info({ context: 'muxService' }, `Video asset ${video.id} is already in ready state, skipping update`)
         return
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset ${video.id} status to ready`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Updating video asset ${video.id} status to ready`)
 
       // Prepare update data with all available metadata
       const updateData: any = {}
@@ -259,12 +260,12 @@ export class VideoAssetWebhookHandler {
       // Add metadata fields if they're available and not already set
       if (duration && !video.duration) {
         updateData.duration = duration
-        console.log(`🔔 WEBHOOK [${timestamp}] Setting duration: ${duration}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting duration: ${duration}`)
       }
 
       if (aspectRatio && !video.aspectRatio) {
         updateData.aspectRatio = aspectRatio
-        console.log(`🔔 WEBHOOK [${timestamp}] Setting aspect ratio: ${aspectRatio}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting aspect ratio: ${aspectRatio}`)
       }
 
       // Always update muxData
@@ -272,36 +273,36 @@ export class VideoAssetWebhookHandler {
         ...video.muxData,
         status: 'ready',
       }
-      console.log(`🔔 WEBHOOK [${timestamp}] Setting status: ready`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting status: ready`)
 
       // Add playbackId if available and not already set
       if (playbackId && !video.muxData?.playbackId) {
         updateData.muxData.playbackId = playbackId
-        console.log(`🔔 WEBHOOK [${timestamp}] Setting playback ID: ${playbackId}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting playback ID: ${playbackId}`)
       }
 
       // Update thumbnail URL if we have a playback ID
       if (playbackId && !video.muxThumbnailUrl) {
         const thumbnailUrl = this.getThumbnailUrl(playbackId)
         updateData.muxThumbnailUrl = thumbnailUrl
-        console.log(`🔔 WEBHOOK [${timestamp}] Setting thumbnail URL: ${thumbnailUrl}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting thumbnail URL: ${thumbnailUrl}`)
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
 
       // Update the video with the asset data
-      console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
       try {
         // Clear the cache for this asset to ensure fresh data on next fetch
         this.muxService.clearAssetCache(assetId)
-        console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
 
         const updatedVideo = await this.videoAssetRepository.update(video.id, updateData)
         if (updatedVideo) {
           await this.emitEvent(EVENTS.VIDEO_STATUS_READY, updatedVideo)
         }
       } catch (updateError) {
-        console.error(`🔔 WEBHOOK [${timestamp}] Error updating video asset:`, updateError)
+        logger.error({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Error updating video asset:`, updateError)
         await this.emitEvent(EVENTS.VIDEO_STATUS_UPDATED, {
           id: video.id,
           assetId,
@@ -311,7 +312,7 @@ export class VideoAssetWebhookHandler {
         })
       }
     } catch (error) {
-      console.error(`🔔 WEBHOOK [${timestamp}] Unhandled error in handleAssetReady:`, error)
+      logger.error({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Unhandled error in handleAssetReady:`, error)
       await this.emitEvent(EVENTS.VIDEO_STATUS_UPDATED, {
         status: 'error',
         error: 'Unhandled error processing video',
@@ -326,33 +327,33 @@ export class VideoAssetWebhookHandler {
   private async handleUploadAssetCreated(data: any): Promise<void> {
     try {
       const timestamp = new Date().toISOString()
-      console.log(`🔔 WEBHOOK [${timestamp}] Processing upload.asset_created event`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Processing upload.asset_created event`)
 
       const { id: uploadId, asset_id: assetId } = data
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Upload ID: ${uploadId}`)
-      console.log(`🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId || 'N/A'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Upload ID: ${uploadId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId || 'N/A'}`)
 
       // Find video with this uploadId
-      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video asset with upload ID: ${uploadId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Looking for video asset with upload ID: ${uploadId}`)
       const video = await this.videoAssetRepository.findByMuxUploadId(uploadId)
-      console.log(`🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
-        console.log(
+        logger.info({ context: 'muxService' }, 
           `🔔 WEBHOOK [${timestamp}] No video asset found for uploadId ${uploadId}, skipping update`,
         )
         return
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Found video asset ID: ${video.id}`)
-      console.log(
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Found video asset ID: ${video.id}`)
+      logger.info({ context: 'muxService' }, 
         `🔔 WEBHOOK [${timestamp}] Current video asset status: ${video.muxData?.status || 'N/A'}`,
       )
 
       // Prepare update data
       const updateStatus = video.muxData?.status !== 'ready'
-      console.log(`🔔 WEBHOOK [${timestamp}] Will update status: ${updateStatus ? 'Yes' : 'No'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Will update status: ${updateStatus ? 'Yes' : 'No'}`)
 
       const updateData: any = {
         muxData: {
@@ -363,29 +364,29 @@ export class VideoAssetWebhookHandler {
         },
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Setting asset ID: ${assetId}`)
-      console.log(`🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting asset ID: ${assetId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
 
       // Update the video with the asset data
-      console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
 
       // Clear the cache for this asset to ensure fresh data on next fetch
       if (assetId) {
         this.muxService.clearAssetCache(assetId)
-        console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
       }
 
       const updatedVideo = await this.videoAssetRepository.update(video.id, updateData)
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `🔔 WEBHOOK [${timestamp}] Video asset update result: ${updatedVideo ? 'Success' : 'Failed'}`,
       )
 
       if (updatedVideo) {
-        console.log(`Updated video asset ${video.id} with Mux asset ID`)
+        logger.info({ context: 'muxService' }, `Updated video asset ${video.id} with Mux asset ID`)
         await this.emitEvent(EVENTS.VIDEO_UPDATED, updatedVideo)
       }
     } catch (error) {
-      console.error('Error in handleUploadAssetCreated:', error)
+      logger.error({ context: 'muxService' }, 'Error in handleUploadAssetCreated:', error)
     }
   }
 
@@ -395,42 +396,42 @@ export class VideoAssetWebhookHandler {
   private async handleAssetDeleted(data: any): Promise<void> {
     try {
       const timestamp = new Date().toISOString()
-      console.log(`🔔 WEBHOOK [${timestamp}] Processing asset.deleted event`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Processing asset.deleted event`)
 
       const { id: assetId } = data
-      console.log(`🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Asset ID: ${assetId}`)
 
       // Find video with this assetId
-      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video asset with asset ID: ${assetId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Looking for video asset with asset ID: ${assetId}`)
       const video = await this.videoAssetRepository.findByMuxAssetId(assetId)
-      console.log(`🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
-        console.log(`No video asset found for assetId ${assetId}, nothing to delete`)
+        logger.info({ context: 'muxService' }, `No video asset found for assetId ${assetId}, nothing to delete`)
         return
       }
 
-      console.log(`Found video asset ${video.id} for assetId ${assetId}, proceeding with deletion`)
+      logger.info({ context: 'muxService' }, `Found video asset ${video.id} for assetId ${assetId}, proceeding with deletion`)
 
       // Clear the cache for this asset
       this.muxService.clearAssetCache(assetId)
-      console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
 
       // Delete the video from our database
-      console.log(`🔔 WEBHOOK [${timestamp}] Deleting video asset ${video.id} from database...`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Deleting video asset ${video.id} from database...`)
       const success = await this.videoAssetRepository.delete(video.id)
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `🔔 WEBHOOK [${timestamp}] Video asset deletion result: ${success ? 'Success' : 'Failed'}`,
       )
 
       if (success) {
-        console.log(`Successfully deleted video asset ${video.id} after Mux asset deletion`)
+        logger.info({ context: 'muxService' }, `Successfully deleted video asset ${video.id} after Mux asset deletion`)
         await this.emitEvent(EVENTS.VIDEO_DELETED, { id: video.id })
       } else {
-        console.error(`Failed to delete video asset ${video.id} after Mux asset deletion`)
+        logger.error({ context: 'muxService' }, `Failed to delete video asset ${video.id} after Mux asset deletion`)
       }
     } catch (error) {
-      console.error('Error in handleAssetDeleted:', error)
+      logger.error({ context: 'muxService' }, 'Error in handleAssetDeleted:', error)
     }
   }
 
@@ -440,28 +441,28 @@ export class VideoAssetWebhookHandler {
   private async handleNonStandardInput(data: any): Promise<void> {
     try {
       const timestamp = new Date().toISOString()
-      console.log(`🔔 WEBHOOK [${timestamp}] Processing non-standard input detected event`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Processing non-standard input detected event`)
 
       const { upload_id, video_quality, tracks } = data
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Upload ID: ${upload_id || 'N/A'}`)
-      console.log(`🔔 WEBHOOK [${timestamp}] Video Quality: ${video_quality || 'N/A'}`)
-      console.log(`🔔 WEBHOOK [${timestamp}] Tracks:`, JSON.stringify(tracks || [], null, 2))
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Upload ID: ${upload_id || 'N/A'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Video Quality: ${video_quality || 'N/A'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Tracks:`, JSON.stringify(tracks || [], null, 2))
 
       // Find the video with this upload ID
-      console.log(`🔔 WEBHOOK [${timestamp}] Looking for video asset with upload ID: ${upload_id}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Looking for video asset with upload ID: ${upload_id}`)
       const video = await this.videoAssetRepository.findByMuxUploadId(upload_id)
-      console.log(`🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Video asset found: ${video ? 'Yes' : 'No'}`)
 
       if (!video) {
-        console.log(
+        logger.info({ context: 'muxService' }, 
           `🔔 WEBHOOK [${timestamp}] No video asset found for uploadId ${upload_id}, skipping update`,
         )
         return
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Found video asset ID: ${video.id}`)
-      console.log(
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Found video asset ID: ${video.id}`)
+      logger.info({ context: 'muxService' }, 
         `🔔 WEBHOOK [${timestamp}] Current video asset status: ${video.muxData?.status || 'N/A'}`,
       )
 
@@ -471,46 +472,46 @@ export class VideoAssetWebhookHandler {
         ...video.muxData,
         nonStandardInput: true,
       }
-      console.log(`🔔 WEBHOOK [${timestamp}] Setting nonStandardInput: true`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting nonStandardInput: true`)
 
       // Add video quality if available
       if (video_quality) {
         muxDataUpdate.videoQuality = video_quality
-        console.log(`🔔 WEBHOOK [${timestamp}] Setting videoQuality: ${video_quality}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting videoQuality: ${video_quality}`)
       }
 
       // Add tracks if available
       if (tracks) {
         muxDataUpdate.tracks = tracks
-        console.log(`🔔 WEBHOOK [${timestamp}] Setting tracks:`, JSON.stringify(tracks, null, 2))
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting tracks:`, JSON.stringify(tracks, null, 2))
       }
 
       const updateData = {
         muxData: muxDataUpdate,
       }
 
-      console.log(`🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Update data:`, JSON.stringify(updateData, null, 2))
 
       // Update the video with the non-standard input information
-      console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
+      logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
 
       // Clear the cache if we have an asset ID
       if (video.muxData?.assetId) {
         this.muxService.clearAssetCache(video.muxData.assetId)
-        console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${video.muxData.assetId}`)
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${video.muxData.assetId}`)
       }
 
       const updatedVideo = await this.videoAssetRepository.update(video.id, updateData)
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `🔔 WEBHOOK [${timestamp}] Video asset update result: ${updatedVideo ? 'Success' : 'Failed'}`,
       )
 
       if (updatedVideo) {
-        console.log(`Updated video asset ${video.id} with non-standard input information`)
+        logger.info({ context: 'muxService' }, `Updated video asset ${video.id} with non-standard input information`)
         await this.emitEvent(EVENTS.VIDEO_UPDATED, updatedVideo)
       }
     } catch (error) {
-      console.error('Error in handleNonStandardInput:', error)
+      logger.error({ context: 'muxService' }, 'Error in handleNonStandardInput:', error)
     }
   }
 }

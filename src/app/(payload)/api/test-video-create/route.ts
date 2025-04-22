@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Test Video Creation API
  * 
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
       slugLock: true,
     }
 
-    console.log('Attempting to create test video:', JSON.stringify(minimalVideo, null, 2))
+    logger.info({ context: 'test-video-create/route' }, 'Attempting to create test video:', JSON.stringify(minimalVideo, null, 2))
     
     try {
       const result = await payload.create({
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
         video: result,
       })
     } catch (createError) {
-      console.error('Error creating test video:', createError)
+      logger.error({ context: 'test-video-create/route' }, 'Error creating test video:', createError)
       
       // Try to extract validation errors
       let validationErrors = null

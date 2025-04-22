@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Create Video API
  *
@@ -29,7 +30,7 @@ export const POST = createPostHandler(
     // Process the filename to create a title
     const title = removeFileExtension(filename)
 
-    console.log(`Creating video document with uploadId ${uploadId} and title ${title}`)
+    logger.info({ context: 'create-video/route' }, `Creating video document with uploadId ${uploadId} and title ${title}`)
 
     // Create a video repository
     const videoRepository = createVideoRepository(payload)
@@ -58,7 +59,7 @@ export const POST = createPostHandler(
       return createErrorResponse('Failed to create video', 500)
     }
 
-    console.log(`Created new video document with uploadId ${uploadId}:`, video.id)
+    logger.info({ context: 'create-video/route' }, `Created new video document with uploadId ${uploadId}:`, video.id)
 
     return createApiResponse({
       message: 'Video created successfully',

@@ -1,5 +1,8 @@
-// src/collections/Videos/components/MuxUploaderField.tsx
 'use client'
+
+import { clientLogger } from '@/utils/clientLogger';
+// src/collections/Videos/components/MuxUploaderField.tsx
+
 
 import React, { useEffect, useState } from 'react'
 import { useField } from '@payloadcms/ui'
@@ -23,20 +26,20 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
 
   // Log component mounting and current value
   useEffect(() => {
-    console.log('MuxUploaderField mounted with value:', value)
+    clientLogger.info('MuxUploaderField mounted with value:', value, 'components/MuxUploaderField')
     return () => {
-      console.log('MuxUploaderField unmounted')
+      clientLogger.info('MuxUploaderField unmounted', 'components/MuxUploaderField')
     }
   }, [])
 
   // Log value changes
   useEffect(() => {
-    console.log('MuxUploaderField value changed:', value)
+    clientLogger.info('MuxUploaderField value changed:', value, 'components/MuxUploaderField')
   }, [value])
 
   const getUploadUrl = async (file?: File) => {
     try {
-      console.log('Getting upload URL for file:', file?.name, 'size:', file?.size)
+      clientLogger.info('Getting upload URL for file:', file?.name, 'size:', file?.size, 'components/MuxUploaderField')
       const res = await fetch(API_ROUTES.MUX_DIRECT_UPLOAD, {
         method: 'POST',
         headers: {
@@ -47,20 +50,20 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
       })
 
       if (!res.ok) {
-        console.error('Failed to create upload URL, status:', res.status)
+        clientLogger.error('Failed to create upload URL, status:', res.status, 'components/MuxUploaderField')
         throw new Error(`Failed to create upload URL: ${res.status} ${res.statusText}`)
       }
 
       const data = await res.json()
-      console.log('Upload URL response:', data)
+      clientLogger.info('Upload URL response:', data, 'components/MuxUploaderField')
 
       if (!data.data?.url || !data.data?.uploadId) {
-        console.error('Invalid response from server:', data)
+        clientLogger.error('Invalid response from server:', data, 'components/MuxUploaderField')
         throw new Error('Invalid response from server')
       }
 
       // Update the muxData field
-      console.log('Setting value with uploadId:', data.data.uploadId)
+      clientLogger.info('Setting value with uploadId:', data.data.uploadId, 'components/MuxUploaderField')
       setValue({
         ...(value as any),
         uploadId: data.data.uploadId,
@@ -69,7 +72,7 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
 
       return data.data.url
     } catch (error) {
-      console.error('Error creating Mux upload:', error)
+      clientLogger.error('Error creating Mux upload:', error, 'components/MuxUploaderField')
       setError('Failed to create upload URL')
       setUploadStatus('error')
       return null
@@ -87,16 +90,16 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
         <div className="w-full h-48 border-2 border-dashed rounded-lg flex items-center justify-center">
           <MuxUploader
             endpoint={(file?: File | undefined) => {
-              console.log('MuxUploader endpoint called with file:', file?.name)
+              clientLogger.info('MuxUploader endpoint called with file:', file?.name, 'components/MuxUploaderField')
               return file
                 ? getUploadUrl(file).then((url) => {
-                    console.log('Got upload URL:', url)
+                    clientLogger.info('Got upload URL:', url, 'components/MuxUploaderField')
                     return url || ''
                   })
                 : Promise.resolve('')
             }}
             onUploadStart={() => {
-              console.log('MuxUploader onUploadStart called')
+              clientLogger.info('MuxUploader onUploadStart called', 'components/MuxUploaderField')
               setUploadStatus('uploading')
               setProgress(0)
             }}
@@ -104,7 +107,7 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
               // Cast the native event to access the detail property
               const evt = event as unknown as CustomEvent<number>
               const progressValue = evt.detail * 100
-              console.log('MuxUploader onProgress:', progressValue.toFixed(2) + '%')
+              clientLogger.info('MuxUploader onProgress:', progressValue.toFixed(2) + '%', 'components/MuxUploaderField')
               setProgress(progressValue)
             }}
             onSuccess={(event) => {
@@ -118,11 +121,11 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
                 | undefined
               >
 
-              console.log('MuxUploader onSuccess called with event:', evt)
+              clientLogger.info('MuxUploader onSuccess called with event:', evt, 'components/MuxUploaderField')
 
               if (evt.detail) {
-                console.log('Upload success:', evt.detail)
-                console.log('Setting value with assetId:', evt.detail.asset_id)
+                clientLogger.info('Upload success:', evt.detail, 'components/MuxUploaderField')
+                clientLogger.info('Setting value with assetId:', evt.detail.asset_id, 'components/MuxUploaderField')
                 setValue({
                   ...(value as any),
                   status: 'processing',
@@ -131,14 +134,14 @@ const MuxUploaderField: React.FC<MuxUploaderFieldProps> = ({ path, label }) => {
                 })
                 setUploadStatus('processing')
               } else {
-                console.error('Upload success event missing detail')
+                clientLogger.error('Upload success event missing detail', 'components/MuxUploaderField')
               }
             }}
             onError={(event) => {
               // Cast the event appropriately
-              console.error('MuxUploader onError called with event:', event)
+              clientLogger.error('MuxUploader onError called with event:', event, 'components/MuxUploaderField')
               const error = event as unknown as Error
-              console.error('Upload error:', error)
+              clientLogger.error('Upload error:', error, 'components/MuxUploaderField')
               setError(error.message || 'Unknown error')
               setUploadStatus('error')
             }}

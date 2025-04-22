@@ -2,6 +2,7 @@
 import { eventBus } from '@/services/events/eventEmitter'
 import { headers } from 'next/headers'
 import { EVENTS } from '@/constants/events'
+import { logger } from '@/utils/logger'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -21,7 +22,7 @@ export async function GET() {
 
   const stream = new ReadableStream({
     start(controller) {
-      console.log(`[SSE] Connection opened: ${connectionId}`)
+      logger.info({ context: 'SSE', connectionId }, `Connection opened: ${connectionId}`)
 
       // Send initial connection message
       controller.enqueue(
@@ -61,7 +62,7 @@ export async function GET() {
         try {
           controller.close()
         } catch (error) {
-          console.error(`[SSE] Cleanup error for ${connectionId}`, error)
+          logger.error({ context: 'SSE', connectionId, error }, `Cleanup error for ${connectionId}`)
         }
       }
 
@@ -71,7 +72,7 @@ export async function GET() {
     cancel() {
       closed = true
       if (keepAliveInterval) clearInterval(keepAliveInterval)
-      console.log(`[SSE] Connection closed: ${connectionId}`)
+      logger.info({ context: 'SSE', connectionId }, `Connection closed: ${connectionId}`)
     },
   })
 

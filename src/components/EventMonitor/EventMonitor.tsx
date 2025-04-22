@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 // src\components\EventMonitor\EventMonitor.tsx
 import React, { useEffect, useState } from 'react'
 import { useEventBusMulti } from '@/hooks/useEventBus'
@@ -17,7 +20,7 @@ export const EventMonitor: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const addEvent = (type: string, data: any) => {
-    console.log(`📝 EventMonitor received ${type}:`, data)
+    clientLogger.info(`📝 EventMonitor received ${type}:`, data, 'EventMonitorEventMonitor')
     setEvents((prev) => [
       {
         id: Math.random().toString(36).substr(2, 9),

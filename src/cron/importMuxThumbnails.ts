@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 // src/cron/importMuxThumbnails.ts
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
@@ -82,6 +83,6 @@ export async function importMuxThumbnails() {
     }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error(`Error in importMuxThumbnails job: ${errorMessage}`)
+    logger.error({ context: 'cron/importMuxThumbnails' }, `Error in importMuxThumbnails job: ${errorMessage}`)
   }
 }

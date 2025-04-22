@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import payload from 'payload'
 
 export class VideoRepository {
@@ -14,7 +15,7 @@ export class VideoRepository {
     try {
       return await this.findByField('muxData.uploadId', uploadId)
     } catch (error) {
-      console.error('❌ Error in findByMuxUploadId:', error)
+      logger.error({ context: 'repositories/videoRepository' }, '❌ Error in findByMuxUploadId:', error)
       throw error
     }
   }
@@ -26,7 +27,7 @@ export class VideoRepository {
     try {
       return await this.findByField('muxData.assetId', assetId)
     } catch (error) {
-      console.error(`Failed to find video by asset ID ${assetId}:`, error)
+      logger.error({ context: 'repositories/videoRepository' }, `Failed to find video by asset ID ${assetId}:`, error)
       throw error
     }
   }
@@ -42,7 +43,7 @@ export class VideoRepository {
         data,
       })
     } catch (error) {
-      console.error(`Failed to update video ${id}:`, error)
+      logger.error({ context: 'repositories/videoRepository' }, `Failed to update video ${id}:`, error)
       throw error
     }
   }
@@ -57,7 +58,7 @@ export class VideoRepository {
         data,
       })
     } catch (error) {
-      console.error('Failed to create video:', error)
+      logger.error({ context: 'repositories/videoRepository' }, 'Failed to create video:', error)
       throw error
     }
   }
@@ -73,7 +74,7 @@ export class VideoRepository {
       })
       return true
     } catch (error) {
-      console.error(`Failed to delete video ${id}:`, error)
+      logger.error({ context: 'repositories/videoRepository' }, `Failed to delete video ${id}:`, error)
       return false
     }
   }
@@ -94,7 +95,7 @@ export class VideoRepository {
 
       return result.docs[0] || null
     } catch (error) {
-      console.error(`Failed to find video by ${field}:`, error)
+      logger.error({ context: 'repositories/videoRepository' }, `Failed to find video by ${field}:`, error)
       return null
     }
   }

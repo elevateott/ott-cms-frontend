@@ -1,5 +1,7 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger'
+
 import React, { useState, useEffect } from 'react'
 import { ContentCard } from '@/components/ContentCard'
 import { Button } from '@/components/ui/button'
@@ -51,7 +53,7 @@ export const ContentList: React.FC<ContentListProps> = ({
       setPage(pageNum)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
-      console.error('Error fetching content:', err)
+      clientLogger.error('Error fetching content:', err, 'ContentListindex')
     } finally {
       setLoading(false)
     }

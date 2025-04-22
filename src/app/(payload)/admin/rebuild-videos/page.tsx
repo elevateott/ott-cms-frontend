@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -78,7 +81,7 @@ export default function RebuildVideosPage() {
         return false
       }
     } catch (err) {
-      console.error('Error resetting Videos collection:', err)
+      clientLogger.error('Error resetting Videos collection:', err, 'rebuild-videos/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
       return false
     } finally {
@@ -115,7 +118,7 @@ export default function RebuildVideosPage() {
         return false
       }
     } catch (err) {
-      console.error('Error testing minimal collection:', err)
+      clientLogger.error('Error testing minimal collection:', err, 'rebuild-videos/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
       return false
     } finally {

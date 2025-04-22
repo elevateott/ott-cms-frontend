@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Delete All Videos API
  * 
@@ -37,7 +38,7 @@ export async function DELETE(req: NextRequest) {
       })
     }
 
-    console.log(`Deleting ${totalVideos} videos...`)
+    logger.info({ context: 'delete-all/route' }, `Deleting ${totalVideos} videos...`)
 
     // Delete each video
     const deletePromises = videoIds.map(id => 
@@ -49,7 +50,7 @@ export async function DELETE(req: NextRequest) {
 
     await Promise.all(deletePromises)
 
-    console.log(`Successfully deleted ${totalVideos} videos`)
+    logger.info({ context: 'delete-all/route' }, `Successfully deleted ${totalVideos} videos`)
 
     return createApiResponse({ 
       message: `Successfully deleted ${totalVideos} videos`,

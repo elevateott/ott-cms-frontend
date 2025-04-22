@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useEffect } from 'react'
 
 export default function DebugScriptPage() {
@@ -13,22 +16,22 @@ export default function DebugScriptPage() {
         input.includes('/api/videos') && 
         init?.method === 'POST'
       ) {
-        console.log('Intercepted fetch to /api/videos:')
-        console.log('URL:', input)
-        console.log('Method:', init.method)
-        console.log('Headers:', init.headers)
+        clientLogger.info('Intercepted fetch to /api/videos:', 'debug-script/page')
+        clientLogger.info('URL:', input, 'debug-script/page')
+        clientLogger.info('Method:', init.method, 'debug-script/page')
+        clientLogger.info('Headers:', init.headers, 'debug-script/page')
         
         // Log the request body
         if (init.body) {
           if (typeof init.body === 'string') {
             try {
               const bodyJson = JSON.parse(init.body)
-              console.log('Request Body (JSON):', bodyJson)
+              clientLogger.info('Request Body (JSON):', bodyJson, 'debug-script/page')
             } catch (e) {
-              console.log('Request Body (Text):', init.body)
+              clientLogger.info('Request Body (Text):', init.body, 'debug-script/page')
             }
           } else {
-            console.log('Request Body (Non-string):', init.body)
+            clientLogger.info('Request Body (Non-string):', init.body, 'debug-script/page')
           }
         }
         
@@ -40,9 +43,9 @@ export default function DebugScriptPage() {
             body: init.body,
           })
           const debugData = await debugResponse.json()
-          console.log('Debug Endpoint Response:', debugData)
+          clientLogger.info('Debug Endpoint Response:', debugData, 'debug-script/page')
         } catch (error) {
-          console.error('Error sending to debug endpoint:', error)
+          clientLogger.error('Error sending to debug endpoint:', error, 'debug-script/page')
         }
       }
       
@@ -50,12 +53,12 @@ export default function DebugScriptPage() {
       return originalFetch.apply(this, arguments)
     }
     
-    console.log('Debug script installed. Form submissions to /api/videos will be intercepted and logged.')
+    clientLogger.info('Debug script installed. Form submissions to /api/videos will be intercepted and logged.', 'debug-script/page')
     
     // Clean up
     return () => {
       window.fetch = originalFetch
-      console.log('Debug script removed.')
+      clientLogger.info('Debug script removed.', 'debug-script/page')
     }
   }, [])
   

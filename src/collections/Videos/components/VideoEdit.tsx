@@ -1,5 +1,7 @@
-// src/collections/Videos/components/VideoEdit.tsx
 'use client'
+
+// src/collections/Videos/components/VideoEdit.tsx
+
 
 import React, { useEffect, useState } from 'react'
 import MuxUploaderField from './MuxUploaderField'

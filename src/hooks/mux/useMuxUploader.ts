@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { useEffect, useState } from 'react'
 import { useField } from '@payloadcms/ui'
 
@@ -33,7 +34,7 @@ export const useMuxUploader = (path: string) => {
 
       return data.url
     } catch (error) {
-      console.error('Error getting upload URL:', error)
+      logger.error({ context: 'mux' }, 'Error getting upload URL:', error)
       setError('Failed to get upload URL')
       setUploadStatus('error')
       return null
@@ -71,7 +72,7 @@ export const useMuxUploader = (path: string) => {
       // Handle upload errors
       uploader.addEventListener('uploaderror', function(event: Event) {
         const customEvent = event as any
-        console.error('Upload error:', customEvent.detail)
+        logger.error({ context: 'mux' }, 'Upload error:', customEvent.detail)
         setError(customEvent.detail.message || 'Upload failed')
         setUploadStatus('error')
       })

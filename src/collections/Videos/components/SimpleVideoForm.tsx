@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { eventBus } from '@/utilities/eventBus'
@@ -63,18 +66,18 @@ const SimpleVideoForm: React.FC = () => {
 
       // Get the response text first to ensure we can see it even if JSON parsing fails
       const responseText = await response.text()
-      console.log('Response Text:', responseText)
+      clientLogger.info('Response Text:', responseText, 'components/SimpleVideoForm')
 
       let data
       try {
         data = JSON.parse(responseText)
       } catch (parseError) {
-        console.error('Error parsing response as JSON:', parseError)
+        clientLogger.error('Error parsing response as JSON:', parseError, 'components/SimpleVideoForm')
         setError(`Failed to parse response as JSON: ${responseText}`)
         return
       }
 
-      console.log('Response Data:', data)
+      clientLogger.info('Response Data:', data, 'components/SimpleVideoForm')
 
       if (response.ok) {
         setResult(data)
@@ -103,7 +106,7 @@ const SimpleVideoForm: React.FC = () => {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating video:', err)
+      clientLogger.error('Error creating video:', err, 'components/SimpleVideoForm')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)

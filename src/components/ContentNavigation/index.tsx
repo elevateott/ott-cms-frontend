@@ -1,5 +1,7 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger'
+
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -31,7 +33,7 @@ export const ContentNavigation: React.FC = () => {
         const data = await response.json()
         setCategories(data.docs || [])
       } catch (error) {
-        console.error('Error fetching categories:', error)
+        clientLogger.error('Error fetching categories:', error, 'ContentNavigationindex')
       } finally {
         setLoading(false)
       }
@@ -74,9 +76,7 @@ export const ContentNavigation: React.FC = () => {
           <DropdownMenuContent align="end">
             {categories.map((category) => (
               <DropdownMenuItem key={category.id} asChild>
-                <Link href={`/category/${category.slug}`}>
-                  {category.title}
-                </Link>
+                <Link href={`/category/${category.slug}`}>{category.title}</Link>
               </DropdownMenuItem>
             ))}
             <DropdownMenuItem asChild>

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * useEventSource Hook
  *
@@ -30,7 +31,7 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
   const connect = useCallback(() => {
     const now = Date.now()
     if (now - lastConnectionAttemptRef.current < MINIMUM_RECONNECT_DELAY) {
-      console.log('Throttling connection attempt...')
+      logger.info({ context: 'EventSource' }, 'Throttling connection attempt...')
       return
     }
     lastConnectionAttemptRef.current = now
@@ -47,13 +48,13 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
         eventSourceRef.current = null
       }
 
-      console.log('Creating new EventSource connection...')
+      logger.info({ context: 'EventSource' }, 'Creating new EventSource connection...')
       const eventSource = new EventSource(url)
       eventSourceRef.current = eventSource
 
       // Connection opened
       eventSource.onopen = () => {
-        console.log('SSE Connection opened')
+        logger.info({ context: 'EventSource' }, 'SSE Connection opened')
         setConnected(true)
         reconnectAttemptsRef.current = 0
         if (onOpen) onOpen()
@@ -61,7 +62,7 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
 
       // Handle errors
       eventSource.onerror = (error) => {
-        console.log('SSE Connection error:', error)
+        logger.info({ context: 'EventSource' }, 'SSE Connection error:', error)
 
         if (eventSource.readyState === EventSource.CLOSED) {
           setConnected(false)
@@ -69,7 +70,7 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
 
           // Don't attempt to reconnect if we got a 503
           if ((error as any).status === 503) {
-            console.log('Too many connections, waiting longer before retry...')
+            logger.info({ context: 'EventSource' }, 'Too many connections, waiting longer before retry...')
             const backoffTime = INITIAL_RETRY_DELAY * 2
             if (reconnectTimeoutRef.current) {
               clearTimeout(reconnectTimeoutRef.current)
@@ -84,7 +85,7 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
               INITIAL_RETRY_DELAY * Math.pow(2, reconnectAttemptsRef.current),
               MAX_RETRY_DELAY
             )
-            console.log(`Attempting reconnect in ${backoffTime}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RECONNECT_ATTEMPTS})`)
+            logger.info({ context: 'EventSource' }, `Attempting reconnect in ${backoffTime}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RECONNECT_ATTEMPTS})`)
 
             if (reconnectTimeoutRef.current) {
               clearTimeout(reconnectTimeoutRef.current)
@@ -104,14 +105,14 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
             const data = event.data ? JSON.parse(event.data) : {}
             handler(data)
           } catch (error) {
-            console.error(`Error handling ${eventName} event:`, error)
+            logger.error({ context: 'EventSource' }, `Error handling ${eventName} event:`, error)
             handler(event.data)
           }
         })
       })
 
     } catch (error) {
-      console.error('Error creating EventSource:', error)
+      logger.error({ context: 'EventSource' }, 'Error creating EventSource:', error)
       if (onError) onError(error as Event)
     }
   }, [url, events, onOpen, onError])
@@ -124,7 +125,7 @@ export function useEventSource({ url, events, onOpen, onError }: EventSourceProp
         clearTimeout(reconnectTimeoutRef.current)
       }
       if (eventSourceRef.current) {
-        console.log('Closing EventSource connection...')
+        logger.info({ context: 'EventSource' }, 'Closing EventSource connection...')
         eventSourceRef.current.close()
         eventSourceRef.current = null
       }

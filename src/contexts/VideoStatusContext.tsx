@@ -1,5 +1,7 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger'
+
 import React, { createContext, useState, useContext, useCallback, useEffect, useRef } from 'react'
 import { useEventBusOn } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
@@ -40,8 +42,9 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // If it's been less than MIN_UPDATE_INTERVAL since the last event, skip this one
     if (timeSinceLastEvent < MIN_UPDATE_INTERVAL) {
-      console.log(
-        `🔍 DEBUG [VideoStatusContext] Skipping event for ${videoId} - processed one ${timeSinceLastEvent}ms ago`,
+      clientLogger.debug(
+        `Skipping event for ${videoId} - processed one ${timeSinceLastEvent}ms ago`,
+        'VideoStatusContext',
       )
       return false
     }
@@ -54,7 +57,10 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Function to update a video's status with debouncing
   const updateStatus = useCallback(
     (videoId: string, status: string) => {
-      console.log(`🔍 DEBUG [VideoStatusContext] Updating status for video ${videoId} to ${status}`)
+      clientLogger.info(
+        `🔍 DEBUG [VideoStatusContext] Updating status for video ${videoId} to ${status}`,
+        'contexts/VideoStatusContext',
+      )
 
       // Check if there's already a pending update for this video
       const pendingUpdate = pendingUpdatesRef.current[videoId]
@@ -62,23 +68,23 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
         // Clear the existing timeout
         clearTimeout(pendingUpdate.timeoutId)
         delete pendingUpdatesRef.current[videoId]
-        console.log(`🔍 DEBUG [VideoStatusContext] Cleared pending update for video ${videoId}`)
+        clientLogger.info(
+          `🔍 DEBUG [VideoStatusContext] Cleared pending update for video ${videoId}`,
+          'contexts/VideoStatusContext',
+        )
       }
 
       // Create a new timeout for this update
       const timeoutId = setTimeout(() => {
-        console.log(
-          `🔍 DEBUG [VideoStatusContext] Processing debounced update for video ${videoId}`,
-        )
+        clientLogger.debug(`Processing debounced update for video ${videoId}`, 'VideoStatusContext')
 
         // Update the status map
         setStatusMap((prevMap) => {
           // Only update if the status has changed
           if (prevMap[videoId] !== status) {
-            console.log(
-              `🔍 DEBUG [VideoStatusContext] Status changed from ${
-                prevMap[videoId] || 'undefined'
-              } to ${status}`,
+            clientLogger.info(
+              `Status changed from ${prevMap[videoId] || 'undefined'} to ${status}`,
+              'VideoStatusContext',
             )
             return { ...prevMap, [videoId]: status }
           }
@@ -86,15 +92,23 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
         })
 
         // Notify all listeners about the status change
-        console.log(
-          `🔍 DEBUG [VideoStatusContext] Notifying ${listeners.length} listeners about status change for video ${videoId}`,
+        clientLogger.info(
+          `Notifying ${listeners.length} listeners about status change for video ${videoId}`,
+          'VideoStatusContext',
         )
         listeners.forEach((listener) => {
           try {
-            console.log(`🔍 DEBUG [VideoStatusContext] Calling listener for video ${videoId}`)
+            clientLogger.info(
+              `🔍 DEBUG [VideoStatusContext] Calling listener for video ${videoId}`,
+              'contexts/VideoStatusContext',
+            )
             listener(videoId, status)
           } catch (error) {
-            console.error(`🔍 DEBUG [VideoStatusContext] Error in status update listener:`, error)
+            clientLogger.error(
+              `🔍 DEBUG [VideoStatusContext] Error in status update listener:`,
+              error,
+              'contexts/VideoStatusContext',
+            )
           }
         })
 
@@ -118,18 +132,23 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Function to subscribe to status updates
   const subscribeToStatusUpdates = useCallback((listener: StatusUpdateListener) => {
-    console.log(
-      `🔍 DEBUG [VideoStatusContext] New listener subscribed to status updates, current count: ${listeners.length}`,
+    clientLogger.info(
+      `New listener subscribed to status updates, current count: ${listeners.length}`,
+      'VideoStatusContext',
     )
 
     // Generate a unique ID for this listener for debugging
     const listenerId = Math.random().toString(36).substring(2, 9)
-    console.log(`🔍 DEBUG [VideoStatusContext] Assigned listener ID: ${listenerId}`)
+    clientLogger.info(
+      `🔍 DEBUG [VideoStatusContext] Assigned listener ID: ${listenerId}`,
+      'contexts/VideoStatusContext',
+    )
 
     // Wrap the listener to add logging
     const wrappedListener: StatusUpdateListener = (videoId, status) => {
-      console.log(
-        `🔍 DEBUG [VideoStatusContext] Calling listener ${listenerId} for video ${videoId} with status ${status}`,
+      clientLogger.debug(
+        `Calling listener ${listenerId} for video ${videoId} with status ${status}`,
+        'VideoStatusContext',
       )
       listener(videoId, status)
     }
@@ -139,7 +158,10 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // Return a function to unsubscribe
     return () => {
-      console.log(`🔍 DEBUG [VideoStatusContext] Listener ${listenerId} unsubscribed`)
+      clientLogger.info(
+        `🔍 DEBUG [VideoStatusContext] Listener ${listenerId} unsubscribed`,
+        'contexts/VideoStatusContext',
+      )
       setListeners((prevListeners) => prevListeners.filter((l) => l !== wrappedListener))
     }
   }, [])
@@ -149,13 +171,15 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
     'video:status:ready',
     (data) => {
       if (data && data.id && shouldProcessEvent(data.id)) {
-        console.log(
-          `🔍 DEBUG [VideoStatusContext] Received video:status:ready event for ${data.id}`,
-        )
+        clientLogger.info(`Received video:status:ready event for ${data.id}`, 'VideoStatusContext')
         // Force a state update by creating a new status map
         setStatusMap((prevMap) => {
           const newMap = { ...prevMap, [data.id]: 'ready' }
-          console.log(`🔍 DEBUG [VideoStatusContext] Updated status map:`, newMap)
+          clientLogger.info(
+            `🔍 DEBUG [VideoStatusContext] Updated status map:`,
+            newMap,
+            'contexts/VideoStatusContext',
+          )
           return newMap
         })
 
@@ -171,13 +195,18 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
     EVENTS.VIDEO_UPDATED,
     (data) => {
       if (data && data.id && data.isStatusChange && shouldProcessEvent(data.id)) {
-        console.log(
-          `🔍 DEBUG [VideoStatusContext] Received VIDEO_UPDATED event with status change for ${data.id}`,
+        clientLogger.info(
+          `Received VIDEO_UPDATED event with status change for ${data.id}`,
+          'VideoStatusContext',
         )
         // Force a state update by creating a new status map
         setStatusMap((prevMap) => {
           const newMap = { ...prevMap, [data.id]: 'ready' }
-          console.log(`🔍 DEBUG [VideoStatusContext] Updated status map:`, newMap)
+          clientLogger.info(
+            `🔍 DEBUG [VideoStatusContext] Updated status map:`,
+            newMap,
+            'contexts/VideoStatusContext',
+          )
           return newMap
         })
 
@@ -193,11 +222,18 @@ export const VideoStatusProvider: React.FC<{ children: React.ReactNode }> = ({ c
     'REFRESH_LIST_VIEW',
     (data) => {
       if (data && data.id && shouldProcessEvent(data.id)) {
-        console.log(`🔍 DEBUG [VideoStatusContext] Received REFRESH_LIST_VIEW event for ${data.id}`)
+        clientLogger.info(
+          `🔍 DEBUG [VideoStatusContext] Received REFRESH_LIST_VIEW event for ${data.id}`,
+          'contexts/VideoStatusContext',
+        )
         // Force a state update by creating a new status map
         setStatusMap((prevMap) => {
           const newMap = { ...prevMap, [data.id]: 'ready' }
-          console.log(`🔍 DEBUG [VideoStatusContext] Updated status map:`, newMap)
+          clientLogger.info(
+            `🔍 DEBUG [VideoStatusContext] Updated status map:`,
+            newMap,
+            'contexts/VideoStatusContext',
+          )
           return newMap
         })
 

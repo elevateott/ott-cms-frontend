@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 // src/app/api/videos/batch-upload/route.ts
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
           }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          console.error(`Error processing video "${videoData.title}":`, error)
+          logger.error({ context: 'batch-upload/route' }, `Error processing video "${videoData.title}":`, error)
 
           return {
             title: videoData.title,
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: unknown) {
-    console.error('Error in batch upload:', error)
+    logger.error({ context: 'batch-upload/route' }, 'Error in batch upload:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
       { error: `Failed to process batch upload: ${errorMessage}` },

@@ -1,3 +1,4 @@
+import { clientLogger } from '@/utils/clientLogger';
 // src\components\EventProvider\EventBridge.tsx
 
 import { useEffect } from 'react'
@@ -12,10 +13,10 @@ const EventBridge: React.FC = () => {
     const forwardEvent = (eventName: string) => (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data)
-        console.log(`[EventBridge] Forwarding event: ${eventName}`, data)
+        clientLogger.info(`[EventBridge] Forwarding event: ${eventName}`, data, 'EventProviderEventBridge')
         eventBus.emit(eventName, data)
       } catch (err) {
-        console.error(`[EventBridge] Error parsing event data for ${eventName}:`, err)
+        clientLogger.error(`[EventBridge] Error parsing event data for ${eventName}:`, err, 'EventProviderEventBridge')
       }
     }
 
@@ -26,12 +27,12 @@ const EventBridge: React.FC = () => {
 
     Object.values(EVENTS).forEach((eventName) => {
       eventSource.addEventListener(eventName, (event: MessageEvent) => {
-        console.log(`[EventBridge] SSE received: ${eventName}`, event.data)
+        clientLogger.info(`[EventBridge] SSE received: ${eventName}`, event.data, 'EventProviderEventBridge')
         try {
           const data = JSON.parse(event.data)
           eventBus.emit(eventName, data)
         } catch (err) {
-          console.error(`[EventBridge] Error parsing event data for ${eventName}:`, err)
+          clientLogger.error(`[EventBridge] Error parsing event data for ${eventName}:`, err, 'EventProviderEventBridge')
         }
       })
     })

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 
 export default function VideoFormPage() {
@@ -37,7 +40,7 @@ export default function VideoFormPage() {
     try {
       // Log the request details
       const requestBody = JSON.stringify(formData, null, 2)
-      console.log('Request Body:', requestBody)
+      clientLogger.info('Request Body:', requestBody, 'video-form/page')
       setRequestDetails({ body: formData })
       
       // Create a video using the direct Payload API
@@ -51,13 +54,13 @@ export default function VideoFormPage() {
 
       // Get the response text first to ensure we can see it even if JSON parsing fails
       const responseText = await response.text()
-      console.log('Response Text:', responseText)
+      clientLogger.info('Response Text:', responseText, 'video-form/page')
       
       let data
       try {
         data = JSON.parse(responseText)
       } catch (parseError) {
-        console.error('Error parsing response as JSON:', parseError)
+        clientLogger.error('Error parsing response as JSON:', parseError, 'video-form/page')
         setError(`Failed to parse response as JSON: ${responseText}`)
         setRequestDetails(prev => ({
           ...prev,
@@ -66,7 +69,7 @@ export default function VideoFormPage() {
         return
       }
       
-      console.log('Response Data:', data)
+      clientLogger.info('Response Data:', data, 'video-form/page')
       setRequestDetails(prev => ({
         ...prev,
         response: data,
@@ -81,7 +84,7 @@ export default function VideoFormPage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating video:', err)
+      clientLogger.error('Error creating video:', err, 'video-form/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
       setRequestDetails(prev => ({
         ...prev,

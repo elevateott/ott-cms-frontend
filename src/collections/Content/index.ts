@@ -3,6 +3,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
+import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 
 export const Content: CollectionConfig = {
   slug: 'content',
@@ -104,6 +105,9 @@ export const Content: CollectionConfig = {
     },
   ],
   hooks: {
+    // Add logging hooks
+    ...createCollectionLoggingHooks('content'),
+    // Add existing hooks
     beforeChange: [
       ({ data, operation }) => {
         // Set default release date to now if not provided

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 // src\app\api\events\stream\route.ts
 import { eventBus } from '@/services/events/eventEmitter'
 import { headers } from 'next/headers'
@@ -21,7 +22,7 @@ export async function GET() {
 
   const stream = new ReadableStream({
     start(controller) {
-      console.log(`[SSE] Connection opened: ${connectionId}`)
+      logger.info({ context: 'stream/route' }, `[SSE] Connection opened: ${connectionId}`)
 
       // Send initial connection message
       controller.enqueue(
@@ -61,7 +62,7 @@ export async function GET() {
         try {
           controller.close()
         } catch (error) {
-          console.error(`[SSE] Cleanup error for ${connectionId}`, error)
+          logger.error({ context: 'stream/route' }, `[SSE] Cleanup error for ${connectionId}`, error)
         }
       }
 
@@ -71,7 +72,7 @@ export async function GET() {
     cancel() {
       closed = true
       if (keepAliveInterval) clearInterval(keepAliveInterval)
-      console.log(`[SSE] Connection closed: ${connectionId}`)
+      logger.info({ context: 'stream/route' }, `[SSE] Connection closed: ${connectionId}`)
     },
   })
 

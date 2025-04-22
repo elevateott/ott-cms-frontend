@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * useVideoUpload Hook
  *
@@ -75,10 +76,10 @@ export function useVideoUpload(options: UseVideoUploadOptions = {}): UseVideoUpl
           })
 
           if (!createRes.ok) {
-            console.warn('Failed to create video document, but upload URL was created')
+            logger.warn({ context: 'VideoUpload' }, 'Failed to create video document, but upload URL was created')
           }
         } catch (createError) {
-          console.error('Error creating video document:', createError)
+          logger.error({ context: 'VideoUpload' }, 'Error creating video document:', createError)
         }
 
         // Emit an event that upload has started

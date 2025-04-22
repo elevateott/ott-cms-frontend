@@ -1,5 +1,6 @@
 import { EVENTS } from '@/constants/events'
 import { eventBus } from '@/utilities/eventBus'
+import { logger } from '@/utils/logger'
 
 /**
  * Service for handling event emission across the application
@@ -23,7 +24,7 @@ export class EventService {
    */
   async emit(event: keyof typeof EVENTS, data: any): Promise<void> {
     try {
-      console.log(`📢 EventService: Emitting event ${event}`, data)
+      logger.info({ context: 'EventService', event, data }, `Emitting event ${event}`)
 
       // Emit to client-side event bus
       eventBus.emit(event, {
@@ -31,9 +32,8 @@ export class EventService {
         timestamp: new Date().toISOString(),
         source: 'server',
       })
-
     } catch (error) {
-      console.error(`Error emitting event ${event}:`, error)
+      logger.error({ context: 'EventService', event, error }, `Error emitting event ${event}`)
       throw error
     }
   }
@@ -46,7 +46,7 @@ export class EventService {
     try {
       await Promise.all(events.map(({ event, data }) => this.emit(event, data)))
     } catch (error) {
-      console.error('Error emitting multiple events:', error)
+      logger.error({ context: 'EventService', error }, 'Error emitting multiple events')
       throw error
     }
   }

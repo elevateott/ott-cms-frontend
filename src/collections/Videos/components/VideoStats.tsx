@@ -1,5 +1,7 @@
-// src/collections/Videos/components/VideoStats.tsx
 'use client'
+
+// src/collections/Videos/components/VideoStats.tsx
+
 
 import React, { useEffect, useState } from 'react'
 import { useDocumentInfo } from '@payloadcms/ui'

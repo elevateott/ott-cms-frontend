@@ -1,5 +1,7 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger'
+
 //src\components\EventProvider\index.tsx
 
 import { useEffect, useState } from 'react'
@@ -19,7 +21,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = eventBus.on('server_connected', () => {
-      console.log('Server connected event received')
+      clientLogger.info('Server connected event received', 'EventProviderindex')
       setConnected(true)
     })
 
@@ -28,7 +30,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleEvent = (type: string) => (data: any) => {
-      console.log(`Event received: ${type}`, data)
+      clientLogger.info(`Event received: ${type}`, 'EventProviderindex', { eventData: data })
       setLastEvent({ type, data })
     }
 

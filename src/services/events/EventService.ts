@@ -1,4 +1,5 @@
 import { emitSSE } from '@/app/api/events/route'
+import { logger } from '@/utils/logger'
 
 export class EventService {
   private static instance: EventService
@@ -15,7 +16,7 @@ export class EventService {
    * Emit an event to all connected SSE clients
    */
   emit(event: string, data: any): void {
-    console.log(`📡 EventService: Emitting event ${event}:`, data)
+    logger.info({ context: 'EventService', event, data }, `Emitting event ${event}`)
     emitSSE(event, data)
   }
 

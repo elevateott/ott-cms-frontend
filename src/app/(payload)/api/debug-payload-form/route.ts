@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Debug Payload Form API
  * 
@@ -16,15 +17,15 @@ export async function POST(req: NextRequest) {
   try {
     // Get the request body as text first
     const bodyText = await req.text()
-    console.log('Debug Payload Form - Request Body Text:', bodyText)
+    logger.info({ context: 'debug-payload-form/route' }, 'Debug Payload Form - Request Body Text:', bodyText)
     
     // Try to parse the body as JSON
     let body
     try {
       body = JSON.parse(bodyText)
-      console.log('Debug Payload Form - Request Body JSON:', JSON.stringify(body, null, 2))
+      logger.info({ context: 'debug-payload-form/route' }, 'Debug Payload Form - Request Body JSON:', JSON.stringify(body, null, 2))
     } catch (parseError) {
-      console.error('Error parsing request body as JSON:', parseError)
+      logger.error({ context: 'debug-payload-form/route' }, 'Error parsing request body as JSON:', parseError)
       return NextResponse.json({
         success: false,
         message: 'Failed to parse request body as JSON',

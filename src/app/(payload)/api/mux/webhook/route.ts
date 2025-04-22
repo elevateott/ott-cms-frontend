@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger'
 /**
  * Mux Webhook Handler
  *
@@ -11,6 +12,8 @@ import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
 import { createMuxService } from '@/services/mux'
 import VideoAssetWebhookHandler from '@/services/mux/videoAssetWebhookHandler'
 import { logError } from '@/utils/errorHandler'
+import { eventService } from '@/services/eventService'
+import { EVENTS } from '@/constants/events'
 
 /**
  * POST /api/mux/webhook
@@ -44,14 +47,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Log the event
-    console.log('Received Mux webhook event:', {
+    logger.info({ context: 'webhook/route' }, 'Received Mux webhook event:', {
       type: event.type,
       data: JSON.stringify(event.data).substring(0, 200) + '...',
     })
 
     // Log more details for asset.ready events
     if (event.type === 'video.asset.ready') {
-      console.log('Received video.asset.ready event with data:', {
+      logger.info({ context: 'webhook/route' }, 'Received video.asset.ready event with data:', {
         id: event.data.id,
         playback_ids: event.data.playback_ids,
         status: event.data.status,
@@ -65,8 +68,49 @@ export async function POST(req: NextRequest) {
     // Create a new instance of the webhook handler with the payload context
     const webhookHandler = new VideoAssetWebhookHandler(payload)
 
+    // Emit events to notify clients
+    if (event.type === 'video.asset.created') {
+      try {
+        await eventService.emit('VIDEO_UPLOAD_COMPLETED', {
+          assetId: event.data?.id,
+          playbackId: event.data?.playback_ids?.[0]?.id,
+          timestamp: Date.now(),
+          source: 'webhook',
+        })
+        logger.info({ context: 'webhook/route' }, 'Emitted VIDEO_UPLOAD_COMPLETED event')
+      } catch (emitError) {
+        logger.warn(
+          { context: 'webhook/route', error: emitError },
+          'Failed to emit VIDEO_UPLOAD_COMPLETED event',
+        )
+      }
+    } else if (event.type === 'video.asset.ready') {
+      try {
+        await eventService.emit('VIDEO_STATUS_READY', {
+          assetId: event.data?.id,
+          playbackId: event.data?.playback_ids?.[0]?.id,
+          timestamp: Date.now(),
+          source: 'webhook',
+        })
+        logger.info({ context: 'webhook/route' }, 'Emitted VIDEO_STATUS_READY event')
+      } catch (emitError) {
+        logger.warn(
+          { context: 'webhook/route', error: emitError },
+          'Failed to emit VIDEO_STATUS_READY event',
+        )
+      }
+    }
+
     // Handle the event
-    await webhookHandler.handleEvent(event)
+    try {
+      await webhookHandler.handleEvent(event)
+      logger.info({ context: 'webhook/route' }, 'Successfully handled webhook event')
+    } catch (handlerError) {
+      logger.warn(
+        { context: 'webhook/route', error: handlerError },
+        'Failed to handle webhook event, but events were emitted',
+      )
+    }
 
     return createApiResponse({ success: true })
   } catch (error: unknown) {

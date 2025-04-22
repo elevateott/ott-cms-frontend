@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Mux Service
  *
@@ -60,10 +61,10 @@ export class MuxService implements IMuxService {
     passthrough?: Record<string, string>
   }): Promise<{ uploadId: string; url: string }> {
     try {
-      console.log('Creating Mux upload with options:', options)
+      logger.info({ context: 'muxService' }, 'Creating Mux upload with options:', options)
       return await MuxService.getInstance().createDirectUpload(options)
     } catch (error) {
-      console.error('Error creating Mux upload:', error)
+      logger.error({ context: 'muxService' }, 'Error creating Mux upload:', error)
       throw error
     }
   }
@@ -75,7 +76,7 @@ export class MuxService implements IMuxService {
     try {
       return await MuxService.getInstance().getAsset(assetId)
     } catch (error) {
-      console.error(`Error fetching Mux asset ${assetId}:`, error)
+      logger.error({ context: 'muxService' }, `Error fetching Mux asset ${assetId}:`, error)
       throw new Error('Failed to fetch Mux asset')
     }
   }
@@ -87,7 +88,7 @@ export class MuxService implements IMuxService {
     try {
       return await MuxService.getInstance().createMuxThumbnail(assetId, time)
     } catch (error) {
-      console.error(`Error creating Mux thumbnail for asset ${assetId}:`, error)
+      logger.error({ context: 'muxService' }, `Error creating Mux thumbnail for asset ${assetId}:`, error)
       throw new Error('Failed to create Mux thumbnail')
     }
   }
@@ -99,7 +100,7 @@ export class MuxService implements IMuxService {
     try {
       return await MuxService.getInstance().deleteAsset(assetId)
     } catch (error) {
-      console.error(`Error deleting Mux asset ${assetId}:`, error)
+      logger.error({ context: 'muxService' }, `Error deleting Mux asset ${assetId}:`, error)
       throw new Error('Failed to delete Mux asset')
     }
   }
@@ -125,7 +126,7 @@ export class MuxService implements IMuxService {
     try {
       return await MuxService.getInstance().deleteAllMuxAssets(previousResults, recursionDepth)
     } catch (error) {
-      console.error('Error deleting all Mux assets:', error)
+      logger.error({ context: 'muxService' }, 'Error deleting all Mux assets:', error)
       throw new Error('Failed to delete all Mux assets')
     }
   }
@@ -136,7 +137,7 @@ export class MuxService implements IMuxService {
       throw new Error('MUX_TOKEN_ID and MUX_TOKEN_SECRET are required')
     }
 
-    console.log('Initializing Mux client with token ID:', tokenId.substring(0, 8) + '...')
+    logger.info({ context: 'muxService' }, 'Initializing Mux client with token ID:', tokenId.substring(0, 8) + '...')
 
     try {
       const muxClient = new Mux({
@@ -153,23 +154,23 @@ export class MuxService implements IMuxService {
       }
 
       // Log available properties for debugging
-      //console.log('Mux video client properties:', Object.keys(this.video))
+      //logger.info({ context: 'muxService' }, 'Mux video client properties:', Object.keys(this.video))
 
       // Check for uploads property (could be lowercase or uppercase)
       const hasUploads = this.video.uploads || this.video.Uploads
       const hasAssets = this.video.assets || this.video.Assets
 
       if (!hasUploads) {
-        console.warn('Mux Video client missing uploads property - uploads API may not be available')
+        logger.warn({ context: 'muxService' }, 'Mux Video client missing uploads property - uploads API may not be available')
       }
 
       if (!hasAssets) {
-        console.warn('Mux Video client missing assets property - assets API may not be available')
+        logger.warn({ context: 'muxService' }, 'Mux Video client missing assets property - assets API may not be available')
       }
 
-      console.log('Mux Video client initialized successfully')
+      logger.info({ context: 'muxService' }, 'Mux Video client initialized successfully')
     } catch (error) {
-      console.error('Error initializing Mux client:', error)
+      logger.error({ context: 'muxService' }, 'Error initializing Mux client:', error)
       throw new Error(
         `Failed to initialize Mux Video client: ${error instanceof Error ? error.message : String(error)}`,
       )
@@ -184,11 +185,11 @@ export class MuxService implements IMuxService {
     url: string
   }> {
     try {
-      console.log('MuxService.createDirectUpload called with options:', options)
+      logger.info({ context: 'muxService' }, 'MuxService.createDirectUpload called with options:', options)
 
       // Check if video.uploads exists (lowercase 'u')
       if (this.video.uploads) {
-        console.log('Using video.uploads.create')
+        logger.info({ context: 'muxService' }, 'Using video.uploads.create')
         const uploadOptions = {
           cors_origin: '*',
           new_asset_settings: {
@@ -196,10 +197,10 @@ export class MuxService implements IMuxService {
           },
           ...options,
         }
-        console.log('Upload options:', uploadOptions)
+        logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
 
         const upload = await this.video.uploads.create(uploadOptions)
-        console.log('Upload created successfully:', { id: upload.id })
+        logger.info({ context: 'muxService' }, 'Upload created successfully:', { id: upload.id })
 
         return {
           uploadId: upload.id,
@@ -208,7 +209,7 @@ export class MuxService implements IMuxService {
       }
       // Fallback to video.Uploads if it exists (capital 'U')
       else if (this.video.Uploads) {
-        console.log('Using video.Uploads.create')
+        logger.info({ context: 'muxService' }, 'Using video.Uploads.create')
         const uploadOptions = {
           cors_origin: '*',
           new_asset_settings: {
@@ -216,10 +217,10 @@ export class MuxService implements IMuxService {
           },
           ...options,
         }
-        console.log('Upload options:', uploadOptions)
+        logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
 
         const upload = await this.video.Uploads.create(uploadOptions)
-        console.log('Upload created successfully:', { id: upload.id })
+        logger.info({ context: 'muxService' }, 'Upload created successfully:', { id: upload.id })
 
         return {
           uploadId: upload.id,
@@ -228,11 +229,11 @@ export class MuxService implements IMuxService {
       }
       // Log error if neither exists
       else {
-        console.error('Mux video client is missing uploads property', this.video)
+        logger.error({ context: 'muxService' }, 'Mux video client is missing uploads property', this.video)
         throw new Error('Mux video client is missing uploads property')
       }
     } catch (error) {
-      console.error('Error in MuxService.createDirectUpload:', error)
+      logger.error({ context: 'muxService' }, 'Error in MuxService.createDirectUpload:', error)
       logError(error, 'MuxService.createDirectUpload')
       throw error
     }
@@ -251,14 +252,14 @@ export class MuxService implements IMuxService {
   async getAsset(assetId: string): Promise<MuxAsset | null> {
     // Get the call stack to identify where this is being called from
     const stack = new Error().stack
-    console.log(`getAsset called for ${assetId} from:`, stack?.split('\n')[2])
+    logger.info({ context: 'muxService' }, `getAsset called for ${assetId} from:`, stack?.split('\n')[2])
 
     const cacheKey = `asset:${assetId}`
 
     // Check if we have a cached result that's still valid
     const cachedAsset = MuxService.cachedAssets.get(cacheKey)
     if (cachedAsset && Date.now() - cachedAsset.timestamp < MuxService.CACHE_TTL) {
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `Using cached data for Mux asset ${assetId} (age: ${Date.now() - cachedAsset.timestamp}ms)`,
       )
       return cachedAsset.data
@@ -266,7 +267,7 @@ export class MuxService implements IMuxService {
 
     // If there's already a pending request for this asset, return that promise
     if (MuxService.pendingRequests.has(cacheKey)) {
-      console.log(`Using pending request for Mux asset ${assetId}`)
+      logger.info({ context: 'muxService' }, `Using pending request for Mux asset ${assetId}`)
       return MuxService.pendingRequests.get(cacheKey) as Promise<MuxAsset | null>
     }
 
@@ -300,10 +301,10 @@ export class MuxService implements IMuxService {
     if (assetId) {
       const cacheKey = `asset:${assetId}`
       MuxService.cachedAssets.delete(cacheKey)
-      console.log(`Cleared cache for Mux asset ${assetId}`)
+      logger.info({ context: 'muxService' }, `Cleared cache for Mux asset ${assetId}`)
     } else {
       MuxService.cachedAssets.clear()
-      console.log('Cleared all Mux asset cache')
+      logger.info({ context: 'muxService' }, 'Cleared all Mux asset cache')
     }
   }
 
@@ -317,12 +318,12 @@ export class MuxService implements IMuxService {
       const timeSinceLastRequest = now - MuxService.lastRequestTime
       if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
         const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
-        console.log(`Rate limiting: Waiting ${delay}ms before fetching Mux asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `Rate limiting: Waiting ${delay}ms before fetching Mux asset ${assetId}`)
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
       MuxService.lastRequestTime = Date.now()
 
-      console.log(`Fetching Mux asset ${assetId}`)
+      logger.info({ context: 'muxService' }, `Fetching Mux asset ${assetId}`)
 
       // Get the asset directly using the assetId
       const response = await this.video._client.get(`/video/v1/assets/${assetId}`)
@@ -356,14 +357,14 @@ export class MuxService implements IMuxService {
    */
   async getAllAssets(limit: number = 100): Promise<MuxAsset[]> {
     try {
-      console.log(`Fetching up to ${limit} Mux assets for deletion`)
+      logger.info({ context: 'muxService' }, `Fetching up to ${limit} Mux assets for deletion`)
 
       // Apply rate limiting
       const now = Date.now()
       const timeSinceLastRequest = now - MuxService.lastRequestTime
       if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
         const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
-        console.log(`Rate limiting: Waiting ${delay}ms before fetching Mux assets`)
+        logger.info({ context: 'muxService' }, `Rate limiting: Waiting ${delay}ms before fetching Mux assets`)
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
       MuxService.lastRequestTime = Date.now()
@@ -377,12 +378,12 @@ export class MuxService implements IMuxService {
       })
 
       if (!response || !response.data) {
-        console.log('No assets found or invalid response format')
+        logger.info({ context: 'muxService' }, 'No assets found or invalid response format')
         return []
       }
 
       if (!Array.isArray(response.data)) {
-        console.log('Invalid response format - expected an array')
+        logger.info({ context: 'muxService' }, 'Invalid response format - expected an array')
         return []
       }
 
@@ -399,10 +400,10 @@ export class MuxService implements IMuxService {
         tracks: asset.tracks,
       })) as MuxAsset[]
 
-      console.log(`Found ${assets.length} Mux assets to delete`)
+      logger.info({ context: 'muxService' }, `Found ${assets.length} Mux assets to delete`)
       return assets
     } catch (error) {
-      console.error('Error fetching all Mux assets:', error)
+      logger.error({ context: 'muxService' }, 'Error fetching all Mux assets:', error)
       logError(error, 'MuxService.getAllAssets')
       return []
     }
@@ -413,41 +414,41 @@ export class MuxService implements IMuxService {
    */
   async deleteAsset(assetId: string): Promise<boolean> {
     try {
-      console.log(`Deleting Mux asset ${assetId}...`)
+      logger.info({ context: 'muxService' }, `Deleting Mux asset ${assetId}...`)
 
       // Apply rate limiting
       const now = Date.now()
       const timeSinceLastRequest = now - MuxService.lastRequestTime
       if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
         const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
-        console.log(`Rate limiting: Waiting ${delay}ms before deleting Mux asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `Rate limiting: Waiting ${delay}ms before deleting Mux asset ${assetId}`)
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
       MuxService.lastRequestTime = Date.now()
 
       // First try using the SDK methods if available
       if (this.video.assets && typeof this.video.assets.del === 'function') {
-        console.log(`Using video.assets.del for asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `Using video.assets.del for asset ${assetId}`)
         await this.video.assets.del(assetId)
-        console.log(`Successfully deleted Mux asset ${assetId} using SDK method`)
+        logger.info({ context: 'muxService' }, `Successfully deleted Mux asset ${assetId} using SDK method`)
         return true
       }
       // Fallback to video.Assets if it exists (capital 'A')
       else if (this.video.Assets && typeof this.video.Assets.del === 'function') {
-        console.log(`Using video.Assets.del for asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `Using video.Assets.del for asset ${assetId}`)
         await this.video.Assets.del(assetId)
-        console.log(`Successfully deleted Mux asset ${assetId} using SDK method`)
+        logger.info({ context: 'muxService' }, `Successfully deleted Mux asset ${assetId} using SDK method`)
         return true
       }
       // Fallback to direct API call if SDK methods are not available
       else {
-        console.log(`Using direct API call for deleting asset ${assetId}`)
+        logger.info({ context: 'muxService' }, `Using direct API call for deleting asset ${assetId}`)
         await this.video._client.delete(`/video/v1/assets/${assetId}`)
-        console.log(`Successfully deleted Mux asset ${assetId} using direct API call`)
+        logger.info({ context: 'muxService' }, `Successfully deleted Mux asset ${assetId} using direct API call`)
         return true
       }
     } catch (error) {
-      console.error(`Error deleting Mux asset ${assetId}:`, error)
+      logger.error({ context: 'muxService' }, `Error deleting Mux asset ${assetId}:`, error)
       logError(error, 'MuxService.deleteAsset')
       return false
     }
@@ -488,7 +489,7 @@ export class MuxService implements IMuxService {
       // Mux signatures are in the format "t=timestamp,v1=signature"
       const [timestampPart, signaturePart] = signature.split(',')
       if (!timestampPart || !signaturePart) {
-        console.error('Invalid signature format')
+        logger.error({ context: 'muxService' }, 'Invalid signature format')
         return false
       }
 
@@ -624,7 +625,7 @@ export class MuxService implements IMuxService {
 
       return { url: thumbnailUrl }
     } catch (error) {
-      console.error(`Error creating Mux thumbnail for asset ${assetId}:`, error)
+      logger.error({ context: 'muxService' }, `Error creating Mux thumbnail for asset ${assetId}:`, error)
       throw new Error('Failed to create Mux thumbnail')
     }
   }
@@ -645,13 +646,13 @@ export class MuxService implements IMuxService {
         return { results: [], successCount: 0, failureCount: 0, totalCount: 0 }
       }
 
-      console.log(`Processing ${assets.length} assets for deletion`)
+      logger.info({ context: 'muxService' }, `Processing ${assets.length} assets for deletion`)
 
       // Log the first few asset IDs to avoid overwhelming the console
       const assetIdsToLog = assets.slice(0, 10).map((asset) => asset.id)
-      console.log(`Asset IDs to delete: ${assetIdsToLog.join(', ')}`)
+      logger.info({ context: 'muxService' }, `Asset IDs to delete: ${assetIdsToLog.join(', ')}`)
       if (assets.length > 10) {
-        console.log(`...and ${assets.length - 10} more assets`)
+        logger.info({ context: 'muxService' }, `...and ${assets.length - 10} more assets`)
       }
 
       // Delete assets in batches to avoid overwhelming the system
@@ -661,26 +662,26 @@ export class MuxService implements IMuxService {
       // Process assets in batches
       for (let i = 0; i < assets.length; i += BATCH_SIZE) {
         const batch = assets.slice(i, i + BATCH_SIZE)
-        console.log(
+        logger.info({ context: 'muxService' }, 
           `Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(assets.length / BATCH_SIZE)} (${batch.length} assets)`,
         )
 
         // Process each asset in the batch sequentially
         for (const asset of batch) {
-          console.log(`Deleting asset ${asset.id}...`)
+          logger.info({ context: 'muxService' }, `Deleting asset ${asset.id}...`)
           try {
             const success = await this.deleteAsset(asset.id)
             results.push({ status: 'fulfilled', value: success })
-            console.log(`Asset ${asset.id} deletion ${success ? 'succeeded' : 'failed'}`)
+            logger.info({ context: 'muxService' }, `Asset ${asset.id} deletion ${success ? 'succeeded' : 'failed'}`)
           } catch (error) {
-            console.error(`Error deleting asset ${asset.id}:`, error)
+            logger.error({ context: 'muxService' }, `Error deleting asset ${asset.id}:`, error)
             results.push({ status: 'rejected', reason: error })
           }
         }
 
         // Add a shorter delay between batches to avoid overwhelming the API
         if (i + BATCH_SIZE < assets.length) {
-          console.log('Short pause between batches to avoid rate limiting...')
+          logger.info({ context: 'muxService' }, 'Short pause between batches to avoid rate limiting...')
           await new Promise((resolve) => setTimeout(resolve, 500))
         }
       }
@@ -691,7 +692,7 @@ export class MuxService implements IMuxService {
       ).length
       const failureCount = results.length - successCount
 
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `Batch deletion complete. Successfully deleted ${successCount} Mux assets, failed to delete ${failureCount}`,
       )
 
@@ -702,7 +703,7 @@ export class MuxService implements IMuxService {
         totalCount: assets.length,
       }
     } catch (error) {
-      console.error('Error in deleteBatchOfAssets:', error)
+      logger.error({ context: 'muxService' }, 'Error in deleteBatchOfAssets:', error)
       throw error
     }
   }
@@ -732,7 +733,7 @@ export class MuxService implements IMuxService {
 
       // Check if we've reached the maximum recursion depth
       if (recursionDepth >= MAX_RECURSION_DEPTH) {
-        console.log(
+        logger.info({ context: 'muxService' }, 
           `Maximum recursion depth (${MAX_RECURSION_DEPTH}) reached. Stopping to prevent infinite loops.`,
         )
         return {
@@ -750,18 +751,18 @@ export class MuxService implements IMuxService {
         totalCount: 0,
       }
 
-      console.log(`Starting deletion of all Mux assets... (recursion depth: ${recursionDepth})`)
-      console.log(
+      logger.info({ context: 'muxService' }, `Starting deletion of all Mux assets... (recursion depth: ${recursionDepth})`)
+      logger.info({ context: 'muxService' }, 
         `Current totals: ${currentResults.successCount} deleted, ${currentResults.failureCount} failed, ${currentResults.totalCount} processed`,
       )
 
       // Get all assets from Mux with pagination
-      console.log('Fetching Mux assets...')
+      logger.info({ context: 'muxService' }, 'Fetching Mux assets...')
       const assets = await this.getAllAssets()
-      console.log(`Fetch complete. Found ${assets.length} Mux assets.`)
+      logger.info({ context: 'muxService' }, `Fetch complete. Found ${assets.length} Mux assets.`)
 
       if (assets.length === 0) {
-        console.log('No more Mux assets found to delete')
+        logger.info({ context: 'muxService' }, 'No more Mux assets found to delete')
         return {
           success: true,
           count: currentResults.successCount,
@@ -780,13 +781,13 @@ export class MuxService implements IMuxService {
         totalCount: currentResults.totalCount + batchResults.totalCount,
       }
 
-      console.log(
+      logger.info({ context: 'muxService' }, 
         `Running totals: ${updatedResults.successCount} deleted, ${updatedResults.failureCount} failed, ${updatedResults.totalCount} processed`,
       )
 
       // Check if we're making progress before recursing
       if (assets.length > 0 && batchResults.successCount > 0) {
-        console.log(
+        logger.info({ context: 'muxService' }, 
           `Successfully deleted ${batchResults.successCount} assets, checking for more...`,
         )
         // Add a delay to avoid rate limiting
@@ -794,7 +795,7 @@ export class MuxService implements IMuxService {
         return this.deleteAllMuxAssets(updatedResults, recursionDepth + 1)
       } else if (assets.length > 0 && batchResults.successCount === 0) {
         // We found assets but couldn't delete any - avoid infinite recursion
-        console.log(
+        logger.info({ context: 'muxService' }, 
           'Warning: Found assets but could not delete any. Stopping to avoid infinite recursion.',
         )
         return {
@@ -813,7 +814,7 @@ export class MuxService implements IMuxService {
         totalCount: updatedResults.totalCount,
       }
     } catch (error) {
-      console.error('Error deleting all Mux assets:', error)
+      logger.error({ context: 'muxService' }, 'Error deleting all Mux assets:', error)
       throw new Error('Failed to delete all Mux assets')
     }
   }

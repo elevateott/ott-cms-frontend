@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Event Emitter Service
  *
@@ -27,12 +28,12 @@ class ConnectionManager {
   addClient(id: string, controller: ReadableStreamController<Uint8Array>): void {
     // Remove existing connection if it exists
     if (this.clients.has(id)) {
-      console.log(`Cleaning up existing connection for client: ${id}`)
+      logger.info({ context: 'eventsService' }, `Cleaning up existing connection for client: ${id}`)
       this.removeClient(id)
     }
 
     this.clients.set(id, controller)
-    console.log(`Client connected: ${id}, total clients: ${this.clients.size}`)
+    logger.info({ context: 'eventsService' }, `Client connected: ${id}, total clients: ${this.clients.size}`)
   }
 
   // Remove a client
@@ -42,11 +43,11 @@ class ConnectionManager {
       try {
         controller.close()
       } catch (error) {
-        console.error(`Error closing controller for client ${id}:`, error)
+        logger.error({ context: 'eventsService' }, `Error closing controller for client ${id}:`, error)
       }
     }
     this.clients.delete(id)
-    console.log(`Client disconnected: ${id}, total clients: ${this.clients.size}`)
+    logger.info({ context: 'eventsService' }, `Client disconnected: ${id}, total clients: ${this.clients.size}`)
   }
 
   // Add a method to check if a client exists
@@ -64,7 +65,7 @@ class ConnectionManager {
     const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
     const encoder = new TextEncoder()
 
-    console.log(`🔍 DEBUG [EventEmitter] Sending event to ${this.clients.size} clients:`, {
+    logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] Sending event to ${this.clients.size} clients:`, {
       event,
       data,
     })
@@ -73,7 +74,7 @@ class ConnectionManager {
     const standardizedEvent = event.replace(/_/g, ':')
 
     if (this.clients.size === 0) {
-      console.warn(
+      logger.warn({ context: 'eventsService' }, 
         `🔍 DEBUG [EventEmitter] No clients connected to receive event: ${standardizedEvent}`,
       )
       return
@@ -81,12 +82,12 @@ class ConnectionManager {
 
     this.clients.forEach((controller, id) => {
       try {
-        console.log(`🔍 DEBUG [EventEmitter] Sending event ${standardizedEvent} to client ${id}`)
+        logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] Sending event ${standardizedEvent} to client ${id}`)
         controller.enqueue(
           encoder.encode(`event: ${standardizedEvent}\ndata: ${JSON.stringify(data)}\n\n`),
         )
       } catch (error) {
-        console.error(
+        logger.error({ context: 'eventsService' }, 
           `🔍 DEBUG [EventEmitter] Error sending event ${standardizedEvent} to client ${id}:`,
           error,
         )
@@ -107,19 +108,19 @@ export const connectionManager = ConnectionManager.getInstance()
 
 // Function to send events (used by other modules)
 export function sendEventToClients(event: string, data: any): void {
-  console.log(`🔍 DEBUG [EventEmitter] sendEventToClients called with event: ${event}, data:`, data)
-  console.log(`🔍 DEBUG [EventEmitter] Current client count: ${connectionManager.getClientCount()}`)
+  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] sendEventToClients called with event: ${event}, data:`, data)
+  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] Current client count: ${connectionManager.getClientCount()}`)
   connectionManager.sendEventToClients(event, data)
 }
 
 // Helper functions for specific events
 export function emitVideoCreated(id: string): void {
-  console.log(`🔍 DEBUG [EventEmitter] emitVideoCreated called for video ${id}`)
+  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] emitVideoCreated called for video ${id}`)
   sendEventToClients(EVENTS.VIDEO_CREATED, { id })
 }
 
 export function emitVideoUpdated(id: string, isStatusChange: boolean = false): void {
-  console.log(`🔍 DEBUG [EventEmitter] emitVideoUpdated called for video ${id}`)
-  console.log(`🔍 DEBUG [EventEmitter] isStatusChange: ${isStatusChange}`)
+  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] emitVideoUpdated called for video ${id}`)
+  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] isStatusChange: ${isStatusChange}`)
   sendEventToClients(EVENTS.VIDEO_UPDATED, { id, isStatusChange })
 }

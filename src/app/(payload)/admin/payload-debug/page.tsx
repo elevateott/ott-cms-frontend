@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 
 export default function PayloadDebugPage() {
@@ -10,7 +13,7 @@ export default function PayloadDebugPage() {
 // Copy this entire script and paste it into your browser console when on the Payload CMS admin page
 
 (function() {
-  console.log('Payload CMS Form Debug Script installed');
+  clientLogger.info('Payload CMS Form Debug Script installed', 'payload-debug/page');
   
   // Intercept fetch requests
   const originalFetch = window.fetch;
@@ -21,34 +24,34 @@ export default function PayloadDebugPage() {
       input.includes('/api/videos') && 
       init?.method === 'POST'
     ) {
-      console.log('%c🔍 Intercepted POST to /api/videos', 'font-weight: bold; color: blue;');
-      console.log('URL:', input);
+      clientLogger.info('%c🔍 Intercepted POST to /api/videos', 'font-weight: bold; color: blue;', 'payload-debug/page');
+      clientLogger.info('URL:', input, 'payload-debug/page');
       
       // Log the request body
       if (init.body) {
         if (typeof init.body === 'string') {
           try {
             const bodyJson = JSON.parse(init.body);
-            console.log('%cRequest Body (JSON):', 'font-weight: bold;', bodyJson);
+            clientLogger.info('%cRequest Body (JSON):', 'font-weight: bold;', bodyJson, 'payload-debug/page');
             
             // Check for common issues
             if (!bodyJson.title) {
-              console.warn('⚠️ Missing required field: title');
+              clientLogger.warn('⚠️ Missing required field: title', 'payload-debug/page');
             }
             if (!bodyJson.sourceType) {
-              console.warn('⚠️ Missing required field: sourceType');
+              clientLogger.warn('⚠️ Missing required field: sourceType', 'payload-debug/page');
             }
             if (bodyJson.sourceType === 'embedded' && !bodyJson.embeddedUrl) {
-              console.warn('⚠️ Missing field: embeddedUrl (required for embedded videos)');
+              clientLogger.warn('⚠️ Missing field: embeddedUrl (required for embedded videos)', 'payload-debug/page');
             }
             if (!bodyJson.slug) {
-              console.warn('⚠️ Missing field: slug');
+              clientLogger.warn('⚠️ Missing field: slug', 'payload-debug/page');
             }
           } catch (e) {
-            console.log('Request Body (Text):', init.body);
+            clientLogger.info('Request Body (Text):', init.body, 'payload-debug/page');
           }
         } else {
-          console.log('Request Body (Non-string):', init.body);
+          clientLogger.info('Request Body (Non-string):', init.body, 'payload-debug/page');
         }
       }
       
@@ -63,9 +66,9 @@ export default function PayloadDebugPage() {
       try {
         const debugResponse = await originalFetch('/api/debug-payload-form', requestCopy);
         const debugData = await debugResponse.json();
-        console.log('%cDebug Endpoint Response:', 'font-weight: bold;', debugData);
+        clientLogger.info('%cDebug Endpoint Response:', 'font-weight: bold;', debugData, 'payload-debug/page');
       } catch (error) {
-        console.error('Error sending to debug endpoint:', error);
+        clientLogger.error('Error sending to debug endpoint:', error, 'payload-debug/page');
       }
       
       // Continue with the original request
@@ -78,20 +81,20 @@ export default function PayloadDebugPage() {
         // Try to parse the response as JSON
         try {
           const responseData = await responseClone.json();
-          console.log('%cResponse Data:', 'font-weight: bold; color: green;', responseData);
+          clientLogger.info('%cResponse Data:', 'font-weight: bold; color: green;', responseData, 'payload-debug/page');
           
           if (!response.ok) {
-            console.error('%cError Response:', 'font-weight: bold; color: red;', responseData);
+            clientLogger.error('%cError Response:', 'font-weight: bold; color: red;', responseData, 'payload-debug/page');
           }
         } catch (e) {
           // If it's not JSON, get the text
           const responseText = await responseClone.text();
-          console.log('Response Text:', responseText);
+          clientLogger.info('Response Text:', responseText, 'payload-debug/page');
         }
         
         return response;
       } catch (error) {
-        console.error('%cFetch Error:', 'font-weight: bold; color: red;', error);
+        clientLogger.error('%cFetch Error:', 'font-weight: bold; color: red;', error, 'payload-debug/page');
         throw error;
       }
     }
@@ -117,36 +120,36 @@ export default function PayloadDebugPage() {
       typeof this._url === 'string' && 
       this._url.includes('/api/videos')
     ) {
-      console.log('%c🔍 Intercepted XHR POST to /api/videos', 'font-weight: bold; color: purple;');
-      console.log('URL:', this._url);
+      clientLogger.info('%c🔍 Intercepted XHR POST to /api/videos', 'font-weight: bold; color: purple;', 'payload-debug/page');
+      clientLogger.info('URL:', this._url, 'payload-debug/page');
       
       // Log the request body
       if (body) {
         if (typeof body === 'string') {
           try {
             const bodyJson = JSON.parse(body);
-            console.log('%cXHR Request Body (JSON):', 'font-weight: bold;', bodyJson);
+            clientLogger.info('%cXHR Request Body (JSON):', 'font-weight: bold;', bodyJson, 'payload-debug/page');
           } catch (e) {
-            console.log('XHR Request Body (Text):', body);
+            clientLogger.info('XHR Request Body (Text):', body, 'payload-debug/page');
           }
         } else {
-          console.log('XHR Request Body (Non-string):', body);
+          clientLogger.info('XHR Request Body (Non-string):', body, 'payload-debug/page');
         }
       }
       
       // Add a response listener
       this.addEventListener('load', function() {
-        console.log('%cXHR Response Status:', 'font-weight: bold;', this.status);
+        clientLogger.info('%cXHR Response Status:', 'font-weight: bold;', this.status, 'payload-debug/page');
         
         try {
           const responseData = JSON.parse(this.responseText);
-          console.log('%cXHR Response Data:', 'font-weight: bold; color: green;', responseData);
+          clientLogger.info('%cXHR Response Data:', 'font-weight: bold; color: green;', responseData, 'payload-debug/page');
           
           if (this.status >= 400) {
-            console.error('%cXHR Error Response:', 'font-weight: bold; color: red;', responseData);
+            clientLogger.error('%cXHR Error Response:', 'font-weight: bold; color: red;', responseData, 'payload-debug/page');
           }
         } catch (e) {
-          console.log('XHR Response Text:', this.responseText);
+          clientLogger.info('XHR Response Text:', this.responseText, 'payload-debug/page');
         }
       });
     }
@@ -154,7 +157,7 @@ export default function PayloadDebugPage() {
     return originalXHRSend.apply(this, arguments);
   };
   
-  console.log('Payload CMS Form Debug Script ready. Try creating a video now.');
+  clientLogger.info('Payload CMS Form Debug Script ready. Try creating a video now.', 'payload-debug/page');
 })();
   `.trim()
   

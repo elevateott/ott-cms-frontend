@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress'
 import { cn } from '@/utilities/ui'
 import { eventBus } from '@/utilities/eventBus'
 import { EVENTS } from '@/constants/events'
+import { clientLogger } from '@/utils/clientLogger'
 import styles from './MuxVideoUploader.module.css'
 import MuxUploaderStyles from './MuxUploaderStyles'
 import Script from 'next/script'
@@ -149,7 +150,9 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
 
   // Effect to log when uploadedVideos changes and check for stalled uploads
   useEffect(() => {
-    console.log('uploadedVideos state updated:', uploadedVideos)
+    clientLogger.debug('uploadedVideos state updated', 'MuxVideoUploader', {
+      videos: uploadedVideos,
+    })
 
     // Check if there are any videos in the 'uploading' state
     const hasUploadingVideos = uploadedVideos.some((video) => video.status === 'uploading')
@@ -157,14 +160,18 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     if (hasUploadingVideos) {
       // Set up a timer to check for videos that have been in 'uploading' state for too long
       const timer = setTimeout(() => {
-        console.log('Checking for stalled uploads...')
+        clientLogger.debug('Checking for stalled uploads', 'MuxVideoUploader')
 
         setUploadedVideos((prev) => {
           // Find videos that have been in 'uploading' state for too long
           const updatedVideos = prev.map((video) => {
             // If a video has been in 'uploading' state and has 100% progress, mark it as 'ready'
             if (video.status === 'uploading' && video.progress >= 99) {
-              console.log('Found stalled upload with 100% progress, marking as ready:', video)
+              clientLogger.info(
+                'Found stalled upload with 100% progress, marking as ready',
+                'MuxVideoUploader',
+                { video },
+              )
               return {
                 ...video,
                 status: 'ready' as UploadStatus,
@@ -187,7 +194,9 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     const file = event.detail?.file || event.detail
 
     if (!file || !file.name) {
-      console.error('File is undefined or missing name property:', event.detail)
+      clientLogger.error('File is undefined or missing name property', 'MuxVideoUploader', {
+        detail: event.detail,
+      })
       return
     }
 
@@ -290,7 +299,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   // Function to clear all uploads
   const handleClearAll = () => {
     setUploadedVideos([])
-    console.log('All uploads cleared')
+    clientLogger.info('All uploads cleared', 'MuxVideoUploader')
   }
 
   // Effect to automatically update video status to ready after upload completes
@@ -299,16 +308,23 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     const uploadingVideos = uploadedVideos.filter((video) => video.status === 'uploading')
 
     if (uploadingVideos.length > 0) {
-      console.log('Found videos in uploading state:', uploadingVideos)
+      clientLogger.debug('Found videos in uploading state', 'MuxVideoUploader', {
+        videos: uploadingVideos,
+      })
 
       // Set a timer to automatically update the status to complete after 10 seconds
       const timer = setTimeout(() => {
-        console.log('Auto-updating video status to complete after timeout')
+        clientLogger.info(
+          'Auto-updating video status to complete after timeout',
+          'MuxVideoUploader',
+        )
 
         setUploadedVideos((prev) => {
           return prev.map((video) => {
             if (video.status === 'uploading') {
-              console.log('Auto-updating video to complete status:', video)
+              clientLogger.info('Auto-updating video to complete status', 'MuxVideoUploader', {
+                video,
+              })
               return ensureValidVideo({
                 ...video,
                 status: 'complete',
@@ -332,7 +348,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         strategy="afterInteractive"
         src="/mux-uploader-preload.js"
         onLoad={() => {
-          console.log('Mux Uploader preload script loaded')
+          clientLogger.info('Mux Uploader preload script loaded', 'MuxVideoUploader')
         }}
       />
 

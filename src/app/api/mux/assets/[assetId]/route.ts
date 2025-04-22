@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { NextRequest, NextResponse } from 'next/server'
 import Mux from '@mux/mux-node'
 // Import payload client if needed
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: { assetId:
       return NextResponse.json({ error: 'Asset ID is required' }, { status: 400 })
     }
 
-    console.log(`Checking status for Mux asset: ${assetId}`)
+    logger.info({ context: '[assetId]/route' }, `Checking status for Mux asset: ${assetId}`)
 
     // Get the asset from Mux
     const asset = await Video.Assets.get(assetId)
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: { assetId:
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
     }
 
-    console.log(`Asset status: ${asset.status}`)
+    logger.info({ context: '[assetId]/route' }, `Asset status: ${asset.status}`)
 
     // Return the asset data
     return NextResponse.json({
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: { assetId:
       aspect_ratio: asset.aspect_ratio,
     })
   } catch (error: any) {
-    console.error('Error checking Mux asset status:', error)
+    logger.error({ context: '[assetId]/route' }, 'Error checking Mux asset status:', error)
 
     // Check if it's a Mux API error
     if (error.type === 'not_found') {

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useEffect } from 'react'
 import type { DefaultCellComponentProps } from 'payload'
 import { useVideoStatus } from '@/context/VideoStatusContext'
@@ -22,7 +25,7 @@ const StatusCell: React.FC<DefaultCellComponentProps> = (props) => {
   // Log when status changes from context
   useEffect(() => {
     if (statusMap[videoId]) {
-      console.log(`🔍 DEBUG [StatusCell] Video ${videoId} status updated from context: ${statusMap[videoId]}`)
+      clientLogger.info(`🔍 DEBUG [StatusCell] Video ${videoId} status updated from context: ${statusMap[videoId]}`, 'components/StatusCell')
     }
   }, [statusMap, videoId])
 

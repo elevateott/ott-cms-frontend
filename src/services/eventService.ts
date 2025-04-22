@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger'
 // src\services\eventService.ts
 
 import { EVENTS } from '@/constants/events'
@@ -24,7 +25,7 @@ export class EventService {
    * @param event The event name
    * @param data The event data
    */
-  async emit(event: keyof typeof EVENTS, data: any): Promise<void> {
+  async emit(event: keyof typeof EVENTS, data: Record<string, unknown>): Promise<void> {
     try {
       const enriched = {
         ...data,
@@ -32,15 +33,37 @@ export class EventService {
         source: 'server',
       }
 
-      console.log(`📢 Emitting event: ${event}`, enriched)
+      logger.info({ context: 'services/eventService' }, `📢 Emitting event: ${event}`, enriched)
 
-      // In-app listeners
-      eventBus.emit(event, enriched)
+      try {
+        // Get the actual event string value from the EVENTS object
+        const eventValue = EVENTS[event]
 
-      // SSE clients
-      connectionManager.sendEventToClients(event, enriched) // ✅ This makes the client see it
+        // In-app listeners
+        eventBus.emit(eventValue, enriched)
+
+        // SSE clients
+        connectionManager.sendEventToClients(eventValue, enriched) // ✅ This makes the client see it
+      } catch (emitError) {
+        logger.warn(
+          { context: 'services/eventService', error: emitError },
+          `Error in event emission for ${event}, falling back to direct emission`,
+        )
+
+        // Fallback: try direct emission with the event name
+        try {
+          eventBus.emit(event, enriched)
+          connectionManager.sendEventToClients(event, enriched)
+        } catch (fallbackError) {
+          logger.error(
+            { context: 'services/eventService', error: fallbackError },
+            `Fallback emission also failed for ${event}`,
+          )
+          throw fallbackError
+        }
+      }
     } catch (error) {
-      console.error(`Error emitting event ${event}:`, error)
+      logger.error({ context: 'services/eventService' }, `Error emitting event ${event}:`, error)
       throw error
     }
   }
@@ -49,14 +72,16 @@ export class EventService {
    * Emit multiple events at once
    * @param events Array of event objects containing event name and data
    */
-  async emitMultiple(events: Array<{ event: keyof typeof EVENTS; data: any }>): Promise<void> {
+  async emitMultiple(
+    events: Array<{ event: keyof typeof EVENTS; data: Record<string, unknown> }>,
+  ): Promise<void> {
     const results = await Promise.allSettled(
       events.map(({ event, data }) => this.emit(event, data)),
     )
 
     const errors = results.filter((r) => r.status === 'rejected')
     if (errors.length > 0) {
-      console.error(`❌ ${errors.length} emit(s) failed`)
+      logger.error({ context: 'services/eventService' }, `❌ ${errors.length} emit(s) failed`)
       throw new Error(`${errors.length} events failed to emit`)
     }
   }

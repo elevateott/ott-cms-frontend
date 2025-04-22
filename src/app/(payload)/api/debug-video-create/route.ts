@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Debug Video Creation API
  * 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     
     // Log the request body for debugging
-    console.log('Debug Video Create - Request Body:', JSON.stringify(body, null, 2))
+    logger.info({ context: 'debug-video-create/route' }, 'Debug Video Create - Request Body:', JSON.stringify(body, null, 2))
 
     // Try to create a minimal video document
     try {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
         embeddedUrl: body.embeddedUrl || 'https://example.com/video.m3u8',
       }
 
-      console.log('Attempting to create minimal video:', JSON.stringify(minimalVideo, null, 2))
+      logger.info({ context: 'debug-video-create/route' }, 'Attempting to create minimal video:', JSON.stringify(minimalVideo, null, 2))
       
       const result = await payload.create({
         collection: 'videos',
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
         video: result,
       })
     } catch (createError) {
-      console.error('Error creating minimal video:', createError)
+      logger.error({ context: 'debug-video-create/route' }, 'Error creating minimal video:', createError)
       
       // Try to extract validation errors
       let validationErrors = null

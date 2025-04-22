@@ -1,8 +1,10 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger'
+
 import React, { useState, useRef, useEffect } from 'react'
-import { useEventBusOn } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
+import { eventBus } from '@/utilities/eventBus'
 import { useRouter } from 'next/navigation'
 
 /**
@@ -23,7 +25,10 @@ const ListViewRefresher: React.FC = () => {
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   const forceRefresh = (source?: string): void => {
-    console.log(`[ListViewRefresher] forceRefresh called${source ? ` from ${source}` : ''}`)
+    clientLogger.info(
+      `[ListViewRefresher] forceRefresh called${source ? ` from ${source}` : ''}`,
+      'components/ListViewRefresher',
+    )
     router.refresh()
     setLastRefreshed(new Date())
     setRefreshCount((prev) => prev + 1)
@@ -33,7 +38,10 @@ const ListViewRefresher: React.FC = () => {
   const startPolling = () => {
     if (!pollingRef.current) {
       pollingRef.current = setInterval(() => {
-        console.log('[ListViewRefresher] Polling refresh (no pendingVideos check)')
+        clientLogger.info(
+          '[ListViewRefresher] Polling refresh (no pendingVideos check)',
+          'components/ListViewRefresher',
+        )
         forceRefresh('polling')
       }, POLL_INTERVAL)
     }
@@ -57,40 +65,63 @@ const ListViewRefresher: React.FC = () => {
     EVENTS.VIDEO_UPLOAD_PROGRESS,
     EVENTS.VIDEO_UPLOAD_COMPLETED,
     EVENTS.VIDEO_UPLOAD_ERROR,
+    // Also listen for the underscore version of the event (from utilities/eventBus.ts)
+    'video_upload_completed',
     // Custom event for manual refresh
     'RELOAD_PAGE' as string,
   ]
 
   // Set up listeners for all relevant events in a useEffect
   useEffect(() => {
+    // Create an array to store unsubscribe functions
+    const unsubscribes: (() => void)[] = []
+
     // Set up event handlers
     refresherEvents.forEach((eventName) => {
-      useEventBusOn(
-        eventName,
-        (data) => {
-          if (eventName === EVENTS.VIDEO_CREATED) {
-            startPolling()
-            setTimeout(() => {
-              forceRefresh('VIDEO_CREATED')
-            }, 3000)
-          } else if (eventName === EVENTS.VIDEO_UPLOAD_COMPLETED) {
-            // Client-side event from uploader: just start polling, no delay or forceRefresh needed
-            startPolling()
-          } else if (eventName === EVENTS.VIDEO_STATUS_READY) {
-            stopPolling()
-            forceRefresh(EVENTS.VIDEO_STATUS_READY)
-          } else if (eventName === EVENTS.VIDEO_UPDATED && data?.isStatusChange) {
-            setTimeout(() => {
-              forceRefresh('VIDEO_UPDATED')
-            }, 3000)
-          } else {
-            // For all other events, just refresh immediately
-            forceRefresh(eventName)
-          }
-        },
-        [startPolling, stopPolling, forceRefresh],
+      clientLogger.info(
+        `[ListViewRefresher] Setting up listener for ${eventName}`,
+        'components/ListViewRefresher',
       )
+
+      const unsubscribe = eventBus.on(eventName, (data) => {
+        clientLogger.info(
+          `[ListViewRefresher] Received event ${eventName}`,
+          'components/ListViewRefresher',
+          { data },
+        )
+
+        if (eventName === EVENTS.VIDEO_CREATED) {
+          startPolling()
+          setTimeout(() => {
+            forceRefresh('VIDEO_CREATED')
+          }, 3000)
+        } else if (eventName === EVENTS.VIDEO_UPLOAD_COMPLETED) {
+          // Client-side event from uploader: just start polling, no delay or forceRefresh needed
+          clientLogger.info(
+            `[ListViewRefresher] Starting polling due to ${eventName}`,
+            'components/ListViewRefresher',
+          )
+          startPolling()
+        } else if (eventName === EVENTS.VIDEO_STATUS_READY) {
+          stopPolling()
+          forceRefresh(EVENTS.VIDEO_STATUS_READY)
+        } else if (eventName === EVENTS.VIDEO_UPDATED && data?.isStatusChange) {
+          setTimeout(() => {
+            forceRefresh('VIDEO_UPDATED')
+          }, 3000)
+        } else {
+          // For all other events, just refresh immediately
+          forceRefresh(eventName)
+        }
+      })
+
+      unsubscribes.push(unsubscribe)
     })
+
+    // Clean up all subscriptions when component unmounts
+    return () => {
+      unsubscribes.forEach((unsubscribe) => unsubscribe())
+    }
   }, [refresherEvents, startPolling, stopPolling, forceRefresh])
 
   useEffect(() => {

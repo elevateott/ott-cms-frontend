@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     
     return createApiResponse(result)
   } catch (error: unknown) {
-    console.error('Error fetching categories:', error)
+    logger.error({ context: 'categories/route' }, 'Error fetching categories:', error)
     return createErrorResponse(
       error instanceof Error ? error.message : 'An error occurred while fetching categories',
       500

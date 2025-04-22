@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import type { CollectionAfterChangeHook } from 'payload'
 import { createMuxService } from '@/services/mux'
 
@@ -19,7 +20,7 @@ export const fetchMuxMetadataForVideoAsset: CollectionAfterChangeHook = async ({
     const now = Date.now()
 
     if (lastProcessed && now - lastProcessed < CACHE_TTL) {
-      console.log(
+      logger.info({ context: 'mux' }, 
         `Skipping Mux metadata fetch for asset ${assetId} - processed ${now - lastProcessed}ms ago`,
       )
       return doc
@@ -52,7 +53,7 @@ export const fetchMuxMetadataForVideoAsset: CollectionAfterChangeHook = async ({
         })
       }
     } catch (error) {
-      console.error('Error fetching Mux metadata for video asset:', error)
+      logger.error({ context: 'mux' }, 'Error fetching Mux metadata for video asset:', error)
     }
   }
 

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -25,7 +28,7 @@ export default function ResetVideosPage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error resetting Videos collection:', err)
+      clientLogger.error('Error resetting Videos collection:', err, 'reset-videos/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)

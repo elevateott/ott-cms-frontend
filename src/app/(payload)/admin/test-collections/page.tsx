@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,7 +27,7 @@ export default function TestCollectionsPage() {
       }
     } catch (err) {
       setError('An error occurred while fetching collections')
-      console.error(err)
+      clientLogger.error(err, 'test-collections/page')
     } finally {
       setLoading(false)
     }

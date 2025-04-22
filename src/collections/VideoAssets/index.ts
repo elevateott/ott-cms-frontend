@@ -4,6 +4,7 @@ import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { fetchMuxMetadataForVideoAsset } from '@/hooks/mux/updateVideoAssetOnWebhook'
 import { deleteAssetOnVideoAssetDelete } from '@/hooks/mux/deleteAssetOnVideoAssetDelete'
+import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
@@ -195,6 +196,9 @@ export const VideoAssets: CollectionConfig = {
     },
   ],
   hooks: {
+    // Add logging hooks
+    ...createCollectionLoggingHooks('videoassets'),
+    // Add existing hooks
     afterChange: [fetchMuxMetadataForVideoAsset],
     beforeDelete: [deleteAssetOnVideoAssetDelete],
   },

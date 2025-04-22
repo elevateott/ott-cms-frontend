@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useEventBusMulti } from '@/hooks/useEventBus'
@@ -13,7 +16,7 @@ import { EVENTS } from '@/constants/events'
  * of the list view without reloading the entire page.
  */
 
-const POLL_INTERVAL = 30000 // 30 seconds - increased to reduce API calls
+const POLL_INTERVAL = 10000 // 10 seconds
 
 const ListViewRefresher: React.FC = () => {
   const router = useRouter()
@@ -23,7 +26,7 @@ const ListViewRefresher: React.FC = () => {
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   const forceRefresh = (source?: string): void => {
-    console.log(`[ListViewRefresher] forceRefresh called${source ? ` from ${source}` : ''}`)
+    clientLogger.info(`[ListViewRefresher] forceRefresh called${source ? ` from ${source}` : ''}`, 'components/ListViewRefresher')
     router.refresh()
     setLastRefreshed(new Date())
     setRefreshCount((prev) => prev + 1)
@@ -33,19 +36,19 @@ const ListViewRefresher: React.FC = () => {
   const startPolling = () => {
     // Only start polling if we don't already have a polling interval
     if (!pollingRef.current) {
-      console.log('[ListViewRefresher] Starting polling interval')
+      clientLogger.info('[ListViewRefresher] Starting polling interval', 'components/ListViewRefresher')
 
       // Set a maximum number of poll attempts to avoid excessive API calls
       let pollCount = 0
-      const MAX_POLL_COUNT = 10 // Maximum number of times to poll
+      const MAX_POLL_COUNT = 100 // Maximum number of times to poll
 
       pollingRef.current = setInterval(() => {
         pollCount++
-        console.log(`[ListViewRefresher] Polling refresh ${pollCount}/${MAX_POLL_COUNT}`)
+        clientLogger.info(`[ListViewRefresher] Polling refresh ${pollCount}/${MAX_POLL_COUNT}`, 'components/ListViewRefresher')
 
         // If we've reached the maximum number of polls, stop polling
         if (pollCount >= MAX_POLL_COUNT) {
-          console.log('[ListViewRefresher] Reached maximum poll count, stopping polling')
+          clientLogger.info('[ListViewRefresher] Reached maximum poll count, stopping polling', 'components/ListViewRefresher')
           stopPolling()
           return
         }
@@ -81,7 +84,7 @@ const ListViewRefresher: React.FC = () => {
     // If we've refreshed recently, set a timeout for the remaining time
     if (timeSinceLastEvent < MIN_REFRESH_INTERVAL) {
       const delay = MIN_REFRESH_INTERVAL - timeSinceLastEvent
-      console.log(`[ListViewRefresher] Debouncing refresh from ${source} for ${delay}ms`)
+      clientLogger.info(`[ListViewRefresher] Debouncing refresh from ${source} for ${delay}ms`, 'components/ListViewRefresher')
       refreshTimeoutRef.current = setTimeout(() => {
         forceRefresh(`${source} (debounced)`)
         lastEventTimeRef.current = Date.now()

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 /**
  * VideoAdmin Component
  *
@@ -68,7 +71,7 @@ const DeleteAllVideos: React.FC = () => {
 
       const result = await response.json()
       setSuccess(true)
-      console.log('All videos deleted successfully:', result)
+      clientLogger.info('All videos deleted successfully:', result, 'videoVideoAdmin')
 
       // Show success toast
       toast({
@@ -84,7 +87,7 @@ const DeleteAllVideos: React.FC = () => {
         window.location.reload()
       }, 1500)
     } catch (err) {
-      console.error('Error deleting videos:', err)
+      clientLogger.error('Error deleting videos:', err, 'videoVideoAdmin')
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
       setError(errorMessage)
 
@@ -191,7 +194,7 @@ const DeleteAllMuxVideos: React.FC = () => {
       const result = await response.json()
       setSuccess(true)
       setProgress({ current: result.count, total: result.totalCount })
-      console.log('All Mux videos deleted successfully:', result)
+      clientLogger.info('All Mux videos deleted successfully:', result, 'videoVideoAdmin')
 
       // Show success toast with detailed information
       toast({
@@ -205,7 +208,7 @@ const DeleteAllMuxVideos: React.FC = () => {
         setIsOpen(false)
       }, 1500)
     } catch (err) {
-      console.error('Error deleting Mux videos:', err)
+      clientLogger.error('Error deleting Mux videos:', err, 'videoVideoAdmin')
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
       setError(errorMessage)
 
@@ -310,7 +313,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
     if (!embeddedUrl.trim()) return
     // Handle embedded URL submission here
     // This could be an API call to create a new video entry with the embedded URL
-    console.log('Embedded URL submitted:', embeddedUrl)
+    clientLogger.info('Embedded URL submitted:', embeddedUrl, 'videoVideoAdmin')
     setEmbeddedUrl('')
   }
 
@@ -359,7 +362,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
               strategy="afterInteractive"
               src="/mux-uploader-preload.js"
               onLoad={() => {
-                console.log('Mux Uploader preload script loaded in VideoAdmin')
+                clientLogger.info('Mux Uploader preload script loaded in VideoAdmin', 'videoVideoAdmin')
               }}
             />
             {isLoading ? (

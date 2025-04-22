@@ -1,3 +1,4 @@
+import { clientLogger } from '@/utils/clientLogger';
 import React, { useState } from 'react'
 import { cn } from '@/utilities/ui'
 import { Card } from '@/components/ui/card'
@@ -39,11 +40,11 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   // Function to get upload URL from your API
   const getUploadUrl = async (file: File): Promise<string | null> => {
     try {
-      console.log('VideoUploader.getUploadUrl called with file:', file.name, 'size:', file.size)
+      clientLogger.info('VideoUploader.getUploadUrl called with file:', file.name, 'size:', file.size, 'videoVideoUploader')
       const filename = file.name
 
       // First create the upload URL
-      console.log('Fetching upload URL from', API_ROUTES.MUX_DIRECT_UPLOAD)
+      clientLogger.info('Fetching upload URL from', API_ROUTES.MUX_DIRECT_UPLOAD, 'videoVideoUploader')
       const response = await fetch(API_ROUTES.MUX_DIRECT_UPLOAD, {
         method: 'POST',
         headers: {
@@ -54,15 +55,15 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
       })
 
       if (!response.ok) {
-        console.error('Failed to get upload URL, status:', response.status)
+        clientLogger.error('Failed to get upload URL, status:', response.status, 'videoVideoUploader')
         throw new Error(`Failed to get upload URL: ${response.status} ${response.statusText}`)
       }
 
       const data = await response.json()
-      console.log('Upload URL response:', data)
+      clientLogger.info('Upload URL response:', data, 'videoVideoUploader')
 
       if (!data.data?.url || !data.data?.uploadId) {
-        console.error('Invalid response from server:', data)
+        clientLogger.error('Invalid response from server:', data, 'videoVideoUploader')
         throw new Error('Invalid response from server')
       }
 
@@ -85,13 +86,13 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
         }
 
         const createData = await createRes.json()
-        console.log('Video document created:', createData)
+        clientLogger.info('Video document created:', createData, 'videoVideoUploader')
 
         // Emit video created event
-        console.log('Emitting VIDEO_CREATED event with data:', {
+        clientLogger.info('Emitting VIDEO_CREATED event with data:', {
           id: createData.id,
           uploadId: data.data.uploadId,
-        })
+        }, 'videoVideoUploader')
 
         emitEvent(EVENTS.VIDEO_CREATED, {
           id: createData.id,
@@ -105,7 +106,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
         })
 
         // Emit the REFRESH_LIST_VIEW event to refresh the list view
-        console.log('Emitting REFRESH_LIST_VIEW event for new video')
+        clientLogger.info('Emitting REFRESH_LIST_VIEW event for new video', 'videoVideoUploader')
         emitEvent('REFRESH_LIST_VIEW', {
           source: 'uploader',
           action: 'video_created',
@@ -119,13 +120,13 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
           videoId: createData.id,
         })
       } catch (createError) {
-        console.error('Error creating video document:', createError)
+        clientLogger.error('Error creating video document:', createError, 'videoVideoUploader')
         throw createError
       }
 
       return data.data.url
     } catch (error) {
-      console.error('Error in getUploadUrl:', error)
+      clientLogger.error('Error in getUploadUrl:', error, 'videoVideoUploader')
       handleError(error as Error)
       return null
     }
@@ -146,12 +147,12 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
   const handleSuccess = (event: CustomEvent) => {
     // Extract data from the event
     const data = event.detail || {}
-    console.log('handleSuccess called with data:', data)
+    clientLogger.info('handleSuccess called with data:', data, 'videoVideoUploader')
 
     setUploadStatus('processing')
 
     if (onUploadComplete) {
-      console.log('Calling onUploadComplete with data:', data)
+      clientLogger.info('Calling onUploadComplete with data:', data, 'videoVideoUploader')
       onUploadComplete(data)
     }
 
@@ -163,7 +164,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
 
     // Emit video updated event if we have an ID
     if (data.id) {
-      console.log('Emitting video_updated event with data:', data)
+      clientLogger.info('Emitting video_updated event with data:', data, 'videoVideoUploader')
       emitEvent(EVENTS.VIDEO_UPDATED, {
         id: data.id,
         isStatusChange: false,
@@ -177,7 +178,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     }
 
     // Emit REFRESH_LIST_VIEW event
-    console.log('Emitting REFRESH_LIST_VIEW event')
+    clientLogger.info('Emitting REFRESH_LIST_VIEW event', 'videoVideoUploader')
     emitEvent('REFRESH_LIST_VIEW', {
       source: 'uploader',
       action: 'upload_complete',
@@ -185,14 +186,14 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
     })
 
     if (refreshList) {
-      console.log('Calling refreshList after 2 seconds')
+      clientLogger.info('Calling refreshList after 2 seconds', 'videoVideoUploader')
       setTimeout(() => {
-        console.log('Refreshing list now')
+        clientLogger.info('Refreshing list now', 'videoVideoUploader')
         refreshList()
 
         // Call it again after a longer delay
         setTimeout(() => {
-          console.log('Refreshing list again')
+          clientLogger.info('Refreshing list again', 'videoVideoUploader')
           refreshList()
         }, 3000)
       }, 2000)
@@ -258,16 +259,16 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
         {sourceType === 'mux' && (
           <ClientVideoUploader
             endpoint={(file?: File) => {
-              console.log('ClientVideoUploader endpoint called with file:', file?.name)
+              clientLogger.info('ClientVideoUploader endpoint called with file:', file?.name, 'videoVideoUploader')
               return file
                 ? getUploadUrl(file).then((url) => {
-                    console.log('Got upload URL:', url)
+                    clientLogger.info('Got upload URL:', url, 'videoVideoUploader')
                     return url || ''
                   })
                 : Promise.resolve('')
             }}
             onUploadComplete={(data) => {
-              console.log('ClientVideoUploader onUploadComplete called with data:', data)
+              clientLogger.info('ClientVideoUploader onUploadComplete called with data:', data, 'videoVideoUploader')
               handleSuccess({
                 detail: {
                   upload_id: data.uploadId,
@@ -277,7 +278,7 @@ export const VideoUploader: React.FC<VideoUploaderProps> = ({
               } as unknown as CustomEvent)
             }}
             onUploadError={(error) => {
-              console.error('ClientVideoUploader onUploadError called with error:', error)
+              clientLogger.error('ClientVideoUploader onUploadError called with error:', error, 'videoVideoUploader')
               handleError(error)
             }}
           />

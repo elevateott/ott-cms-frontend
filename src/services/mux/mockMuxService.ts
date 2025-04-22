@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Mock Mux Service
  *
@@ -10,7 +11,7 @@ import { IMuxService } from '@/services/mux/IMuxService'
 
 export class MockMuxService implements IMuxService {
   constructor() {
-    console.log('MockMuxService initialized')
+    logger.info({ context: 'muxService' }, 'MockMuxService initialized')
   }
   /**
    * Create a direct upload URL
@@ -63,7 +64,7 @@ export class MockMuxService implements IMuxService {
    * Clear the cache for a specific asset or all assets
    */
   clearAssetCache(assetId?: string): void {
-    console.log(`[MockMuxService] Clearing cache${assetId ? ` for asset ${assetId}` : ''}`)
+    logger.info({ context: 'muxService' }, `[MockMuxService] Clearing cache${assetId ? ` for asset ${assetId}` : ''}`)
     // No actual cache in mock service, this is just a stub
   }
 

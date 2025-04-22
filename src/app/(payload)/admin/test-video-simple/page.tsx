@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 
 export default function TestVideoSimplePage() {
@@ -23,7 +26,7 @@ export default function TestVideoSimplePage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating test video:', err)
+      clientLogger.error('Error creating test video:', err, 'test-video-simple/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Create Video API
  * 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     
     // Log the request body for debugging
-    console.log('Create Video API - Request Body:', JSON.stringify(body, null, 2))
+    logger.info({ context: 'create-video/route' }, 'Create Video API - Request Body:', JSON.stringify(body, null, 2))
     
     // Create a minimal video document
     const videoData = {
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       slug: body.slug || undefined, // Let the hook generate it if not provided
     }
     
-    console.log('Creating video with data:', JSON.stringify(videoData, null, 2))
+    logger.info({ context: 'create-video/route' }, 'Creating video with data:', JSON.stringify(videoData, null, 2))
     
     try {
       const result = await payload.create({
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
         video: result,
       })
     } catch (createError) {
-      console.error('Error creating video:', createError)
+      logger.error({ context: 'create-video/route' }, 'Error creating video:', createError)
       
       // Try to extract validation errors
       let validationErrors = null

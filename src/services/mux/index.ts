@@ -1,7 +1,6 @@
 import { MuxService } from './muxService'
 import { MockMuxService } from './mockMuxService'
 import { IMuxService } from './IMuxService'
-import { muxConfig } from '@/config'
 
 let muxServiceInstance: IMuxService | null = null
 
@@ -13,19 +12,19 @@ export const createMuxService = (): IMuxService => {
 
   // Check if we're in development and mock mode is enabled
   if (process.env.NODE_ENV === 'development' && process.env.USE_MOCK_MUX === 'true') {
-    console.log('Using mock Mux service for development')
+    console.log('[muxService] Using mock Mux service for development')
     muxServiceInstance = new MockMuxService()
     return muxServiceInstance
   }
 
-  // Validate environment variables
-  const tokenId = process.env.MUX_TOKEN_ID || muxConfig.tokenId
-  const tokenSecret = process.env.MUX_TOKEN_SECRET || muxConfig.tokenSecret
+  // Get environment variables directly
+  const tokenId = process.env.MUX_TOKEN_ID || ''
+  const tokenSecret = process.env.MUX_TOKEN_SECRET || ''
 
   if (!tokenId || !tokenSecret) {
-    console.error('Missing Mux credentials')
+    console.error('[muxService] Missing Mux credentials')
     if (process.env.NODE_ENV === 'development') {
-      console.log('Falling back to mock service due to missing credentials')
+      console.info('[muxService] Falling back to mock service due to missing credentials')
       muxServiceInstance = new MockMuxService()
       return muxServiceInstance
     }
@@ -33,7 +32,10 @@ export const createMuxService = (): IMuxService => {
   }
 
   try {
-    console.log('Initializing Mux service with token ID:', tokenId.substring(0, 8) + '...')
+    console.info(
+      '[muxService] Initializing Mux service with token ID:',
+      tokenId.substring(0, 8) + '...',
+    )
     const instance = new MuxService({
       tokenId,
       tokenSecret,
@@ -45,9 +47,9 @@ export const createMuxService = (): IMuxService => {
     muxServiceInstance = instance
     return muxServiceInstance
   } catch (error) {
-    console.error('Failed to initialize Mux service:', error)
+    console.error('[muxService] Failed to initialize Mux service:', error)
     if (process.env.NODE_ENV === 'development') {
-      console.log('Falling back to mock service due to initialization error')
+      console.info('[muxService] Falling back to mock service due to initialization error')
       muxServiceInstance = new MockMuxService()
       return muxServiceInstance
     }

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -41,7 +44,7 @@ export default function DirectApiTestPage() {
       })
 
       const data = await response.json()
-      console.log('API Response:', data)
+      clientLogger.info('API Response:', data, 'direct-api-test/page')
 
       if (response.ok) {
         setResult(data)
@@ -50,7 +53,7 @@ export default function DirectApiTestPage() {
         setResult(data)
       }
     } catch (err) {
-      console.error('Error creating video:', err)
+      clientLogger.error('Error creating video:', err, 'direct-api-test/page')
       setError(err instanceof Error ? err.message : 'An unknown error occurred')
     } finally {
       setLoading(false)
