@@ -238,24 +238,51 @@ export class MuxService implements IMuxService {
     }
   }
 
-  // Add rate limiting for Mux API calls
+  // Add rate limiting and caching for Mux API calls
   private static lastRequestTime = 0
   private static MIN_REQUEST_INTERVAL = 1000 // 1 second between requests
   private static pendingRequests = new Map<string, Promise<any>>()
+  private static cachedAssets = new Map<string, { data: MuxAsset; timestamp: number }>()
+  private static CACHE_TTL = 10000 // 10 seconds cache TTL
 
   /**
-   * Get asset details with rate limiting
+   * Get asset details with rate limiting and caching
    */
   async getAsset(assetId: string): Promise<MuxAsset | null> {
-    // If there's already a pending request for this asset, return that promise
+    // Get the call stack to identify where this is being called from
+    const stack = new Error().stack
+    console.log(`getAsset called for ${assetId} from:`, stack?.split('\n')[2])
+
     const cacheKey = `asset:${assetId}`
+
+    // Check if we have a cached result that's still valid
+    const cachedAsset = MuxService.cachedAssets.get(cacheKey)
+    if (cachedAsset && Date.now() - cachedAsset.timestamp < MuxService.CACHE_TTL) {
+      console.log(
+        `Using cached data for Mux asset ${assetId} (age: ${Date.now() - cachedAsset.timestamp}ms)`,
+      )
+      return cachedAsset.data
+    }
+
+    // If there's already a pending request for this asset, return that promise
     if (MuxService.pendingRequests.has(cacheKey)) {
-      console.log(`Using cached request for Mux asset ${assetId}`)
+      console.log(`Using pending request for Mux asset ${assetId}`)
       return MuxService.pendingRequests.get(cacheKey) as Promise<MuxAsset | null>
     }
 
     // Create a new request promise with rate limiting
-    const requestPromise = this.executeGetAsset(assetId)
+    const requestPromise = this.executeGetAsset(assetId).then((result) => {
+      // Cache the result if it's not null
+      if (result) {
+        MuxService.cachedAssets.set(cacheKey, {
+          data: result,
+          timestamp: Date.now(),
+        })
+      }
+      return result
+    })
+
+    // Store the pending request
     MuxService.pendingRequests.set(cacheKey, requestPromise)
 
     // Remove the promise from the map when it resolves or rejects
@@ -264,6 +291,20 @@ export class MuxService implements IMuxService {
     })
 
     return requestPromise
+  }
+
+  /**
+   * Clear the cache for a specific asset or all assets
+   */
+  clearAssetCache(assetId?: string): void {
+    if (assetId) {
+      const cacheKey = `asset:${assetId}`
+      MuxService.cachedAssets.delete(cacheKey)
+      console.log(`Cleared cache for Mux asset ${assetId}`)
+    } else {
+      MuxService.cachedAssets.clear()
+      console.log('Cleared all Mux asset cache')
+    }
   }
 
   /**
@@ -777,4 +818,3 @@ export class MuxService implements IMuxService {
     }
   }
 }
-

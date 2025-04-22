@@ -60,6 +60,14 @@ export class MockMuxService implements IMuxService {
   }
 
   /**
+   * Clear the cache for a specific asset or all assets
+   */
+  clearAssetCache(assetId?: string): void {
+    console.log(`[MockMuxService] Clearing cache${assetId ? ` for asset ${assetId}` : ''}`)
+    // No actual cache in mock service, this is just a stub
+  }
+
+  /**
    * Delete an asset
    */
   async deleteAsset(assetId: string): Promise<boolean> {

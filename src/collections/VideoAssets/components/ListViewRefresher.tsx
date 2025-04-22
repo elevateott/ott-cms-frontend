@@ -13,7 +13,7 @@ import { EVENTS } from '@/constants/events'
  * of the list view without reloading the entire page.
  */
 
-const POLL_INTERVAL = 10000 // 10 seconds
+const POLL_INTERVAL = 30000 // 30 seconds - increased to reduce API calls
 
 const ListViewRefresher: React.FC = () => {
   const router = useRouter()
@@ -31,9 +31,25 @@ const ListViewRefresher: React.FC = () => {
 
   // Start polling if not already polling
   const startPolling = () => {
+    // Only start polling if we don't already have a polling interval
     if (!pollingRef.current) {
+      console.log('[ListViewRefresher] Starting polling interval')
+
+      // Set a maximum number of poll attempts to avoid excessive API calls
+      let pollCount = 0
+      const MAX_POLL_COUNT = 10 // Maximum number of times to poll
+
       pollingRef.current = setInterval(() => {
-        console.log('[ListViewRefresher] Polling refresh (no pendingVideos check)')
+        pollCount++
+        console.log(`[ListViewRefresher] Polling refresh ${pollCount}/${MAX_POLL_COUNT}`)
+
+        // If we've reached the maximum number of polls, stop polling
+        if (pollCount >= MAX_POLL_COUNT) {
+          console.log('[ListViewRefresher] Reached maximum poll count, stopping polling')
+          stopPolling()
+          return
+        }
+
         forceRefresh('polling')
       }, POLL_INTERVAL)
     }
@@ -47,50 +63,78 @@ const ListViewRefresher: React.FC = () => {
     }
   }
 
+  // Debounce refresh to prevent excessive calls
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastEventTimeRef = useRef<number>(0)
+  const MIN_REFRESH_INTERVAL = 2000 // 2 seconds minimum between refreshes
+
+  const debouncedRefresh = (source: string) => {
+    const now = Date.now()
+    const timeSinceLastEvent = now - lastEventTimeRef.current
+
+    // Clear any existing timeout
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current)
+      refreshTimeoutRef.current = null
+    }
+
+    // If we've refreshed recently, set a timeout for the remaining time
+    if (timeSinceLastEvent < MIN_REFRESH_INTERVAL) {
+      const delay = MIN_REFRESH_INTERVAL - timeSinceLastEvent
+      console.log(`[ListViewRefresher] Debouncing refresh from ${source} for ${delay}ms`)
+      refreshTimeoutRef.current = setTimeout(() => {
+        forceRefresh(`${source} (debounced)`)
+        lastEventTimeRef.current = Date.now()
+      }, delay)
+    } else {
+      // Otherwise refresh immediately
+      forceRefresh(source)
+      lastEventTimeRef.current = now
+    }
+  }
+
   // Use useEventBusMulti to handle all events
   useEventBusMulti({
     [EVENTS.VIDEO_CREATED]: () => {
       startPolling()
-      setTimeout(() => {
-        forceRefresh('VIDEO_CREATED')
-      }, 3000)
+      debouncedRefresh('VIDEO_CREATED')
     },
     [EVENTS.VIDEO_UPLOAD_COMPLETED]: () => {
       startPolling()
     },
     [EVENTS.VIDEO_STATUS_READY]: () => {
       stopPolling()
-      forceRefresh(EVENTS.VIDEO_STATUS_READY)
+      debouncedRefresh(EVENTS.VIDEO_STATUS_READY)
     },
     [EVENTS.VIDEO_UPDATED]: (data) => {
       if (data?.isStatusChange) {
-        setTimeout(() => {
-          forceRefresh('VIDEO_UPDATED')
-        }, 3000)
-      } else {
-        forceRefresh(EVENTS.VIDEO_UPDATED)
+        debouncedRefresh('VIDEO_UPDATED')
       }
     },
     [EVENTS.VIDEO_STATUS_UPDATED]: () => {
-      forceRefresh(EVENTS.VIDEO_STATUS_UPDATED)
+      debouncedRefresh(EVENTS.VIDEO_STATUS_UPDATED)
     },
     [EVENTS.VIDEO_UPLOAD_STARTED]: () => {
-      forceRefresh(EVENTS.VIDEO_UPLOAD_STARTED)
+      debouncedRefresh(EVENTS.VIDEO_UPLOAD_STARTED)
     },
-    [EVENTS.VIDEO_UPLOAD_PROGRESS]: () => {
-      forceRefresh(EVENTS.VIDEO_UPLOAD_PROGRESS)
-    },
+    // Don't refresh on every progress event - it's too frequent
+    // [EVENTS.VIDEO_UPLOAD_PROGRESS]: () => {
+    //   debouncedRefresh(EVENTS.VIDEO_UPLOAD_PROGRESS)
+    // },
     [EVENTS.VIDEO_UPLOAD_ERROR]: () => {
-      forceRefresh(EVENTS.VIDEO_UPLOAD_ERROR)
+      debouncedRefresh(EVENTS.VIDEO_UPLOAD_ERROR)
     },
     RELOAD_PAGE: () => {
-      forceRefresh('RELOAD_PAGE')
+      debouncedRefresh('RELOAD_PAGE')
     },
   })
 
   useEffect(() => {
     return () => {
       stopPolling()
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current)
+      }
     }
   }, [])
 

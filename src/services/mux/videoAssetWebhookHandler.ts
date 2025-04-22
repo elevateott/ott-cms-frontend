@@ -8,11 +8,13 @@ import VideoAssetRepository from '@/repositories/videoAssetRepository'
 import { EventService } from '@/services/eventService'
 import { EVENTS } from '@/constants/events'
 import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
+import { createMuxService } from '@/services/mux'
 
 export class VideoAssetWebhookHandler {
   private eventService: EventService
   private videoAssetRepository: VideoAssetRepository
   private initialized: boolean = false
+  private muxService = createMuxService()
 
   constructor(payload?: any) {
     this.initializeServices(payload)
@@ -290,6 +292,10 @@ export class VideoAssetWebhookHandler {
       // Update the video with the asset data
       console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
       try {
+        // Clear the cache for this asset to ensure fresh data on next fetch
+        this.muxService.clearAssetCache(assetId)
+        console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
+
         const updatedVideo = await this.videoAssetRepository.update(video.id, updateData)
         if (updatedVideo) {
           await this.emitEvent(EVENTS.VIDEO_STATUS_READY, updatedVideo)
@@ -362,6 +368,13 @@ export class VideoAssetWebhookHandler {
 
       // Update the video with the asset data
       console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
+
+      // Clear the cache for this asset to ensure fresh data on next fetch
+      if (assetId) {
+        this.muxService.clearAssetCache(assetId)
+        console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
+      }
+
       const updatedVideo = await this.videoAssetRepository.update(video.id, updateData)
       console.log(
         `🔔 WEBHOOK [${timestamp}] Video asset update result: ${updatedVideo ? 'Success' : 'Failed'}`,
@@ -398,6 +411,10 @@ export class VideoAssetWebhookHandler {
       }
 
       console.log(`Found video asset ${video.id} for assetId ${assetId}, proceeding with deletion`)
+
+      // Clear the cache for this asset
+      this.muxService.clearAssetCache(assetId)
+      console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${assetId}`)
 
       // Delete the video from our database
       console.log(`🔔 WEBHOOK [${timestamp}] Deleting video asset ${video.id} from database...`)
@@ -476,6 +493,13 @@ export class VideoAssetWebhookHandler {
 
       // Update the video with the non-standard input information
       console.log(`🔔 WEBHOOK [${timestamp}] Updating video asset in database...`)
+
+      // Clear the cache if we have an asset ID
+      if (video.muxData?.assetId) {
+        this.muxService.clearAssetCache(video.muxData.assetId)
+        console.log(`🔔 WEBHOOK [${timestamp}] Cleared cache for asset ${video.muxData.assetId}`)
+      }
+
       const updatedVideo = await this.videoAssetRepository.update(video.id, updateData)
       console.log(
         `🔔 WEBHOOK [${timestamp}] Video asset update result: ${updatedVideo ? 'Success' : 'Failed'}`,

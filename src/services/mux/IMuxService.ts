@@ -8,6 +8,7 @@ export interface IMuxService {
   getAsset(assetId: string): Promise<MuxAsset | null>
   getAllAssets(limit?: number): Promise<MuxAsset[]>
   deleteAsset(assetId: string): Promise<boolean>
+  clearAssetCache(assetId?: string): void
   getThumbnailUrl(
     playbackId: string,
     options?: {

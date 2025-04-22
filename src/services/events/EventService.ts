@@ -1,4 +1,4 @@
-import { emitSSE } from '@/app/api/events/stream/route'
+import { emitSSE } from '@/app/api/events/route'
 
 export class EventService {
   private static instance: EventService
