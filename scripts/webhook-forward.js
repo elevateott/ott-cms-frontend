@@ -12,8 +12,8 @@ import dotenv from 'dotenv'
 dotenv.config({ path: '.env.development' })
 
 // Get the smee URL from environment variable or use a default
-const source = process.env.WEBHOOK_PROXY_URL || 'https://smee.io/new'
-const target = process.env.WEBHOOK_TARGET_URL || 'http://localhost:3000/api/mux/webhook'
+const source = process.env.WEBHOOK_PROXY_URL
+const target = process.env.WEBHOOK_TARGET_URL
 
 console.log(`Forwarding webhooks from ${source} to ${target}`)
 

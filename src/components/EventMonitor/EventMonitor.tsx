@@ -20,7 +20,7 @@ export const EventMonitor: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const addEvent = (type: string, data: any) => {
-    clientLogger.info(`📝 EventMonitor received ${type}:`, data, 'EventMonitorEventMonitor')
+    clientLogger.info(`📝 EventMonitor received ${type}:`, data)
     setEvents((prev) => [
       {
         id: Math.random().toString(36).substr(2, 9),

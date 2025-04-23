@@ -77,7 +77,7 @@ export function logError(
       context,
     }
 
-    logger.error({ context: 'utils/errorHandler' }, 
+    console.error(
       `[ERROR]${context ? ` [${context}]` : ''}:`,
       JSON.stringify(formattedError, null, 2),
     )

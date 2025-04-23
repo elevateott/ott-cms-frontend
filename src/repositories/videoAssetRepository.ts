@@ -1,4 +1,4 @@
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/logger'
 import { getPayload } from '@/utils/getPayload'
 
 export class VideoAssetRepository {
@@ -14,7 +14,11 @@ export class VideoAssetRepository {
     try {
       return await this.findByField('muxData.uploadId', uploadId)
     } catch (error) {
-      logger.error({ context: 'repositories/videoAssetRepository' }, '❌ Error in findByMuxUploadId:', error)
+      logger.error(
+        { context: 'repositories/videoAssetRepository' },
+        '❌ Error in findByMuxUploadId:',
+        error,
+      )
       throw error
     }
   }
@@ -23,7 +27,11 @@ export class VideoAssetRepository {
     try {
       return await this.findByField('muxData.assetId', assetId)
     } catch (error) {
-      logger.error({ context: 'repositories/videoAssetRepository' }, '❌ Error in findByMuxAssetId:', error)
+      logger.error(
+        { context: 'repositories/videoAssetRepository' },
+        '❌ Error in findByMuxAssetId:',
+        error,
+      )
       throw error
     }
   }
@@ -41,7 +49,11 @@ export class VideoAssetRepository {
 
       return result
     } catch (error) {
-      logger.error({ context: 'repositories/videoAssetRepository' }, `Failed to update video asset ${id}:`, error)
+      logger.error(
+        { context: 'repositories/videoAssetRepository' },
+        `Failed to update video asset ${id}:`,
+        error,
+      )
       throw error
     }
   }
@@ -51,14 +63,48 @@ export class VideoAssetRepository {
    */
   async create(data: any): Promise<any> {
     try {
+      logger.info(
+        { context: 'repositories/videoAssetRepository' },
+        '🔄 Creating video asset with data:',
+        JSON.stringify(data, null, 2),
+      )
+
+      if (!this.payload) {
+        logger.error(
+          { context: 'repositories/videoAssetRepository' },
+          '❌ Payload instance is not available',
+        )
+        throw new Error('Payload instance is not available')
+      }
+
       const result = await this.payload.create({
         collection: this.collectionSlug,
         data,
       })
 
+      logger.info(
+        { context: 'repositories/videoAssetRepository' },
+        '✅ Successfully created video asset:',
+        result?.id || 'unknown id',
+      )
+
       return result
     } catch (error) {
-      logger.error({ context: 'repositories/videoAssetRepository' }, 'Failed to create video asset:', error)
+      logger.error(
+        { context: 'repositories/videoAssetRepository' },
+        '❌ Failed to create video asset:',
+        error,
+      )
+
+      // Log more details about the error
+      if (error instanceof Error) {
+        logger.error({ context: 'repositories/videoAssetRepository' }, '🔍 Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        })
+      }
+
       throw error
     }
   }
@@ -75,7 +121,11 @@ export class VideoAssetRepository {
 
       return true
     } catch (error) {
-      logger.error({ context: 'repositories/videoAssetRepository' }, `Failed to delete video asset ${id}:`, error)
+      logger.error(
+        { context: 'repositories/videoAssetRepository' },
+        `Failed to delete video asset ${id}:`,
+        error,
+      )
       return false
     }
   }
@@ -96,7 +146,11 @@ export class VideoAssetRepository {
 
       return result.docs[0] || null
     } catch (error) {
-      logger.error({ context: 'repositories/videoAssetRepository' }, `Failed to find video asset by ${field}:`, error)
+      logger.error(
+        { context: 'repositories/videoAssetRepository' },
+        `Failed to find video asset by ${field}:`,
+        error,
+      )
       return null
     }
   }

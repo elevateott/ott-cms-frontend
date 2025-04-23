@@ -1,0 +1,36 @@
+{
+  "type": "video.asset.created",
+  "id": "evt_123456789",
+  "object": "event",
+  "created_at": "2023-07-25T15:30:00.000000Z",
+  "data": {
+    "id": "mux_asset_123456",
+    "created_at": "2023-07-25T15:30:00.000000Z",
+    "status": "preparing",
+    "duration": 0,
+    "max_stored_resolution": "none",
+    "max_stored_frame_rate": 0,
+    "aspect_ratio": null,
+    "playback_ids": [
+      {
+        "id": "playback_id_123456",
+        "policy": "public"
+      }
+    ],
+    "tracks": [],
+    "mp4_support": "none",
+    "master_access": "none",
+    "upload_id": "upload_123456",
+    "is_live": false,
+    "passthrough": "test-video-1",
+    "live_stream_id": null,
+    "master": {
+      "status": "preparing",
+      "url": null
+    },
+    "static_renditions": {
+      "status": "disabled",
+      "files": []
+    }
+  }
+}

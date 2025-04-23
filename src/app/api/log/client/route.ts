@@ -1,6 +1,6 @@
 /**
  * Client Log API
- * 
+ *
  * This API endpoint receives logs from the client-side logger
  * and forwards them to the server-side logger.
  */
@@ -9,19 +9,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/utils/logger'
 import { ClientLogData } from '@/utils/clientLogger'
 
+/**
+ * HEAD /api/log/client
+ *
+ * Used by the client logger to check if the server is available
+ */
+export async function HEAD(): Promise<NextResponse> {
+  return NextResponse.json({ available: true })
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // Parse the log data from the request
     const logData: ClientLogData = await req.json()
-    
+
     // Extract the log data
     const { level, message, context, data, userAgent, url } = logData
-    
+
     // Create a context string that includes the client info
-    const clientContext = context 
-      ? `${context} (Client)`
-      : 'Client'
-    
+    const clientContext = context ? `${context} (Client)` : 'Client'
+
     // Add client-specific data
     const clientData = {
       ...data,
@@ -30,7 +37,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         url,
       },
     }
-    
+
     // Log using the appropriate level
     switch (level) {
       case 'info':
@@ -49,26 +56,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         // Default to info level if unknown
         logger.info({ context: clientContext, ...clientData, level }, message)
     }
-    
+
     // Return a success response
     return NextResponse.json({ success: true })
   } catch (error) {
     // Log the error
     logger.error(
-      { 
+      {
         err: error instanceof Error ? error : new Error('Unknown error'),
         context: 'ClientLogAPI',
-      }, 
-      'Error processing client log'
+      },
+      'Error processing client log',
     )
-    
+
     // Return an error response
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
-      { status: 500 }
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
     )
   }
 }
