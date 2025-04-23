@@ -12,8 +12,8 @@ import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
 import { createMuxService } from '@/services/mux'
 
 export class VideoAssetWebhookHandler {
-  private eventService: EventService
-  private videoAssetRepository: VideoAssetRepository
+  private eventService!: EventService
+  private videoAssetRepository!: VideoAssetRepository
   private initialized: boolean = false
   private muxService = createMuxService()
 

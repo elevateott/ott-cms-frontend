@@ -28,6 +28,7 @@ export interface ClientLogData {
 // Configuration
 const LOG_TO_SERVER = process.env.NEXT_PUBLIC_ENABLE_REMOTE_LOGGING === 'true'
 const LOG_ENDPOINT = '/api/log/client'
+const LOG_STATUS_ENDPOINT = '/api/log/status'
 
 // Error tracking to disable logging if there are persistent errors
 let consecutiveErrors = 0
@@ -64,8 +65,16 @@ const isLoggingEnabled = () => {
 
 // Helper function to fetch with timeout using Promise.race
 const fetchWithTimeout = (url: string, options: RequestInit, timeout = 3000): Promise<Response> => {
+  // Check if fetch is available (only in browser environment)
+  if (typeof fetch === 'undefined') {
+    return Promise.reject(new Error('Fetch API not available'))
+  }
+
   return Promise.race([
-    fetch(url, options),
+    fetch(url, options).catch((error) => {
+      // Convert network errors to a rejected promise with a more descriptive message
+      return Promise.reject(new Error(`Network error: ${error.message || 'Unknown error'}`))
+    }),
     new Promise<Response>((_, reject) =>
       setTimeout(() => reject(new Error('Request timeout')), timeout),
     ),
@@ -94,6 +103,14 @@ const sendToServer = async (logData: ClientLogData): Promise<void> => {
   const fullEndpoint = `${serverUrl}${LOG_ENDPOINT}`
 
   try {
+    // Check if the API endpoint exists before sending
+    if (!fullEndpoint || !serverUrl) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[ClientLogger] Invalid API endpoint, skipping log send')
+      }
+      return
+    }
+
     const response = await fetchWithTimeout(
       fullEndpoint,
       {
@@ -101,6 +118,8 @@ const sendToServer = async (logData: ClientLogData): Promise<void> => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(logData),
         keepalive: true, // This ensures the request completes even if the page is unloading
+        // Add credentials to ensure cookies are sent
+        credentials: 'same-origin',
       },
       3000, // 3 second timeout
     )
@@ -112,7 +131,7 @@ const sendToServer = async (logData: ClientLogData): Promise<void> => {
       // Increment error count for non-200 responses
       disableServerLoggingIfNeeded()
       if (process.env.NODE_ENV === 'development') {
-        console.error(`[ClientLogger] Server returned ${response.status}: ${response.statusText}`)
+        console.warn(`[ClientLogger] Server returned ${response.status}: ${response.statusText}`)
       }
     }
   } catch (err) {
@@ -125,8 +144,10 @@ const sendToServer = async (logData: ClientLogData): Promise<void> => {
       // Check if it's a timeout error
       if (err instanceof Error && err.message === 'Request timeout') {
         console.warn('[ClientLogger] Request timed out after 3 seconds')
+      } else if (err instanceof Error && err.message.startsWith('Network error:')) {
+        console.warn(`[ClientLogger] ${err.message}`)
       } else {
-        console.error('[ClientLogger] Failed to send log to server:', err)
+        console.warn('[ClientLogger] Failed to send log to server:', err)
       }
     }
   }
@@ -145,10 +166,24 @@ const sendQueuedLogs = () => {
   const logsToSend = [...logQueue]
   logQueue = []
 
-  // Send each log
+  // Send each log with proper error handling
   logsToSend.forEach((logData) => {
-    sendToServer(logData).catch(() => {
-      // Silent catch to prevent errors if server logging fails
+    sendToServer(logData).catch((error) => {
+      // If server logging is disabled, don't re-queue
+      if (loggingDisabled) return
+
+      // For network errors, re-queue the log for the next batch
+      // but only if we haven't exceeded the maximum queue size
+      if (logQueue.length < 100) {
+        logQueue.push(logData)
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(
+            `[ClientLogger] Re-queued log due to error: ${error.message || 'Unknown error'}`,
+          )
+        }
+      } else if (process.env.NODE_ENV === 'development') {
+        console.warn('[ClientLogger] Log queue full, dropping log')
+      }
     })
   })
 
@@ -215,40 +250,74 @@ if (typeof window !== 'undefined' && LOG_TO_SERVER) {
   window.addEventListener('load', () => {
     // Check if the server is available
     const serverUrl = window.location.origin
-    const fullEndpoint = `${serverUrl}${LOG_ENDPOINT}`
+    const statusEndpoint = `${serverUrl}${LOG_STATUS_ENDPOINT}`
 
-    fetchWithTimeout(
-      fullEndpoint,
-      {
-        method: 'HEAD',
-        cache: 'no-store',
-      },
-      3000, // 3 second timeout
-    )
-      .then((response) => {
-        if (response.ok) {
-          console.debug('[ClientLogger] Server logging is available')
-          resetErrorCount()
-        } else {
-          console.warn(`[ClientLogger] Server returned ${response.status}, disabling logging`)
-          disableServerLoggingIfNeeded()
-          disableServerLoggingIfNeeded()
-          disableServerLoggingIfNeeded()
-        }
-      })
-      .catch((err) => {
-        // Check if it's a timeout error
-        if (err instanceof Error && err.message === 'Request timeout') {
-          console.warn('[ClientLogger] Server availability check timed out after 3 seconds')
-        } else {
-          console.warn('[ClientLogger] Server logging is not available:', err.message)
-        }
+    // Don't try to check if the endpoint is invalid
+    if (!statusEndpoint || !serverUrl) {
+      console.warn('[ClientLogger] Invalid API endpoint, disabling server logging')
+      loggingDisabled = true
+      return
+    }
 
-        // Disable logging after 3 consecutive errors
-        disableServerLoggingIfNeeded()
-        disableServerLoggingIfNeeded()
-        disableServerLoggingIfNeeded()
-      })
+    // Use a try-catch to handle any unexpected errors
+    try {
+      fetchWithTimeout(
+        statusEndpoint,
+        {
+          method: 'GET',
+          cache: 'no-store',
+          // Add credentials to ensure cookies are sent
+          credentials: 'same-origin',
+        },
+        3000, // 3 second timeout
+      )
+        .then(async (response) => {
+          if (response.ok) {
+            try {
+              // Parse the JSON response
+              const data = await response.json()
+
+              if (data.success && data.status === 'available') {
+                console.debug('[ClientLogger] Server logging is available')
+                resetErrorCount()
+                loggingDisabled = false
+              } else {
+                console.warn(
+                  '[ClientLogger] Server logging is not available:',
+                  data.status || 'unknown status',
+                )
+                loggingDisabled = true
+              }
+            } catch (error) {
+              console.warn('[ClientLogger] Error parsing status response:', error)
+              loggingDisabled = true
+            }
+          } else {
+            console.warn(`[ClientLogger] Server returned ${response.status}, disabling logging`)
+            // Disable logging immediately for non-200 responses
+            loggingDisabled = true
+          }
+        })
+        .catch((err) => {
+          // Check if it's a timeout error
+          if (err instanceof Error && err.message === 'Request timeout') {
+            console.warn('[ClientLogger] Server availability check timed out after 3 seconds')
+          } else if (err instanceof Error && err.message.startsWith('Network error:')) {
+            console.warn(`[ClientLogger] ${err.message}`)
+          } else {
+            console.warn(
+              '[ClientLogger] Server logging is not available:',
+              err.message || 'Unknown error',
+            )
+          }
+
+          // Disable logging immediately for any error
+          loggingDisabled = true
+        })
+    } catch (error) {
+      console.warn('[ClientLogger] Error checking server availability:', error)
+      loggingDisabled = true
+    }
   })
 }
 

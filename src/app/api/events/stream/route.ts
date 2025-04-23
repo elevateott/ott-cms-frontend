@@ -1,8 +1,8 @@
-// src\app\api\events\route.ts
-import { eventBus } from '@/services/events/eventEmitter'
+// src\app\api\events\stream\route.ts
 import { headers } from 'next/headers'
 import { EVENTS } from '@/constants/events'
 import { logger } from '@/utils/logger'
+import { eventBus, connectionManager } from '@/services/events/eventEmitter'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -11,9 +11,14 @@ export async function GET() {
   const headersList = await headers()
   const accept = headersList.get('accept')
 
+  logger.info({ context: 'SSE' }, `SSE stream requested with Accept header: ${accept}`)
+
   if (accept !== 'text/event-stream') {
+    logger.warn({ context: 'SSE' }, `Rejecting connection with invalid Accept header: ${accept}`)
     return new Response('Accepts SSE connections only', { status: 406 })
   }
+
+  logger.info({ context: 'SSE' }, 'Valid SSE connection request received')
 
   const connectionId = crypto.randomUUID()
   const encoder = new TextEncoder()
@@ -23,6 +28,9 @@ export async function GET() {
   const stream = new ReadableStream({
     start(controller) {
       logger.info({ context: 'SSE', connectionId }, `Connection opened: ${connectionId}`)
+
+      // Register this client with the connection manager
+      connectionManager.addClient(connectionId, controller)
 
       // Send initial connection message
       controller.enqueue(
@@ -41,10 +49,10 @@ export async function GET() {
       }, 30000)
 
       // Register all event listeners dynamically
-      const listeners: Record<string, (...args: any[]) => void> = {}
+      const listeners: Record<string, (data: unknown) => void> = {}
 
       for (const event of Object.values(EVENTS)) {
-        const listener = (data: any) => {
+        const listener = (data: unknown) => {
           if (!closed) {
             controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`))
           }
@@ -60,6 +68,8 @@ export async function GET() {
           eventBus.off(event, listener)
         }
         try {
+          // Remove client from connection manager
+          connectionManager.removeClient(connectionId)
           controller.close()
         } catch (error) {
           logger.error({ context: 'SSE', connectionId, error }, `Cleanup error for ${connectionId}`)
@@ -72,6 +82,8 @@ export async function GET() {
     cancel() {
       closed = true
       if (keepAliveInterval) clearInterval(keepAliveInterval)
+      // Remove client from connection manager
+      connectionManager.removeClient(connectionId)
       logger.info({ context: 'SSE', connectionId }, `Connection closed: ${connectionId}`)
     },
   })
@@ -86,6 +98,6 @@ export async function GET() {
   })
 }
 
-export function emitSSE(event: string, data: any) {
+export function emitSSE(event: string, data: unknown) {
   eventBus.emit(event, data)
 }

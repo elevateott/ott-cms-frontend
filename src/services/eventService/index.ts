@@ -1,6 +1,6 @@
 import { EVENTS } from '@/constants/events'
-import { eventBus } from '@/utilities/eventBus'
 import { logger } from '@/utils/logger'
+import { eventBus, sendEventToClients } from '../../services/events/eventEmitter'
 
 /**
  * Service for handling event emission across the application
@@ -22,16 +22,26 @@ export class EventService {
    * @param event The event name
    * @param data The event data
    */
-  async emit(event: keyof typeof EVENTS, data: any): Promise<void> {
+  async emit(event: keyof typeof EVENTS, data: unknown): Promise<void> {
     try {
       logger.info({ context: 'EventService', event, data }, `Emitting event ${event}`)
 
-      // Emit to client-side event bus
-      eventBus.emit(event, {
-        ...data,
+      // Create payload with timestamp and source
+      const payload = {
+        ...(typeof data === 'object' && data !== null
+          ? (data as Record<string, unknown>)
+          : { data }),
         timestamp: new Date().toISOString(),
         source: 'server',
-      })
+      }
+
+      logger.info(`📢 EventService: Emitting event ${event}`, payload)
+
+      // Internal listeners (hooks, dev logs)
+      eventBus.emit(event, payload)
+
+      // Push to connected SSE clients
+      sendEventToClients(event, payload)
     } catch (error) {
       logger.error({ context: 'EventService', event, error }, `Error emitting event ${event}`)
       throw error
@@ -42,12 +52,20 @@ export class EventService {
    * Emit multiple events at once
    * @param events Array of event objects containing event name and data
    */
-  async emitMultiple(events: Array<{ event: keyof typeof EVENTS; data: any }>): Promise<void> {
-    try {
-      await Promise.all(events.map(({ event, data }) => this.emit(event, data)))
-    } catch (error) {
-      logger.error({ context: 'EventService', error }, 'Error emitting multiple events')
-      throw error
+  async emitMultiple(events: Array<{ event: keyof typeof EVENTS; data: unknown }>): Promise<void> {
+    const results = await Promise.allSettled(
+      events.map(({ event, data }) => this.emit(event, data)),
+    )
+
+    const errors = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[]
+    if (errors.length > 0) {
+      for (const error of errors) {
+        logger.error(
+          { context: 'EventService.emitMultiple', error },
+          'Failed to emit one or more events',
+        )
+      }
+      throw new Error(`emitMultiple failed for ${errors.length} event(s)`)
     }
   }
 }

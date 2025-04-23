@@ -4,6 +4,7 @@
  * A simple event bus for client-side communication between components
  */
 
+// src\utilities\eventBus.ts
 import { clientLogger } from '@/utils/clientLogger'
 
 type EventCallback<T = any> = (data?: T) => void

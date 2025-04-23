@@ -1,4 +1,3 @@
-import { logger } from '@/utils/logger';
 /**
  * Event Emitter Service
  *
@@ -9,6 +8,7 @@ import { ReadableStreamController } from 'node:stream/web'
 import { logError } from '@/utils/errorHandler'
 import { EVENTS } from '@/constants/events'
 import { EventEmitter } from 'events'
+import { logger } from '@/utils/logger'
 export const eventBus = new EventEmitter()
 
 // Store active connections with cleanup
@@ -33,7 +33,10 @@ class ConnectionManager {
     }
 
     this.clients.set(id, controller)
-    logger.info({ context: 'eventsService' }, `Client connected: ${id}, total clients: ${this.clients.size}`)
+    logger.info(
+      { context: 'eventsService' },
+      `Client connected: ${id}, total clients: ${this.clients.size}`,
+    )
   }
 
   // Remove a client
@@ -43,11 +46,18 @@ class ConnectionManager {
       try {
         controller.close()
       } catch (error) {
-        logger.error({ context: 'eventsService' }, `Error closing controller for client ${id}:`, error)
+        logger.error(
+          { context: 'eventsService' },
+          `Error closing controller for client ${id}:`,
+          error,
+        )
       }
     }
     this.clients.delete(id)
-    logger.info({ context: 'eventsService' }, `Client disconnected: ${id}, total clients: ${this.clients.size}`)
+    logger.info(
+      { context: 'eventsService' },
+      `Client disconnected: ${id}, total clients: ${this.clients.size}`,
+    )
   }
 
   // Add a method to check if a client exists
@@ -61,20 +71,26 @@ class ConnectionManager {
   }
 
   // Send event to all clients
-  sendEventToClients(event: string, data: any): void {
-    const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
-    const encoder = new TextEncoder()
-
-    logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] Sending event to ${this.clients.size} clients:`, {
-      event,
-      data,
-    })
-
-    // Standardize event names
+  sendEventToClients(event: string, data: unknown): void {
+    // Standardize event names (replace underscores with colons)
     const standardizedEvent = event.replace(/_/g, ':')
 
+    // We'll use this encoder later when sending to each client
+    const encoder = new TextEncoder()
+
+    logger.info(
+      { context: 'eventsService' },
+      `🔍 DEBUG [EventEmitter] Sending event to ${this.clients.size} clients:`,
+      {
+        originalEvent: event,
+        standardizedEvent,
+        data,
+      },
+    )
+
     if (this.clients.size === 0) {
-      logger.warn({ context: 'eventsService' }, 
+      logger.warn(
+        { context: 'eventsService' },
         `🔍 DEBUG [EventEmitter] No clients connected to receive event: ${standardizedEvent}`,
       )
       return
@@ -82,12 +98,16 @@ class ConnectionManager {
 
     this.clients.forEach((controller, id) => {
       try {
-        logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] Sending event ${standardizedEvent} to client ${id}`)
+        logger.info(
+          { context: 'eventsService' },
+          `🔍 DEBUG [EventEmitter] Sending event ${standardizedEvent} to client ${id}`,
+        )
         controller.enqueue(
           encoder.encode(`event: ${standardizedEvent}\ndata: ${JSON.stringify(data)}\n\n`),
         )
       } catch (error) {
-        logger.error({ context: 'eventsService' }, 
+        logger.error(
+          { context: 'eventsService' },
           `🔍 DEBUG [EventEmitter] Error sending event ${standardizedEvent} to client ${id}:`,
           error,
         )
@@ -107,20 +127,36 @@ class ConnectionManager {
 export const connectionManager = ConnectionManager.getInstance()
 
 // Function to send events (used by other modules)
-export function sendEventToClients(event: string, data: any): void {
-  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] sendEventToClients called with event: ${event}, data:`, data)
-  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] Current client count: ${connectionManager.getClientCount()}`)
+export function sendEventToClients(event: string, data: unknown): void {
+  logger.info(
+    { context: 'eventsService' },
+    `🔍 DEBUG [EventEmitter] sendEventToClients called with event: ${event}, data:`,
+    data,
+  )
+  logger.info(
+    { context: 'eventsService' },
+    `🔍 DEBUG [EventEmitter] Current client count: ${connectionManager.getClientCount()}`,
+  )
   connectionManager.sendEventToClients(event, data)
 }
 
 // Helper functions for specific events
 export function emitVideoCreated(id: string): void {
-  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] emitVideoCreated called for video ${id}`)
+  logger.info(
+    { context: 'eventsService' },
+    `🔍 DEBUG [EventEmitter] emitVideoCreated called for video ${id}`,
+  )
   sendEventToClients(EVENTS.VIDEO_CREATED, { id })
 }
 
 export function emitVideoUpdated(id: string, isStatusChange: boolean = false): void {
-  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] emitVideoUpdated called for video ${id}`)
-  logger.info({ context: 'eventsService' }, `🔍 DEBUG [EventEmitter] isStatusChange: ${isStatusChange}`)
+  logger.info(
+    { context: 'eventsService' },
+    `🔍 DEBUG [EventEmitter] emitVideoUpdated called for video ${id}`,
+  )
+  logger.info(
+    { context: 'eventsService' },
+    `🔍 DEBUG [EventEmitter] isStatusChange: ${isStatusChange}`,
+  )
   sendEventToClients(EVENTS.VIDEO_UPDATED, { id, isStatusChange })
 }
