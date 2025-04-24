@@ -1,7 +1,6 @@
 'use client'
 
-import { clientLogger } from '@/utils/clientLogger';
-
+import { clientLogger } from '@/utils/clientLogger'
 
 /**
  * VideoAdmin Component
@@ -56,8 +55,8 @@ const DeleteAllVideos: React.FC = () => {
       setError(null)
       setSuccess(false)
 
-      // Call the API to delete all videos
-      const response = await fetch('/api/videos/delete-all', {
+      // Call the API to delete all video assets
+      const response = await fetch('/api/videoassets/delete-all', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -66,17 +65,17 @@ const DeleteAllVideos: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to delete videos')
+        throw new Error(errorData.message || 'Failed to delete video assets')
       }
 
       const result = await response.json()
       setSuccess(true)
-      clientLogger.info('All videos deleted successfully:', result, 'videoVideoAdmin')
+      clientLogger.info('All video assets deleted successfully:', result, 'videoVideoAdmin')
 
       // Show success toast
       toast({
         title: 'Success',
-        description: `Successfully deleted ${result.deletedCount} videos`,
+        description: `Successfully deleted ${result.deletedCount} video assets`,
         variant: 'default',
       })
 
@@ -111,18 +110,18 @@ const DeleteAllVideos: React.FC = () => {
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold"
           >
             <Trash2 className="h-4 w-4" />
-            Delete All Videos
+            Delete All Video Assets
           </Button>
         </DialogTrigger>
         <DialogContent className="bg-white border border-gray-200 shadow-lg text-black">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Delete All Videos
+              Delete All Video Assets
             </DialogTitle>
             <DialogDescription className="text-gray-700 mt-2">
-              This action will permanently delete ALL videos from the system. This cannot be undone.
-              Are you sure you want to continue?
+              This action will permanently delete ALL video assets from the system. This cannot be
+              undone. Are you sure you want to continue?
             </DialogDescription>
           </DialogHeader>
 
@@ -134,7 +133,7 @@ const DeleteAllVideos: React.FC = () => {
 
           {success && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-              All videos have been successfully deleted.
+              All video assets have been successfully deleted.
             </div>
           )}
 
@@ -149,7 +148,7 @@ const DeleteAllVideos: React.FC = () => {
               className="gap-2 bg-red-600 hover:bg-red-700 text-white font-bold"
             >
               {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isDeleting ? 'Deleting...' : 'Delete All Videos'}
+              {isDeleting ? 'Deleting...' : 'Delete All Video Assets'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -362,7 +361,10 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
               strategy="afterInteractive"
               src="/mux-uploader-preload.js"
               onLoad={() => {
-                clientLogger.info('Mux Uploader preload script loaded in VideoAdmin', 'videoVideoAdmin')
+                clientLogger.info(
+                  'Mux Uploader preload script loaded in VideoAdmin',
+                  'videoVideoAdmin',
+                )
               }}
             />
             {isLoading ? (
