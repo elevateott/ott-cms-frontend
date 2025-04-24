@@ -32,10 +32,10 @@ Desktop.ini
 
 # Local environment files
 .env
+.env.development
+.env.production
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.test
 
 # Next.js build output
 out/

@@ -22,7 +22,7 @@ export const VideoAssets: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['thumbnailPreview', 'title', 'sourceType', 'status', 'createdAt'],
-    group: 'Media',
+    group: 'Content',
     components: {
       // Add our custom components before the default list view
       beforeList: [
@@ -44,6 +44,11 @@ export const VideoAssets: CollectionConfig = {
       },
     },
     {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
       name: 'status',
       type: 'ui',
       label: 'Status',
@@ -53,11 +58,6 @@ export const VideoAssets: CollectionConfig = {
         },
         position: 'sidebar',
       },
-    },
-    {
-      name: 'title',
-      type: 'text',
-      required: true,
     },
     ...slugField(),
     {
