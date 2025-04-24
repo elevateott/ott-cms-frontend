@@ -2,8 +2,8 @@
 import type { GlobalConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 
-const StreamingSources: GlobalConfig = {
-  slug: 'streaming-sources',
+const StreamingSettings: GlobalConfig = {
+  slug: 'streaming-settings',
   access: {
     read: () => true,
     update: authenticated,
@@ -60,4 +60,4 @@ const StreamingSources: GlobalConfig = {
   ],
 }
 
-export default StreamingSources
+export default StreamingSettings

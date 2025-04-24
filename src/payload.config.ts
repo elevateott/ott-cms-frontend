@@ -1,6 +1,6 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
-import StreamingSources from './globals/streamingSources'
+import StreamingSettings from './globals/streamingSettings'
 import OTTSettings from './globals/OTTSettings'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 
@@ -93,7 +93,7 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Media, Categories, Users, MuxWebhookJobs, VideoAssets, Content],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer, StreamingSources, OTTSettings],
+  globals: [Header, Footer, StreamingSettings, OTTSettings],
   plugins: [
     ...plugins,
     payloadCloudPlugin(),

@@ -21,7 +21,7 @@ export const Content: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title'],
-    group: 'Media',
+    group: 'Content',
   },
   fields: [
     {

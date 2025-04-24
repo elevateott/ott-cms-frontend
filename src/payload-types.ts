@@ -109,13 +109,13 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
-    'streaming-sources': StreamingSource;
+    'streaming-settings': StreamingSetting;
     'ott-settings': OttSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
-    'streaming-sources': StreamingSourcesSelect<false> | StreamingSourcesSelect<true>;
+    'streaming-settings': StreamingSettingsSelect<false> | StreamingSettingsSelect<true>;
     'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
   };
   locale: null;
@@ -1805,9 +1805,9 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "streaming-sources".
+ * via the `definition` "streaming-settings".
  */
-export interface StreamingSource {
+export interface StreamingSetting {
   id: string;
   /**
    * Control which video source types are allowed in the system
@@ -1953,9 +1953,9 @@ export interface FooterSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "streaming-sources_select".
+ * via the `definition` "streaming-settings_select".
  */
-export interface StreamingSourcesSelect<T extends boolean = true> {
+export interface StreamingSettingsSelect<T extends boolean = true> {
   allowedSources?: T;
   muxSettings?:
     | T
