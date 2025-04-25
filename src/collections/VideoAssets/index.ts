@@ -30,6 +30,7 @@ export const VideoAssets: CollectionConfig = {
       'status',
       'createdAt',
       'actions',
+      'quickActions',
     ],
     group: 'Content',
     components: {
@@ -278,6 +279,16 @@ export const VideoAssets: CollectionConfig = {
       admin: {
         components: {
           Cell: '@/collections/VideoAssets/components/ActionsCell',
+        },
+      },
+    },
+    {
+      name: 'quickActions',
+      type: 'ui',
+      label: '',
+      admin: {
+        components: {
+          Cell: '@/collections/VideoAssets/components/QuickActionsCell',
         },
       },
     },
