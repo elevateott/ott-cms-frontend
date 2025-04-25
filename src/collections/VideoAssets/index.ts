@@ -16,7 +16,8 @@ export const VideoAssets: CollectionConfig = {
   defaultSort: ['-createdAt'],
   access: {
     read: () => true,
-    create: authenticated,
+    // Disable direct creation through the admin panel
+    create: () => false,
     update: authenticated,
     delete: authenticated,
   },
