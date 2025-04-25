@@ -298,6 +298,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
   const [sourceType, setSourceType] = useState<'mux' | 'embedded'>('mux')
   const [embeddedUrl, setEmbeddedUrl] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isUploading, setIsUploading] = useState(false)
 
   // Set loading to false after a short delay
   useEffect(() => {
@@ -337,8 +338,12 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
           <Select
             value={sourceType}
             onValueChange={(value: 'mux' | 'embedded') => setSourceType(value)}
+            disabled={isUploading}
           >
-            <SelectTrigger id="sourceType" className="w-48">
+            <SelectTrigger
+              id="sourceType"
+              className={`w-48 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
               <SelectValue placeholder="Select source type" />
             </SelectTrigger>
             <SelectContent>
@@ -392,6 +397,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
 
                   return result.data.url // Return the URL string directly
                 }}
+                onUploadingStateChange={setIsUploading}
               />
             )}
           </>

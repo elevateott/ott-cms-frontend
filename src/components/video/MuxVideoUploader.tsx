@@ -16,7 +16,15 @@ import MuxUploaderStyles from './MuxUploaderStyles'
 import Script from 'next/script'
 
 // Video list component
-const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll: () => void }) => {
+const VideoList = ({
+  videos,
+  onClearAll,
+  isUploading,
+}: {
+  videos: UploadedVideo[]
+  onClearAll: () => void
+  isUploading: boolean
+}) => {
   if (videos.length === 0) {
     return null
   }
@@ -29,7 +37,8 @@ const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll
           variant="outline"
           size="sm"
           onClick={onClearAll}
-          className="text-xs flex items-center gap-1"
+          disabled={isUploading}
+          className={`text-xs flex items-center gap-1 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <Trash2 className="w-3 h-3" />
           Clear All
@@ -123,6 +132,7 @@ export interface MuxVideoUploaderProps {
   onUploadComplete?: (data: { uploadId?: string; assetId?: string; playbackId?: string }) => void
   onUploadError?: (error: Error) => void
   className?: string
+  onUploadingStateChange?: (isUploading: boolean) => void
 }
 
 const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
@@ -130,6 +140,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   onUploadComplete,
   onUploadError,
   className,
+  onUploadingStateChange,
 }) => {
   const [uploadedVideos, setUploadedVideos] = useLocalStorage<UploadedVideo[]>(
     'ott-cms-uploaded-videos',
@@ -137,6 +148,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   )
   const [uploaderKey, setUploaderKey] = useState<number>(0)
   const [isUploaderReady, setIsUploaderReady] = useState<boolean>(false)
+  const [isUploading, setIsUploading] = useState<boolean>(false)
 
   // Effect to set the uploader ready state after a short delay
   useEffect(() => {
@@ -147,6 +159,13 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
 
     return () => clearTimeout(timer)
   }, [])
+
+  // Effect to notify parent component when uploading state changes
+  useEffect(() => {
+    if (onUploadingStateChange) {
+      onUploadingStateChange(isUploading)
+    }
+  }, [isUploading, onUploadingStateChange])
 
   // Effect to log when uploadedVideos changes and check for stalled uploads
   useEffect(() => {
@@ -200,6 +219,9 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
       return
     }
 
+    // Set uploading state to true when upload starts
+    setIsUploading(true)
+
     const newVideo = ensureValidVideo({
       id: Date.now().toString(),
       filename: file.name,
@@ -248,6 +270,13 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         })
       }
 
+      // Check if there are any remaining uploads in progress
+      const hasUploadingVideos = updatedVideos.some((video) => video.status === 'uploading')
+      if (!hasUploadingVideos) {
+        // If no more uploads in progress, set isUploading to false
+        setIsUploading(false)
+      }
+
       return updatedVideos
     })
 
@@ -286,6 +315,13 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
           status: 'error',
           error: error?.message || 'Unknown error',
         })
+      }
+
+      // Check if there are any remaining uploads in progress
+      const hasUploadingVideos = updatedVideos.some((video) => video.status === 'uploading')
+      if (!hasUploadingVideos) {
+        // If no more uploads in progress, set isUploading to false
+        setIsUploading(false)
       }
 
       return updatedVideos
@@ -423,7 +459,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
       </div>
 
       {/* Uploaded Videos List */}
-      <VideoList videos={uploadedVideos} onClearAll={handleClearAll} />
+      <VideoList videos={uploadedVideos} onClearAll={handleClearAll} isUploading={isUploading} />
     </div>
   )
 }
