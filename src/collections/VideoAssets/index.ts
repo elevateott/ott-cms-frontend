@@ -5,7 +5,7 @@ import { slugField } from '@/fields/slug'
 import { fetchMuxMetadataForVideoAsset } from '@/hooks/mux/updateVideoAssetOnWebhook'
 import { deleteAssetOnVideoAssetDelete } from '@/hooks/mux/deleteAssetOnVideoAssetDelete'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
-import { updateMuxAssetOnVideoAssetChange } from '@/hooks/mux/updateMuxAssetOnVideoAssetChange'
+import { checkDependenciesBeforeDelete } from '@/hooks/videoAssets/checkDependenciesBeforeDelete'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
@@ -22,7 +22,15 @@ export const VideoAssets: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['thumbnailPreview', 'title', 'sourceType', 'duration', 'status', 'createdAt'],
+    defaultColumns: [
+      'thumbnailPreview',
+      'title',
+      'sourceType',
+      'duration',
+      'status',
+      'createdAt',
+      'actions',
+    ],
     group: 'Content',
     components: {
       // Add our custom components before the default list view
@@ -31,6 +39,7 @@ export const VideoAssets: CollectionConfig = {
         '@/components/EventMonitor',
         '@/collections/VideoAssets/components/ListViewRefresher',
       ],
+      // Custom row component not supported in this version of Payload
     },
   },
   fields: [
@@ -262,13 +271,23 @@ export const VideoAssets: CollectionConfig = {
         update: () => false,
       },
     },
+    {
+      name: 'actions',
+      type: 'ui',
+      label: 'Actions',
+      admin: {
+        components: {
+          Cell: '@/collections/VideoAssets/components/ActionsCell',
+        },
+      },
+    },
   ],
   hooks: {
     // Add logging hooks
     ...createCollectionLoggingHooks('videoassets'),
     // Add existing hooks
-    afterChange: [fetchMuxMetadataForVideoAsset, updateMuxAssetOnVideoAssetChange],
-    beforeDelete: [deleteAssetOnVideoAssetDelete],
+    afterChange: [fetchMuxMetadataForVideoAsset],
+    beforeDelete: [checkDependenciesBeforeDelete, deleteAssetOnVideoAssetDelete],
   },
 }
 
