@@ -111,12 +111,14 @@ export interface Config {
     footer: Footer;
     'streaming-settings': StreamingSetting;
     'ott-settings': OttSetting;
+    'cloud-integrations': CloudIntegration;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     'streaming-settings': StreamingSettingsSelect<false> | StreamingSettingsSelect<true>;
     'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
+    'cloud-integrations': CloudIntegrationsSelect<false> | CloudIntegrationsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -1940,6 +1942,33 @@ export interface OttSetting {
   createdAt?: string | null;
 }
 /**
+ * Configure cloud storage integration settings for video uploads
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cloud-integrations".
+ */
+export interface CloudIntegration {
+  id: string;
+  /**
+   * API key for Dropbox integration. Create an app in the Dropbox Developer Console.
+   */
+  dropboxAppKey?: string | null;
+  /**
+   * API key for Google Drive integration. Create in the Google Cloud Console.
+   */
+  googleApiKey?: string | null;
+  /**
+   * OAuth client ID for Google Drive integration. Create in the Google Cloud Console.
+   */
+  googleClientId?: string | null;
+  /**
+   * Application (client) ID for OneDrive integration. Create in the Microsoft Azure Portal.
+   */
+  onedriveClientId?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
@@ -2053,6 +2082,19 @@ export interface OttSettingsSelect<T extends boolean = true> {
         googleAnalyticsId?: T;
         enableMuxAnalytics?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cloud-integrations_select".
+ */
+export interface CloudIntegrationsSelect<T extends boolean = true> {
+  dropboxAppKey?: T;
+  googleApiKey?: T;
+  googleClientId?: T;
+  onedriveClientId?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

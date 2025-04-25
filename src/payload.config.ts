@@ -2,6 +2,7 @@
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import StreamingSettings from './globals/streamingSettings'
 import OTTSettings from './globals/OTTSettings'
+import CloudIntegrations from './globals/CloudIntegrations'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 
 import sharp from 'sharp' // sharp-import
@@ -93,7 +94,7 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Media, Categories, Users, MuxWebhookJobs, VideoAssets, Content],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer, StreamingSettings, OTTSettings],
+  globals: [Header, Footer, StreamingSettings, OTTSettings, CloudIntegrations],
   plugins: [
     ...plugins,
     payloadCloudPlugin(),

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import MuxUploader from '@mux/mux-uploader-react'
 import { MuxUploaderDrop, MuxUploaderFileSelect } from '@mux/mux-uploader-react'
@@ -14,6 +14,7 @@ import { clientLogger } from '@/utils/clientLogger'
 import styles from './MuxVideoUploader.module.css'
 import MuxUploaderStyles from './MuxUploaderStyles'
 import Script from 'next/script'
+import CloudProviderButtons from './CloudProviderButtons'
 
 // Video list component
 const VideoList = ({
@@ -155,6 +156,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   const [uploaderKey, setUploaderKey] = useState<number>(0)
   const [isUploaderReady, setIsUploaderReady] = useState<boolean>(false)
   const [isUploading, setIsUploading] = useState<boolean>(false)
+  const muxUploaderRef = useRef<any>(null)
 
   // Effect to set the uploader ready state after a short delay
   useEffect(() => {
@@ -410,6 +412,176 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     }
   }
 
+  // Function to handle cloud file selection
+  const handleCloudFileSelected = async (file: File) => {
+    try {
+      clientLogger.info('Cloud file selected for upload', 'MuxVideoUploader', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      })
+
+      // Set uploading state to true
+      setIsUploading(true)
+
+      // Create a new video entry
+      const newVideo = ensureValidVideo({
+        id: Date.now().toString(),
+        filename: file.name,
+        title: file.name.split('.').slice(0, -1).join('.'), // Remove extension
+        status: 'uploading',
+        progress: 0,
+        createdAt: Date.now(),
+      })
+
+      // Add to uploaded videos
+      setUploadedVideos((prev) => [...prev, newVideo])
+
+      // Get upload URL from endpoint
+      const uploadUrl = await endpoint(file)
+
+      if (!uploadUrl) {
+        throw new Error('Failed to get upload URL')
+      }
+
+      // Create FormData and upload the file
+      const formData = new FormData()
+      formData.append('file', file)
+
+      // Track upload progress
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100)
+
+          setUploadedVideos((prev) => {
+            const updatedVideos = [...prev]
+            const lastVideoIndex = updatedVideos.length - 1
+
+            if (lastVideoIndex >= 0) {
+              updatedVideos[lastVideoIndex] = ensureValidVideo({
+                ...updatedVideos[lastVideoIndex],
+                progress: progress,
+              })
+            }
+
+            return updatedVideos
+          })
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Upload successful
+          try {
+            const response = JSON.parse(xhr.responseText)
+            const { upload_id, asset_id, playback_ids } = response
+
+            setUploadedVideos((prev) => {
+              const updatedVideos = [...prev]
+              const lastVideoIndex = updatedVideos.length - 1
+
+              if (lastVideoIndex >= 0) {
+                updatedVideos[lastVideoIndex] = ensureValidVideo({
+                  ...updatedVideos[lastVideoIndex],
+                  status: 'complete',
+                  progress: 100,
+                  assetId: asset_id,
+                  playbackId: playback_ids?.[0]?.id,
+                })
+              }
+
+              return updatedVideos
+            })
+
+            // Emit client-side event for upload completed
+            eventBus.emit(EVENTS.VIDEO_UPLOAD_COMPLETED, {
+              uploadId: upload_id,
+              assetId: asset_id,
+              playbackId: playback_ids?.[0]?.id,
+              timestamp: Date.now(),
+              source: 'client',
+            })
+
+            if (onUploadComplete) {
+              onUploadComplete({
+                uploadId: upload_id,
+                assetId: asset_id,
+                playbackId: playback_ids?.[0]?.id,
+              })
+            }
+
+            // Check if there are any remaining uploads in progress
+            setUploadedVideos((prev) => {
+              const hasUploadingVideos = prev.some((video) => video.status === 'uploading')
+              if (!hasUploadingVideos) {
+                // If no more uploads in progress, set isUploading to false
+                setIsUploading(false)
+              }
+              return prev
+            })
+          } catch (error) {
+            clientLogger.error('Error parsing upload response', 'MuxVideoUploader', { error })
+            handleCloudUploadError(new Error('Error parsing upload response'))
+          }
+        } else {
+          // Upload failed
+          handleCloudUploadError(new Error(`Upload failed with status ${xhr.status}`))
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        handleCloudUploadError(new Error('Network error during upload'))
+      })
+
+      xhr.addEventListener('abort', () => {
+        handleCloudUploadError(new Error('Upload aborted'))
+      })
+
+      // Start the upload
+      xhr.open('POST', uploadUrl)
+      xhr.send(formData)
+    } catch (error) {
+      clientLogger.error('Error handling cloud file upload', 'MuxVideoUploader', { error })
+      handleCloudUploadError(
+        error instanceof Error ? error : new Error('Unknown error during upload'),
+      )
+    }
+  }
+
+  // Helper function to handle cloud upload errors
+  const handleCloudUploadError = (error: Error) => {
+    setUploadedVideos((prev) => {
+      const updatedVideos = [...prev]
+      const lastVideoIndex = updatedVideos.length - 1
+
+      if (lastVideoIndex >= 0) {
+        updatedVideos[lastVideoIndex] = ensureValidVideo({
+          ...updatedVideos[lastVideoIndex],
+          status: 'error',
+          error: error?.message || 'Unknown error',
+        })
+      }
+
+      return updatedVideos
+    })
+
+    if (onUploadError) {
+      onUploadError(error)
+    }
+
+    // Check if there are any remaining uploads in progress
+    setUploadedVideos((prev) => {
+      const hasUploadingVideos = prev.some((video) => video.status === 'uploading')
+      if (!hasUploadingVideos) {
+        // If no more uploads in progress, set isUploading to false
+        setIsUploading(false)
+      }
+      return prev
+    })
+  }
+
   // Function to clear all uploads
   const handleClearAll = () => {
     setUploadedVideos([])
@@ -535,6 +707,14 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
           </MuxUploader>
         )}
       </div>
+
+      {/* Cloud Provider Buttons */}
+      {isUploaderReady && (
+        <div className="mt-2">
+          <p className="text-sm text-gray-500 mb-2">Or select a video from cloud storage:</p>
+          <CloudProviderButtons onFileSelected={handleCloudFileSelected} disabled={isUploading} />
+        </div>
+      )}
 
       {/* Uploaded Videos List */}
       <VideoList videos={uploadedVideos} onClearAll={handleClearAll} isUploading={isUploading} />
