@@ -21,7 +21,7 @@ export const VideoAssets: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['thumbnailPreview', 'title', 'sourceType', 'status', 'createdAt'],
+    defaultColumns: ['thumbnailPreview', 'title', 'sourceType', 'duration', 'status', 'createdAt'],
     group: 'Content',
     components: {
       // Add our custom components before the default list view
