@@ -218,6 +218,9 @@ export const VideoAssets: CollectionConfig = {
       type: 'number',
       admin: {
         description: 'Video duration in seconds (automatically populated for Mux videos)',
+        components: {
+          Cell: '@/components/FormattedDurationCell',
+        },
       },
     },
     {

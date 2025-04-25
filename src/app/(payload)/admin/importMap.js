@@ -20,6 +20,7 @@ import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { default as default_7365299d83dfa761a1edff1100fe1231 } from '@/collections/VideoAssets/components/ThumbnailCell'
 import { default as default_7e5679f467cca64e427803cb4bd4bfc5 } from '@/collections/VideoAssets/components/StatusField'
 import { default as default_3015ae6f5ca8b3e35eef170b626e5e37 } from '@/collections/VideoAssets/components/StatusCell'
+import { default as default_3a1cc515ff3d8bb85bfb3a92af6f4a6c } from '@/components/FormattedDurationCell'
 import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
 import { default as default_d1773cd31f37c9924e701f2341c74113 } from '@/collections/VideoAssets/components/ActionsCell'
 import { default as default_2bd5f1326dc90247fa5fc166638f6821 } from '@/collections/VideoAssets/components/QuickActionsCell'
@@ -57,6 +58,7 @@ export const importMap = {
   "@/collections/VideoAssets/components/ThumbnailCell#default": default_7365299d83dfa761a1edff1100fe1231,
   "@/collections/VideoAssets/components/StatusField#default": default_7e5679f467cca64e427803cb4bd4bfc5,
   "@/collections/VideoAssets/components/StatusCell#default": default_3015ae6f5ca8b3e35eef170b626e5e37,
+  "@/components/FormattedDurationCell#default": default_3a1cc515ff3d8bb85bfb3a92af6f4a6c,
   "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,
   "@/collections/VideoAssets/components/ActionsCell#default": default_d1773cd31f37c9924e701f2341c74113,
   "@/collections/VideoAssets/components/QuickActionsCell#default": default_2bd5f1326dc90247fa5fc166638f6821,
