@@ -375,95 +375,97 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
 
       {/* Source Type Selection */}
       <div className="space-y-4 p-6 bg-white rounded-lg border">
-        {/* Only show source type dropdown if global setting is "Both" */}
-        {streamingSourceTypes === 'Both' && (
-          <div className="space-y-2">
-            <Label htmlFor="sourceType">Video Source Type</Label>
-            <Select
-              value={sourceType}
-              onValueChange={(value: 'mux' | 'embedded') => setSourceType(value)}
-              disabled={isUploading}
-            >
-              <SelectTrigger
-                id="sourceType"
-                className={`w-48 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <SelectValue placeholder="Select source type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="mux">Mux Upload</SelectItem>
-                <SelectItem value="embedded">Embedded URL</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              Upload a video file directly to Mux, or switch to Embedded URL to use an existing HLS
-              stream.
-            </p>
+        {isLoading ? (
+          // Show loader while component is initializing
+          <div className="w-full h-48 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
+            <p className="text-sm text-gray-500">Loading video uploader...</p>
           </div>
-        )}
-
-        {/* Show appropriate component based on source type */}
-        {/* Mux Uploader - shown when sourceType is 'mux' */}
-        {(sourceType === 'mux' || streamingSourceTypes === 'Mux') && (
+        ) : (
           <>
-            {/* Load preload script with highest priority */}
-            <Script
-              id="mux-uploader-preload-admin"
-              strategy="afterInteractive"
-              src="/mux-uploader-preload.js"
-              onLoad={() => {
-                clientLogger.info(
-                  'Mux Uploader preload script loaded in VideoAdmin',
-                  'videoVideoAdmin',
-                )
-              }}
-            />
-            {isLoading ? (
-              // Show loader while uploader is not ready
-              <div className="w-full h-48 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
-                <p className="text-sm text-gray-500">Loading video uploader...</p>
+            {/* Only show source type dropdown if global setting is "Both" */}
+            {streamingSourceTypes === 'Both' && (
+              <div className="space-y-2">
+                <Label htmlFor="sourceType">Video Source Type</Label>
+                <Select
+                  value={sourceType}
+                  onValueChange={(value: 'mux' | 'embedded') => setSourceType(value)}
+                  disabled={isUploading}
+                >
+                  <SelectTrigger
+                    id="sourceType"
+                    className={`w-48 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <SelectValue placeholder="Select source type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mux">Mux Upload</SelectItem>
+                    <SelectItem value="embedded">Embedded URL</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Upload a video file directly to Mux, or switch to Embedded URL to use an existing
+                  HLS stream.
+                </p>
               </div>
-            ) : (
-              <MuxVideoUploader
-                endpoint={async (file?: File) => {
-                  if (!file) return '' // Return empty string if no file provided
+            )}
 
-                  const response = await fetch('/api/mux/direct-upload', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: file.name }),
-                  })
+            {/* Show appropriate component based on source type */}
+            {/* Mux Uploader - shown when sourceType is 'mux' */}
+            {(sourceType === 'mux' || streamingSourceTypes === 'Mux') && (
+              <>
+                {/* Load preload script with highest priority */}
+                <Script
+                  id="mux-uploader-preload-admin"
+                  strategy="afterInteractive"
+                  src="/mux-uploader-preload.js"
+                  onLoad={() => {
+                    clientLogger.info(
+                      'Mux Uploader preload script loaded in VideoAdmin',
+                      'videoVideoAdmin',
+                    )
+                  }}
+                />
+                <MuxVideoUploader
+                  endpoint={async (file?: File) => {
+                    if (!file) return '' // Return empty string if no file provided
 
-                  const result = await response.json()
+                    const response = await fetch('/api/mux/direct-upload', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ filename: file.name }),
+                    })
 
-                  if (!result.data?.url) {
-                    throw new Error('Invalid upload URL response')
-                  }
+                    const result = await response.json()
 
-                  return result.data.url // Return the URL string directly
-                }}
-                onUploadingStateChange={setIsUploading}
-              />
+                    if (!result.data?.url) {
+                      throw new Error('Invalid upload URL response')
+                    }
+
+                    return result.data.url // Return the URL string directly
+                  }}
+                  onUploadingStateChange={setIsUploading}
+                />
+              </>
+            )}
+
+            {/* Embedded URL Input - shown when sourceType is 'embedded' */}
+            {(sourceType === 'embedded' || streamingSourceTypes === 'Embedded') && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="embeddedUrl">HLS Stream URL</Label>
+                  <Input
+                    id="embeddedUrl"
+                    type="url"
+                    placeholder="Enter HLS stream URL"
+                    value={embeddedUrl}
+                    onChange={(e) => setEmbeddedUrl(e.target.value)}
+                  />
+                </div>
+                <Button onClick={handleEmbeddedUrlSubmit}>Add Embedded Video</Button>
+              </div>
             )}
           </>
-        )}
-
-        {/* Embedded URL Input - shown when sourceType is 'embedded' */}
-        {(sourceType === 'embedded' || streamingSourceTypes === 'Embedded') && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="embeddedUrl">HLS Stream URL</Label>
-              <Input
-                id="embeddedUrl"
-                type="url"
-                placeholder="Enter HLS stream URL"
-                value={embeddedUrl}
-                onChange={(e) => setEmbeddedUrl(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleEmbeddedUrlSubmit}>Add Embedded Video</Button>
-          </div>
         )}
       </div>
     </div>

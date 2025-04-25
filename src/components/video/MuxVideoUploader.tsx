@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import MuxUploader from '@mux/mux-uploader-react'
 import { MuxUploaderDrop, MuxUploaderFileSelect } from '@mux/mux-uploader-react'
@@ -86,10 +86,14 @@ const VideoList = ({
           </div>
         ))}
       </div>
-      <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
+      <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700 space-y-2">
         <p>
           <strong>Note:</strong> Videos will appear in the list below once they have been uploaded.
           This may take a few minutes depending on the file size.
+        </p>
+        <p>
+          <strong>Auto-cleanup:</strong> Video upload statuses are automatically removed after 24
+          hours.
         </p>
       </div>
     </div>
@@ -106,6 +110,7 @@ interface UploadedVideo {
   title: string
   status: UploadStatus
   progress: number
+  createdAt: number // Timestamp when the entry was created
   error?: string
   assetId?: string
   playbackId?: string
@@ -120,6 +125,7 @@ const ensureValidVideo = (video: Partial<UploadedVideo>): UploadedVideo => {
     title: video.title || 'Untitled video',
     status: video.status || 'uploading',
     progress: video.progress || 0,
+    createdAt: video.createdAt || Date.now(), // Use existing timestamp or create a new one
     error: video.error,
     assetId: video.assetId,
     playbackId: video.playbackId,
@@ -159,6 +165,77 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
 
     return () => clearTimeout(timer)
   }, [])
+
+  // Function to clean up old uploads
+  const cleanupOldUploads = useCallback(() => {
+    const now = Date.now()
+    const twentyFourHours = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+    const storageKey = 'ott-cms-uploaded-videos'
+
+    try {
+      // Get videos directly from localStorage
+      const storedVideosJson = localStorage.getItem(storageKey)
+      if (!storedVideosJson) return
+
+      const storedVideos = JSON.parse(storedVideosJson) as UploadedVideo[]
+
+      // Filter out old videos
+      const filteredVideos = storedVideos.filter((video) => {
+        // If video has no createdAt timestamp, add one now
+        if (!video.createdAt) {
+          video.createdAt = Date.now()
+          return true
+        }
+
+        // Keep videos less than 24 hours old
+        return now - video.createdAt < twentyFourHours
+      })
+
+      // Only update if we actually removed something
+      if (filteredVideos.length < storedVideos.length) {
+        const removedCount = storedVideos.length - filteredVideos.length
+        clientLogger.info(`Removed ${removedCount} old video upload entries`, 'MuxVideoUploader')
+
+        // Update localStorage directly
+        localStorage.setItem(storageKey, JSON.stringify(filteredVideos))
+
+        // Update React state to match - but only if component is still mounted
+        setUploadedVideos(filteredVideos)
+      }
+    } catch (error) {
+      clientLogger.error('Error cleaning up old uploads', 'MuxVideoUploader', { error })
+    }
+  }, [setUploadedVideos])
+
+  // Effect to clean up old uploads when component mounts
+  useEffect(() => {
+    // Run cleanup once when component mounts
+    if (typeof window !== 'undefined') {
+      // Small delay to ensure component is fully mounted
+      setTimeout(cleanupOldUploads, 500)
+    }
+  }, [cleanupOldUploads])
+
+  // Effect to set up periodic cleanup
+  useEffect(() => {
+    // Set up interval for periodic cleanup (every 3 hours)
+    let intervalId: NodeJS.Timeout | null = null
+
+    if (typeof window !== 'undefined') {
+      intervalId = setInterval(
+        () => {
+          clientLogger.info('Running periodic cleanup of old video uploads', 'MuxVideoUploader')
+          cleanupOldUploads()
+        },
+        3 * 60 * 60 * 1000,
+      ) // Every 3 hours
+    }
+
+    // Clean up interval on unmount
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [cleanupOldUploads])
 
   // Effect to notify parent component when uploading state changes
   useEffect(() => {
@@ -228,6 +305,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
       title: file.name.split('.').slice(0, -1).join('.'), // Remove extension
       status: 'uploading',
       progress: 0,
+      createdAt: Date.now(), // Add timestamp when creating new entry
     })
 
     setUploadedVideos((prev) => [...prev, newVideo])
