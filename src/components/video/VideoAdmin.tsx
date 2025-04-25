@@ -299,6 +299,48 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
   const [embeddedUrl, setEmbeddedUrl] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [streamingSourceTypes, setStreamingSourceTypes] = useState<'Mux' | 'Embedded' | 'Both'>(
+    'Both',
+  )
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
+
+  // Fetch global streaming settings
+  useEffect(() => {
+    const fetchStreamingSettings = async () => {
+      try {
+        setIsLoadingSettings(true)
+        const response = await fetch('/api/globals/streaming-settings')
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch streaming settings')
+        }
+
+        const data = await response.json()
+        const sourceTypes = data.streamingSourceTypes || 'Both'
+        setStreamingSourceTypes(sourceTypes)
+
+        // Set default source type based on global settings
+        if (sourceTypes === 'Mux') {
+          setSourceType('mux')
+        } else if (sourceTypes === 'Embedded') {
+          setSourceType('embedded')
+        }
+
+        clientLogger.info('Streaming settings loaded', 'videoVideoAdmin', {
+          streamingSourceTypes: sourceTypes,
+        })
+      } catch (error) {
+        clientLogger.error(
+          error instanceof Error ? error : 'Error fetching streaming settings',
+          'videoVideoAdmin',
+        )
+      } finally {
+        setIsLoadingSettings(false)
+      }
+    }
+
+    fetchStreamingSettings()
+  }, [])
 
   // Set loading to false after a short delay
   useEffect(() => {
@@ -313,7 +355,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
     if (!embeddedUrl.trim()) return
     // Handle embedded URL submission here
     // This could be an API call to create a new video entry with the embedded URL
-    clientLogger.info('Embedded URL submitted:', embeddedUrl, 'videoVideoAdmin')
+    clientLogger.info('Embedded URL submitted', 'videoVideoAdmin', { url: embeddedUrl })
     setEmbeddedUrl('')
   }
 
@@ -333,32 +375,36 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
 
       {/* Source Type Selection */}
       <div className="space-y-4 p-6 bg-white rounded-lg border">
-        <div className="space-y-2">
-          <Label htmlFor="sourceType">Video Source Type</Label>
-          <Select
-            value={sourceType}
-            onValueChange={(value: 'mux' | 'embedded') => setSourceType(value)}
-            disabled={isUploading}
-          >
-            <SelectTrigger
-              id="sourceType"
-              className={`w-48 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        {/* Only show source type dropdown if global setting is "Both" */}
+        {streamingSourceTypes === 'Both' && (
+          <div className="space-y-2">
+            <Label htmlFor="sourceType">Video Source Type</Label>
+            <Select
+              value={sourceType}
+              onValueChange={(value: 'mux' | 'embedded') => setSourceType(value)}
+              disabled={isUploading}
             >
-              <SelectValue placeholder="Select source type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mux">Mux Upload</SelectItem>
-              <SelectItem value="embedded">Embedded URL</SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-sm text-muted-foreground">
-            Upload a video file directly to Mux, or switch to Embedded URL to use an existing HLS
-            stream.
-          </p>
-        </div>
+              <SelectTrigger
+                id="sourceType"
+                className={`w-48 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <SelectValue placeholder="Select source type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mux">Mux Upload</SelectItem>
+                <SelectItem value="embedded">Embedded URL</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Upload a video file directly to Mux, or switch to Embedded URL to use an existing HLS
+              stream.
+            </p>
+          </div>
+        )}
 
-        {/* Mux Uploader */}
-        {sourceType === 'mux' && (
+        {/* Show appropriate component based on source type */}
+        {/* Mux Uploader - shown when sourceType is 'mux' */}
+        {(sourceType === 'mux' || streamingSourceTypes === 'Mux') && (
           <>
             {/* Load preload script with highest priority */}
             <Script
@@ -403,8 +449,8 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
           </>
         )}
 
-        {/* Embedded URL Input */}
-        {sourceType === 'embedded' && (
+        {/* Embedded URL Input - shown when sourceType is 'embedded' */}
+        {(sourceType === 'embedded' || streamingSourceTypes === 'Embedded') && (
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="embeddedUrl">HLS Stream URL</Label>

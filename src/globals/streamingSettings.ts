@@ -13,7 +13,7 @@ const StreamingSettings: GlobalConfig = {
   },
   fields: [
     {
-      name: 'allowedSources',
+      name: 'streamingSourceTypes',
       label: 'Allowed Streaming Source Types',
       type: 'select',
       defaultValue: 'Both',
@@ -32,7 +32,8 @@ const StreamingSettings: GlobalConfig = {
       type: 'group',
       admin: {
         description: 'Mux configuration settings',
-        condition: (data) => data?.allowedSources === 'Mux' || data?.allowedSources === 'Both',
+        condition: (data) =>
+          data?.streamingSourceTypes === 'Mux' || data?.streamingSourceTypes === 'Both',
       },
       fields: [
         {

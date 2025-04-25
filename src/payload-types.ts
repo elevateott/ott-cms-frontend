@@ -1812,7 +1812,7 @@ export interface StreamingSetting {
   /**
    * Control which video source types are allowed in the system
    */
-  allowedSources: 'Mux' | 'Embedded' | 'Both';
+  streamingSourceTypes: 'Mux' | 'Embedded' | 'Both';
   /**
    * Mux configuration settings
    */
@@ -1956,7 +1956,7 @@ export interface FooterSelect<T extends boolean = true> {
  * via the `definition` "streaming-settings_select".
  */
 export interface StreamingSettingsSelect<T extends boolean = true> {
-  allowedSources?: T;
+  streamingSourceTypes?: T;
   muxSettings?:
     | T
     | {
