@@ -798,6 +798,31 @@ export interface Videoasset {
     status?: ('uploading' | 'processing' | 'ready' | 'error') | null;
   };
   /**
+   * Configure advanced settings for this Mux video
+   */
+  muxAdvancedSettings?: {
+    /**
+     * Select the encoding quality tier for this video
+     */
+    videoQuality?: ('basic' | 'plus' | 'premium') | null;
+    /**
+     * Maximum resolution for this video
+     */
+    maxResolution?: '1080p' | null;
+    /**
+     * Control how this video can be accessed
+     */
+    playbackPolicy?: ('public' | 'signed') | null;
+    /**
+     * Automatically adjust audio levels for consistent volume
+     */
+    normalizeAudio?: boolean | null;
+    /**
+     * Automatically generate English captions for this video
+     */
+    autoGenerateCaptions?: boolean | null;
+  };
+  /**
    * Enter an HLS stream URL (e.g., from Vimeo or DaCast)
    */
   embeddedUrl?: string | null;
@@ -1457,6 +1482,15 @@ export interface VideoassetsSelect<T extends boolean = true> {
         assetId?: T;
         playbackId?: T;
         status?: T;
+      };
+  muxAdvancedSettings?:
+    | T
+    | {
+        videoQuality?: T;
+        maxResolution?: T;
+        playbackPolicy?: T;
+        normalizeAudio?: T;
+        autoGenerateCaptions?: T;
       };
   embeddedUrl?: T;
   duration?: T;

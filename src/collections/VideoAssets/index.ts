@@ -5,6 +5,7 @@ import { slugField } from '@/fields/slug'
 import { fetchMuxMetadataForVideoAsset } from '@/hooks/mux/updateVideoAssetOnWebhook'
 import { deleteAssetOnVideoAssetDelete } from '@/hooks/mux/deleteAssetOnVideoAssetDelete'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
+import { updateMuxAssetOnVideoAssetChange } from '@/hooks/mux/updateMuxAssetOnVideoAssetChange'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
@@ -127,6 +128,73 @@ export const VideoAssets: CollectionConfig = {
       ],
     },
     {
+      name: 'muxAdvancedSettings',
+      type: 'group',
+      label: 'Mux Advanced Settings',
+      admin: {
+        className: 'mux-advanced-settings-group',
+        description: 'Configure advanced settings for this Mux video',
+        condition: (data) => data.sourceType === 'mux' && data.muxData?.status === 'ready',
+      },
+      fields: [
+        {
+          name: 'videoQuality',
+          type: 'select',
+          label: 'Video Quality',
+          options: [
+            { label: 'Basic', value: 'basic' },
+            { label: 'Plus', value: 'plus' },
+            { label: 'Premium', value: 'premium' },
+          ],
+          defaultValue: 'basic',
+          admin: {
+            description: 'Select the encoding quality tier for this video',
+          },
+        },
+        {
+          name: 'maxResolution',
+          type: 'select',
+          label: 'Max Resolution',
+          options: [{ label: '1080p', value: '1080p' }],
+          defaultValue: '1080p',
+          admin: {
+            description: 'Maximum resolution for this video',
+          },
+        },
+        {
+          name: 'playbackPolicy',
+          type: 'select',
+          label: 'Playback Policy',
+          options: [
+            { label: 'Public', value: 'public' },
+            { label: 'Signed', value: 'signed' },
+          ],
+          defaultValue: 'public',
+          admin: {
+            description: 'Control how this video can be accessed',
+          },
+        },
+        {
+          name: 'normalizeAudio',
+          type: 'checkbox',
+          label: 'Normalize Audio',
+          defaultValue: false,
+          admin: {
+            description: 'Automatically adjust audio levels for consistent volume',
+          },
+        },
+        {
+          name: 'autoGenerateCaptions',
+          type: 'checkbox',
+          label: 'Auto-generate Captions',
+          defaultValue: false,
+          admin: {
+            description: 'Automatically generate English captions for this video',
+          },
+        },
+      ],
+    },
+    {
       name: 'embeddedUrl',
       type: 'text',
       admin: {
@@ -199,7 +267,7 @@ export const VideoAssets: CollectionConfig = {
     // Add logging hooks
     ...createCollectionLoggingHooks('videoassets'),
     // Add existing hooks
-    afterChange: [fetchMuxMetadataForVideoAsset],
+    afterChange: [fetchMuxMetadataForVideoAsset, updateMuxAssetOnVideoAssetChange],
     beforeDelete: [deleteAssetOnVideoAssetDelete],
   },
 }

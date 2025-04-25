@@ -61,3 +61,21 @@ export const deleteAllMuxAssets = async (): Promise<{
   const muxService = getMuxService()
   return muxService.deleteAllMuxAssets()
 }
+
+/**
+ * Update a Mux asset with advanced properties
+ */
+export const updateMuxAsset = async (
+  assetId: string,
+  data: {
+    playback_policy?: ('public' | 'signed')[]
+    mp4_support?: 'none' | 'standard'
+    encoding_tier?: 'basic' | 'plus' | 'premium'
+    max_resolution_tier?: '1080p'
+    normalize_audio?: boolean
+    generated_subtitles?: { name: string; language_code: string }[]
+  },
+): Promise<any> => {
+  const muxService = getMuxService()
+  return muxService.updateAsset(assetId, data)
+}

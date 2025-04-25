@@ -1,4 +1,4 @@
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/logger'
 /**
  * Mock Mux Service
  *
@@ -64,8 +64,40 @@ export class MockMuxService implements IMuxService {
    * Clear the cache for a specific asset or all assets
    */
   clearAssetCache(assetId?: string): void {
-    logger.info({ context: 'muxService' }, `[MockMuxService] Clearing cache${assetId ? ` for asset ${assetId}` : ''}`)
+    logger.info(
+      { context: 'muxService' },
+      `[MockMuxService] Clearing cache${assetId ? ` for asset ${assetId}` : ''}`,
+    )
     // No actual cache in mock service, this is just a stub
+  }
+
+  /**
+   * Update an asset
+   */
+  async updateAsset(assetId: string, data: any): Promise<any> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Updating Mux asset ${assetId} with data:`,
+        data,
+      )
+
+      // Simulate successful update
+      return {
+        id: assetId,
+        playback_policy: data.playback_policy || ['public'],
+        mp4_support: data.mp4_support || 'none',
+        encoding_tier: data.encoding_tier || 'basic',
+        max_resolution_tier: data.max_resolution_tier || '1080p',
+        normalize_audio: data.normalize_audio !== undefined ? data.normalize_audio : false,
+        generated_subtitles: data.generated_subtitles || [],
+      }
+    } catch (error) {
+      logError(error, 'MockMuxService.updateAsset')
+      throw new Error(
+        `Failed to update mock Mux asset: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
   }
 
   /**
