@@ -1,28 +1,24 @@
 'use client'
 
-import { PayloadComponent } from 'payload'
+import type { CustomComponent } from 'payload'
 
-type UIFieldProps = {
-  path: string
-  field: {
-    name: string
-    label?: string
-    admin?: {
-      description?: string
-    }
-  }
-  value?: unknown
-  onChange?: (value: unknown) => void
-  preferencesKey?: string
-  operation?: 'create' | 'update'
-  user?: {
-    id: string
-    email?: string
-    roles?: string[]
-  }
+export interface UIFieldProps {
+  type: 'group'
+  name: 'meta'
+  interfaceName: 'SharedMeta'
+  fields: [
+    {
+      name: 'title'
+      type: 'text'
+    },
+    {
+      name: 'description'
+      type: 'text'
+    },
+  ]
 }
 
-export const SimpleNotice: PayloadComponent<never, UIFieldProps> = (_props) => {
+export const SimpleNotice: CustomComponent<UIFieldProps> = (_props: UIFieldProps) => {
   return (
     <div
       style={{

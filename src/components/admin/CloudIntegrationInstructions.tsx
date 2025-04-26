@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Copy, Check } from 'lucide-react'
 import { useState } from 'react'
-import type { PayloadComponent } from 'payload'
-import type { InstructionsUIFieldProps } from '@/types/UIFieldProps'
+import type { CustomComponent } from 'payload'
+import type { UIFieldProps } from '@/types/UIFieldProps'
 
 const CopyButton = ({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false)
@@ -30,27 +30,7 @@ const CopyButton = ({ text }: { text: string }) => {
   )
 }
 
-type UIFieldProps = {
-  path: string
-  field: {
-    name: string
-    label?: string
-    admin?: {
-      description?: string
-    }
-  }
-  value?: unknown
-  onChange?: (value: unknown) => void
-  preferencesKey?: string
-  operation?: 'create' | 'update'
-  user?: {
-    id: string
-    email?: string
-    roles?: string[]
-  }
-}
-
-const CloudIntegrationInstructions: PayloadComponent<never, UIFieldProps> = (_props) => {
+const CloudIntegrationInstructions: CustomComponent<UIFieldProps> = (_props: UIFieldProps) => {
   return (
     <Card className="mb-6">
       <CardHeader>
