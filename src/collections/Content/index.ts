@@ -116,6 +116,30 @@ export const Content: CollectionConfig = {
     // Add logging hooks
     ...createCollectionLoggingHooks('content'),
     // Add existing hooks
+    beforeValidate: [
+      ({ data }) => {
+        // Auto-generate SEO metadata if not provided
+        if (!data.meta) data.meta = {}
+
+        // Set meta.title from title if not provided
+        if (!data.meta.title && data.title) {
+          data.meta.title = data.title
+        }
+
+        // Set meta.description from description if not provided (limit to 160 chars)
+        if (!data.meta.description && data.description) {
+          data.meta.description = data.description.slice(0, 160)
+        }
+
+        // Set meta.canonicalURL from slug if not provided
+        if (!data.meta.canonicalURL && data.slug) {
+          const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+          data.meta.canonicalURL = `${baseUrl}/content/${data.slug}`
+        }
+
+        return data
+      },
+    ],
     beforeChange: [
       ({ data, operation }) => {
         // Set default release date to now if not provided

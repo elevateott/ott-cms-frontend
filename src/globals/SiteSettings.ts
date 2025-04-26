@@ -1,5 +1,4 @@
 import { GlobalConfig } from 'payload'
-import SimpleNotice from '@/components/admin/ExampleUIField'
 
 const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -13,7 +12,7 @@ const SiteSettings: GlobalConfig = {
       admin: {
         position: 'sidebar',
         components: {
-          Field: SimpleNotice, // custom UI component
+          Field: '@/components/admin/ExampleUIField/SimpleNotice', // custom UI component
         },
       },
     },

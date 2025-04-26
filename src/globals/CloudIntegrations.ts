@@ -1,7 +1,6 @@
 // src/globals/CloudIntegrations.ts
 import type { GlobalConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
-import CloudIntegrationInstructions from '@/components/admin/CloudIntegrationInstructions'
 
 const CloudIntegrations: GlobalConfig = {
   slug: 'cloud-integrations',
@@ -20,7 +19,8 @@ const CloudIntegrations: GlobalConfig = {
       admin: {
         position: 'sidebar',
         components: {
-          Field: CloudIntegrationInstructions,
+          Field:
+            '@/components/admin/CloudIntegrationInstructions/CloudIntegrationInstructionsField',
         },
       },
     },
