@@ -1,5 +1,5 @@
 import { GlobalConfig } from 'payload'
-import SimpleNotice from '@/components/admin/SimpleNotice'
+import SimpleNotice from '@/components/admin/ExampleUIField'
 
 const SiteSettings: GlobalConfig = {
   slug: 'site-settings',

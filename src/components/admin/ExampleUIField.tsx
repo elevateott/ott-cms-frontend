@@ -1,22 +1,7 @@
 'use client'
 
 import type { CustomComponent } from 'payload'
-
-export interface UIFieldProps {
-  type: 'group'
-  name: 'meta'
-  interfaceName: 'SharedMeta'
-  fields: [
-    {
-      name: 'title'
-      type: 'text'
-    },
-    {
-      name: 'description'
-      type: 'text'
-    },
-  ]
-}
+import type { UIFieldProps } from '@/types/UIFieldProps'
 
 export const SimpleNotice: CustomComponent<UIFieldProps> = (_props: UIFieldProps) => {
   return (
