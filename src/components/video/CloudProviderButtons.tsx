@@ -3,8 +3,18 @@
 import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { clientLogger } from '@/utils/clientLogger'
+import { fetchWithTimeout } from '@/utils/fetch'
 import Script from 'next/script'
-import { Loader2 } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
+import { Alert, AlertTitle } from '../ui/alert'
+import { useToast } from '@/hooks/use-toast'
+
+// Import icons from lucide-react
+import {
+  Cloud as DropboxIcon,
+  FileBox as GoogleDriveIcon,
+  Database as OneDriveIcon
+} from 'lucide-react'
 
 // Define interfaces for the cloud providers
 interface DropboxOptions {
@@ -92,6 +102,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   onFileSelected,
   disabled,
 }) => {
+  const { toast } = useToast()
   const [dropboxLoaded, setDropboxLoaded] = useState(false)
   const [googleDriveLoaded, setGoogleDriveLoaded] = useState(false)
   const [oneDriveLoaded, setOneDriveLoaded] = useState(false)
@@ -101,105 +112,76 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 
   // Fetch cloud integration settings from the API
   useEffect(() => {
+    let isMounted = true
+
     const fetchSettings = async () => {
       try {
         setLoading(true)
         clientLogger.info('Fetching cloud integration settings', 'CloudProviderButtons')
 
-        // Add a timeout to the fetch request
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        const response = await fetchWithTimeout('/api/cloud-integrations', {
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+        }, 10000) // 10 second timeout
 
-        try {
-          const response = await fetch('/api/cloud-integrations', {
-            signal: controller.signal,
-            headers: {
-              'Cache-Control': 'no-cache',
-              Pragma: 'no-cache',
-            },
-          })
+        if (!isMounted) return
 
-          clearTimeout(timeoutId)
-
-          if (!response.ok) {
-            throw new Error(`Failed to fetch cloud integration settings: ${response.status}`)
-          }
-
-          const data = await response.json()
-
-          // Check if we got an error message in the response
-          if (data.error) {
-            clientLogger.warn(
-              'Received error in cloud integration settings response',
-              'CloudProviderButtons',
-              {
-                error: data.error,
-              },
-            )
-          }
-
-          setSettings(data)
-          clientLogger.info('Cloud integration settings loaded', 'CloudProviderButtons', {
-            settings: data,
-          })
-        } catch (fetchError) {
-          if (fetchError.name === 'AbortError') {
-            clientLogger.error('Fetch request timed out', 'CloudProviderButtons')
-            throw new Error('Request timed out. Please try again.')
-          }
-          throw fetchError
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
+
+        const data = await response.json()
+
+        if (data.error) {
+          throw new Error(data.error)
+        }
+
+        setSettings(data)
+        clientLogger.info('Cloud integration settings loaded', 'CloudProviderButtons')
       } catch (error) {
         clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
-          error,
+          error: error instanceof Error ? error.message : 'Unknown error'
         })
-        setError('Failed to load cloud integration settings. Using default settings.')
 
-        // Use default settings
-        setSettings({
-          dropboxAppKey: null,
-          googleApiKey: null,
-          googleClientId: null,
-          onedriveClientId: null,
-        })
+        if (isMounted) {
+          setSettings({
+            dropboxAppKey: null,
+            googleApiKey: null,
+            googleClientId: null,
+            onedriveClientId: null,
+          })
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     fetchSettings()
 
-    // Add a fallback timeout to prevent infinite loading
-    const fallbackTimeout = setTimeout(() => {
-      if (loading) {
-        clientLogger.warn('Fallback timeout triggered for cloud settings', 'CloudProviderButtons')
-        setLoading(false)
-        setSettings({
-          dropboxAppKey: null,
-          googleApiKey: null,
-          googleClientId: null,
-          onedriveClientId: null,
-        })
-      }
-    }, 15000) // 15 seconds fallback
-
-    return () => clearTimeout(fallbackTimeout)
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Dropbox integration
   const handleDropboxSelect = () => {
     if (!window.Dropbox) {
-      clientLogger.error('Dropbox SDK not loaded', 'CloudProviderButtons')
+      clientLogger.error('Dropbox SDK not loaded', 'CloudProviderButtons', {
+        error: new Error('Dropbox SDK not available')
+      })
       return
     }
 
     // Check if app key is available from settings
     const appKey = settings?.dropboxAppKey
     if (!appKey) {
-      clientLogger.error('Dropbox app key not configured', 'CloudProviderButtons')
-      alert(
-        'Dropbox integration is not configured. Please go to the CMS admin panel, navigate to "System Settings > Cloud Integrations" and enter your Dropbox App Key.',
-      )
+      clientLogger.error('Dropbox app key not configured', 'CloudProviderButtons', {
+        error: new Error('Missing configuration')
+      })
       return
     }
 
@@ -255,17 +237,18 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   // Google Drive integration
   const handleGoogleDriveSelect = () => {
     if (!window.gapi || !window.google?.picker) {
-      clientLogger.error('Google Drive SDK not loaded', 'CloudProviderButtons')
+      clientLogger.error('Google Drive SDK not loaded', 'CloudProviderButtons', {
+        error: new Error('Google Drive SDK not available')
+      })
       return
     }
 
     // Check if API key is available from settings
     const apiKey = settings?.googleApiKey
     if (!apiKey) {
-      clientLogger.error('Google API key not configured', 'CloudProviderButtons')
-      alert(
-        'Google Drive integration is not configured. Please go to the CMS admin panel, navigate to "System Settings > Cloud Integrations" and enter your Google API Key.',
-      )
+      clientLogger.error('Google API key not configured', 'CloudProviderButtons', {
+        error: new Error('Missing configuration')
+      })
       return
     }
 
@@ -339,20 +322,19 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 
   // OneDrive integration
   const handleOneDriveSelect = () => {
-    // Check if OneDrive SDK is available
-    if (typeof window === 'undefined' || !window.OneDrive) {
-      clientLogger.error('OneDrive SDK not loaded or not available', 'CloudProviderButtons')
-      alert('OneDrive integration is not available. The SDK failed to load properly.')
+    if (!window.OneDrive) {
+      clientLogger.error('OneDrive SDK not loaded', 'CloudProviderButtons', {
+        error: new Error('OneDrive SDK not available')
+      })
       return
     }
 
     // Check if client ID is available from settings
     const clientId = settings?.onedriveClientId
     if (!clientId) {
-      clientLogger.error('OneDrive client ID not configured', 'CloudProviderButtons')
-      alert(
-        'OneDrive integration is not configured. Please go to the CMS admin panel, navigate to "System Settings > Cloud Integrations" and enter your OneDrive Client ID.',
-      )
+      clientLogger.error('OneDrive client ID not configured', 'CloudProviderButtons', {
+        error: new Error('Missing configuration')
+      })
       return
     }
 
@@ -699,83 +681,67 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
       />
 
       {/* Cloud Provider Buttons */}
-      <div className="flex flex-wrap gap-2 mt-2">
+      <div className="flex flex-wrap gap-4">
         <Button
-          variant="outline"
-          size="sm"
           onClick={handleDropboxSelect}
-          disabled={disabled || !dropboxLoaded}
-          className="flex items-center gap-1"
+          disabled={disabled || !settings?.dropboxAppKey || !dropboxLoaded}
+          variant="outline"
         >
-          <svg
-            className="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M6 9.5L12 14L18 9.5L12 5L6 9.5Z" fill="#0061FF" />
-            <path d="M6 14.5L12 19L18 14.5L12 10L6 14.5Z" fill="#0061FF" />
-          </svg>
+          <DropboxIcon className="mr-2 h-4 w-4" />
           Choose from Dropbox
         </Button>
 
         <Button
-          variant="outline"
-          size="sm"
           onClick={handleGoogleDriveSelect}
-          disabled={disabled || !googleDriveLoaded}
-          className="flex items-center gap-1"
+          disabled={disabled || !settings?.googleApiKey || !settings?.googleClientId || !googleLoaded}
+          variant="outline"
         >
-          <svg
-            className="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M4.5 14L8 19H16L12.5 14H4.5Z" fill="#0F9D58" />
-            <path d="M12 5L8 14H16L20 5H12Z" fill="#4285F4" />
-            <path d="M12 5L8 14L4.5 14L8.5 5H12Z" fill="#FBBC04" />
-          </svg>
+          <GoogleDriveIcon className="mr-2 h-4 w-4" />
           Choose from Google Drive
         </Button>
 
         <Button
-          variant="outline"
-          size="sm"
           onClick={handleOneDriveSelect}
-          disabled={disabled || !oneDriveLoaded}
-          className="flex items-center gap-1"
+          disabled={disabled || !settings?.onedriveClientId || !oneDriveLoaded}
+          variant="outline"
         >
-          <svg
-            className="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M10 6L6 14H14L18 6H10Z" fill="#0364B8" />
-            <path d="M6 14L4 18H12L14 14H6Z" fill="#0078D4" />
-            <path d="M14 14L12 18H20L18 14H14Z" fill="#1490DF" />
-          </svg>
+          <OneDriveIcon className="mr-2 h-4 w-4" />
           Choose from OneDrive
         </Button>
       </div>
 
       {/* Configuration message - only show if no integrations are configured */}
-      {(!settings?.dropboxAppKey && !settings?.googleApiKey && !settings?.onedriveClientId) && (
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-700">
-            To enable cloud storage integration, please configure your credentials in the CMS admin panel:
-          </p>
-          <ol className="mt-2 text-sm text-blue-600 list-decimal list-inside">
-            <li>Go to the CMS admin panel</li>
-            <li>Navigate to <span className="font-mono">System Settings &gt; Cloud Integrations</span></li>
-            <li>Enter your API credentials for each cloud provider</li>
-          </ol>
-        </div>
+      {!settings?.dropboxAppKey && !settings?.googleApiKey && !settings?.onedriveClientId && (
+        <Alert variant="default" className="mt-4 border-blue-200 bg-blue-50">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-700 font-medium">
+            Cloud Storage Integration Not Configured
+          </AlertTitle>
+          <div className="text-sm text-blue-600 mt-2">
+            <p className="mb-2">
+              To enable cloud storage integration, please configure your credentials in Cloud
+              Integrations:
+            </p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>
+                Navigate to{' '}
+                <span className="font-mono">System Settings &gt; Cloud Integrations</span>
+              </li>
+              <li>Enter your API credentials for each cloud provider you wish to use</li>
+            </ol>
+          </div>
+        </Alert>
       )}
     </div>
   )
 }
 
 export default CloudProviderButtons
+
+
+
+
+
+
+
 

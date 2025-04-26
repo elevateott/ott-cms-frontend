@@ -18,7 +18,6 @@ import { SlugComponent as SlugComponent_92cc057d0a2abb4f6cf0307edf59f986 } from 
 import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { default as default_7365299d83dfa761a1edff1100fe1231 } from '@/collections/VideoAssets/components/ThumbnailCell'
-import { default as default_7e5679f467cca64e427803cb4bd4bfc5 } from '@/collections/VideoAssets/components/StatusField'
 import { default as default_3015ae6f5ca8b3e35eef170b626e5e37 } from '@/collections/VideoAssets/components/StatusCell'
 import { default as default_3a1cc515ff3d8bb85bfb3a92af6f4a6c } from '@/components/FormattedDurationCell'
 import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
@@ -56,7 +55,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#HorizontalRuleFeatureClient": HorizontalRuleFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/collections/VideoAssets/components/ThumbnailCell#default": default_7365299d83dfa761a1edff1100fe1231,
-  "@/collections/VideoAssets/components/StatusField#default": default_7e5679f467cca64e427803cb4bd4bfc5,
   "@/collections/VideoAssets/components/StatusCell#default": default_3015ae6f5ca8b3e35eef170b626e5e37,
   "@/components/FormattedDurationCell#default": default_3a1cc515ff3d8bb85bfb3a92af6f4a6c,
   "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,

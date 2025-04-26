@@ -1,39 +1,52 @@
 'use client'
 
 import React from 'react'
-import { CellProps } from 'payload/components/views/Cell'
+import type { DefaultCellComponentProps } from 'payload'
 
-// This component displays the Mux status in the list view
-const StatusCell: React.FC<CellProps> = ({ rowData, data }) => {
-  // Get the status from the cell data
-  const status = data || 'unknown'
-
-  // Define colors for different statuses
-  const statusColors = {
-    uploading: '#3498db', // Blue
-    processing: '#f39c12', // Orange
-    ready: '#2ecc71', // Green
-    error: '#e74c3c', // Red
-    unknown: '#95a5a6', // Gray
+const StatusCell: React.FC<DefaultCellComponentProps> = ({ rowData, className }) => {
+  // Default to 'ready' for embedded videos
+  if (rowData.sourceType === 'embedded') {
+    return <div className="status-badge ready">Ready</div>
   }
 
-  const color = statusColors[status] || statusColors.unknown
+  const status = rowData?.muxData?.status || 'unknown'
 
-  return (
-    <div
-      style={{
-        display: 'inline-block',
-        padding: '4px 8px',
-        borderRadius: '4px',
-        backgroundColor: color,
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: '12px',
-      }}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </div>
-  )
+  const renderStatusBadge = () => {
+    switch (status) {
+      case 'ready':
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+            Ready
+          </span>
+        )
+      case 'processing':
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+            Processing
+          </span>
+        )
+      case 'uploading':
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+            Uploading
+          </span>
+        )
+      case 'error':
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+            Error
+          </span>
+        )
+      default:
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+            {status || 'Unknown'}
+          </span>
+        )
+    }
+  }
+
+  return <div className={className}>{renderStatusBadge()}</div>
 }
 
 export default StatusCell

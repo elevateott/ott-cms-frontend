@@ -58,7 +58,7 @@ export const Videos: CollectionConfig = {
       label: 'Status',
       admin: {
         components: {
-          Cell: '@/collections/Videos/components/StatusField',
+          Cell: '@/collections/Videos/components/StatusCell',
         },
         position: 'sidebar',
       },
@@ -118,24 +118,6 @@ export const Videos: CollectionConfig = {
           admin: {
             readOnly: true,
             description: 'Mux Playback ID (automatically populated)',
-          },
-        },
-        {
-          name: 'status',
-          type: 'select',
-          options: [
-            { label: 'Uploading', value: 'uploading' },
-            { label: 'Processing', value: 'processing' },
-            { label: 'Ready', value: 'ready' },
-            { label: 'Error', value: 'error' },
-          ],
-          defaultValue: 'uploading',
-          admin: {
-            readOnly: true,
-            description: 'Current status of the Mux video',
-            components: {
-              Cell: '@/collections/Videos/components/StatusCell',
-            },
           },
         },
       ],

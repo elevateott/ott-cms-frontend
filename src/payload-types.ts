@@ -112,6 +112,7 @@ export interface Config {
     'streaming-settings': StreamingSetting;
     'ott-settings': OttSetting;
     'cloud-integrations': CloudIntegration;
+    'site-settings': SiteSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
@@ -119,6 +120,7 @@ export interface Config {
     'streaming-settings': StreamingSettingsSelect<false> | StreamingSettingsSelect<true>;
     'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
     'cloud-integrations': CloudIntegrationsSelect<false> | CloudIntegrationsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -1970,6 +1972,16 @@ export interface CloudIntegration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: string;
+  siteName?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -2095,6 +2107,16 @@ export interface CloudIntegrationsSelect<T extends boolean = true> {
   googleApiKey?: T;
   googleClientId?: T;
   onedriveClientId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

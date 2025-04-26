@@ -6,7 +6,7 @@ import type { DefaultCellComponentProps } from 'payload'
 const FormattedDateCell = ({ cellData }: DefaultCellComponentProps) => {
   if (!cellData) return null
 
-  const formattedDate = format(new Date(cellData), 'MMMM do yyyy, h:mm a') // "April 14th 2025"
+  const formattedDate = format(new Date(cellData), 'MM/dd/yy h:mm a') // "04/24/25 10:54 am"
 
   return <span>{formattedDate}</span>
 }

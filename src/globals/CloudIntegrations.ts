@@ -1,6 +1,7 @@
 // src/globals/CloudIntegrations.ts
 import type { GlobalConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
+import CloudIntegrationInstructions from '@/components/admin/CloudIntegrationInstructions'
 
 const CloudIntegrations: GlobalConfig = {
   slug: 'cloud-integrations',
@@ -13,6 +14,16 @@ const CloudIntegrations: GlobalConfig = {
     description: 'Configure cloud storage integration settings for video uploads',
   },
   fields: [
+    {
+      type: 'ui',
+      name: 'cloudIntegrationInstructions',
+      admin: {
+        position: 'sidebar', // Or 'main'
+        components: {
+          Field: CloudIntegrationInstructions,
+        },
+      },
+    },
     {
       name: 'dropboxAppKey',
       label: 'Dropbox App Key',

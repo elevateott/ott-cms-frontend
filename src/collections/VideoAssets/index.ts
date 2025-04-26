@@ -66,7 +66,7 @@ export const VideoAssets: CollectionConfig = {
       label: 'Status',
       admin: {
         components: {
-          Cell: '@/collections/VideoAssets/components/StatusField',
+          Cell: '@/collections/VideoAssets/components/StatusCell',
         },
         position: 'sidebar',
       },
