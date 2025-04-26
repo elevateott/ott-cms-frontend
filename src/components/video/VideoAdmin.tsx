@@ -11,6 +11,7 @@ import { clientLogger } from '@/utils/clientLogger'
 import React, { useState, useEffect } from 'react'
 import { cn } from '@/utilities/ui'
 import MuxVideoUploader from './MuxVideoUploader'
+import EmbeddedVideoUploader from './EmbeddedVideoUploader'
 import MuxUploaderStyles from './MuxUploaderStyles'
 import Script from 'next/script'
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react'
@@ -296,7 +297,6 @@ const DeleteAllMuxVideos: React.FC = () => {
 
 export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) => {
   const [sourceType, setSourceType] = useState<'mux' | 'embedded'>('mux')
-  const [embeddedUrl, setEmbeddedUrl] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
   const [streamingSourceTypes, setStreamingSourceTypes] = useState<'Mux' | 'Embedded' | 'Both'>(
@@ -350,14 +350,6 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
 
     return () => clearTimeout(timer)
   }, [])
-
-  const handleEmbeddedUrlSubmit = () => {
-    if (!embeddedUrl.trim()) return
-    // Handle embedded URL submission here
-    // This could be an API call to create a new video entry with the embedded URL
-    clientLogger.info('Embedded URL submitted', 'videoVideoAdmin', { url: embeddedUrl })
-    setEmbeddedUrl('')
-  }
 
   return (
     <div className={cn('space-y-6 w-full max-w-full', className)} {...props}>
@@ -449,20 +441,10 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
               </>
             )}
 
-            {/* Embedded URL Input - shown when sourceType is 'embedded' */}
+            {/* Embedded Video Uploader - shown when sourceType is 'embedded' */}
             {(sourceType === 'embedded' || streamingSourceTypes === 'Embedded') && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="embeddedUrl">HLS Stream URL</Label>
-                  <Input
-                    id="embeddedUrl"
-                    type="url"
-                    placeholder="Enter HLS stream URL"
-                    value={embeddedUrl}
-                    onChange={(e) => setEmbeddedUrl(e.target.value)}
-                  />
-                </div>
-                <Button onClick={handleEmbeddedUrlSubmit}>Add Embedded Video</Button>
+              <div className="mt-6">
+                <EmbeddedVideoUploader />
               </div>
             )}
           </>

@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Cloud as DropboxIcon,
   FileBox as GoogleDriveIcon,
-  Database as OneDriveIcon
+  Database as OneDriveIcon,
 } from 'lucide-react'
 
 // Define interfaces for the cloud providers
@@ -120,44 +120,59 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
         setError(null)
         clientLogger.info('Fetching cloud integration settings', 'CloudProviderButtons')
 
-        const response = await fetchWithTimeout('/api/cloud-integrations', {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache',
-            Pragma: 'no-cache',
-          },
-        }, 10000)
-
-        if (!isMounted) return
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+        // Use default empty settings first to prevent errors
+        const defaultSettings = {
+          dropboxAppKey: null,
+          googleApiKey: null,
+          googleClientId: null,
+          onedriveClientId: null,
         }
 
-        const data = await response.json()
+        // Set default settings immediately to prevent null errors
+        setSettings(defaultSettings)
 
-        if (data.error) {
-          throw new Error(data.error)
-        }
+        try {
+          const response = await fetchWithTimeout(
+            '/api/cloud-integrations',
+            {
+              method: 'GET',
+              headers: {
+                'Cache-Control': 'no-cache',
+                Pragma: 'no-cache',
+              },
+            },
+            5000,
+          ) // Reduced timeout to 5 seconds
 
-        if (isMounted) {
-          setSettings(data)
-          clientLogger.info('Cloud integration settings loaded', 'CloudProviderButtons', data)
-        }
-      } catch (error) {
-        if (isMounted) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
-            error: errorMessage
-          })
+          if (!isMounted) return
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+
+          const data = await response.json()
+
+          if (data.error) {
+            throw new Error(data.error)
+          }
+
+          if (isMounted) {
+            setSettings(data)
+            clientLogger.info('Cloud integration settings loaded', 'CloudProviderButtons', data)
+          }
+        } catch (fetchError) {
+          // Just log the error but continue with default settings
+          const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error'
+          clientLogger.warn(
+            'Error fetching cloud integration settings, using defaults',
+            'CloudProviderButtons',
+            {
+              error: errorMessage,
+            },
+          )
           setError(errorMessage)
-          // Set default settings on error
-          setSettings({
-            dropboxAppKey: null,
-            googleApiKey: null,
-            googleClientId: null,
-            onedriveClientId: null,
-          })
+
+          // We already set default settings above, so no need to do it again
         }
       } finally {
         if (isMounted) {
@@ -177,7 +192,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   const handleDropboxSelect = () => {
     if (!window.Dropbox) {
       clientLogger.error('Dropbox SDK not loaded', 'CloudProviderButtons', {
-        error: new Error('Dropbox SDK not available')
+        error: new Error('Dropbox SDK not available'),
       })
       return
     }
@@ -186,7 +201,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
     const appKey = settings?.dropboxAppKey
     if (!appKey) {
       clientLogger.error('Dropbox app key not configured', 'CloudProviderButtons', {
-        error: new Error('Missing configuration')
+        error: new Error('Missing configuration'),
       })
       return
     }
@@ -244,7 +259,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   const handleGoogleDriveSelect = () => {
     if (!window.gapi || !window.google?.picker) {
       clientLogger.error('Google Drive SDK not loaded', 'CloudProviderButtons', {
-        error: new Error('Google Drive SDK not available')
+        error: new Error('Google Drive SDK not available'),
       })
       return
     }
@@ -253,7 +268,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
     const apiKey = settings?.googleApiKey
     if (!apiKey) {
       clientLogger.error('Google API key not configured', 'CloudProviderButtons', {
-        error: new Error('Missing configuration')
+        error: new Error('Missing configuration'),
       })
       return
     }
@@ -330,7 +345,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   const handleOneDriveSelect = () => {
     if (!window.OneDrive) {
       clientLogger.error('OneDrive SDK not loaded', 'CloudProviderButtons', {
-        error: new Error('OneDrive SDK not available')
+        error: new Error('OneDrive SDK not available'),
       })
       return
     }
@@ -339,7 +354,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
     const clientId = settings?.onedriveClientId
     if (!clientId) {
       clientLogger.error('OneDrive client ID not configured', 'CloudProviderButtons', {
-        error: new Error('Missing configuration')
+        error: new Error('Missing configuration'),
       })
       return
     }
@@ -513,18 +528,19 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
     )
   }
 
-  // If settings are null, use empty settings but show the buttons
+  // If settings are still null (which shouldn't happen now), use empty settings
   if (!settings) {
     clientLogger.warn(
       'No cloud integration settings found, using empty settings',
       'CloudProviderButtons',
     )
-    setSettings({
-      dropboxAppKey: null,
-      googleApiKey: null,
-      googleClientId: null,
-      onedriveClientId: null,
-    })
+    // Use a useEffect to set settings to avoid React state update during render
+    // This is just a fallback that shouldn't be needed with our improved code
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-gray-500">Cloud storage integration is not available.</p>
+      </div>
+    )
   }
 
   return (
@@ -699,7 +715,9 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 
         <Button
           onClick={handleGoogleDriveSelect}
-          disabled={disabled || !settings?.googleApiKey || !settings?.googleClientId || !googleLoaded}
+          disabled={
+            disabled || !settings?.googleApiKey || !settings?.googleClientId || !googleLoaded
+          }
           variant="outline"
         >
           <GoogleDriveIcon className="mr-2 h-4 w-4" />
@@ -743,12 +761,3 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 }
 
 export default CloudProviderButtons
-
-
-
-
-
-
-
-
-

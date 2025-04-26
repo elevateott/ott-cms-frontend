@@ -11,26 +11,62 @@ const ThumbnailCell = (props: DefaultCellComponentProps) => {
   const { statusMap } = useVideoStatus()
 
   const videoId = rowData?.id
+  const sourceType = rowData?.sourceType
   const thumbnail = rowData?.thumbnail?.url
   const muxThumbnail = rowData?.muxThumbnailUrl
+  const embeddedUrl = rowData?.embeddedUrl
 
-  // Use status from context if available, otherwise fall back to rowData
-  const muxStatus = statusMap[videoId] || rowData?.muxData?.status
-  const imageUrl = thumbnail || muxThumbnail || '/media/fallback-thumbnail-1-600x600.png'
+  // For embedded videos, always treat as 'ready'
+  // For Mux videos, use status from context if available, otherwise fall back to rowData
+  const muxStatus =
+    sourceType === 'embedded' ? 'ready' : statusMap[videoId] || rowData?.muxData?.status
+
+  // For embedded videos, use the thumbnail or a fallback
+  // For Mux videos, use the thumbnail, muxThumbnail, or a fallback
+  const imageUrl =
+    thumbnail ||
+    (sourceType === 'embedded'
+      ? '/media/fallback-thumbnail-1-600x600.png'
+      : muxThumbnail || '/media/fallback-thumbnail-1-600x600.png')
 
   // Log when status changes from context
   useEffect(() => {
-    if (statusMap[videoId]) {
+    if (statusMap[videoId] && sourceType !== 'embedded') {
       clientLogger.info(
         `🔍 DEBUG [ThumbnailCell] Video ${videoId} status updated from context: ${statusMap[videoId]}`,
         'components/ThumbnailCell',
       )
     }
-  }, [statusMap, videoId])
+  }, [statusMap, videoId, sourceType])
 
-  clientLogger.info(`muxStatus: ${muxStatus}`, 'components/ThumbnailCell')
+  // Only log for debugging purposes
+  if (process.env.NODE_ENV === 'development') {
+    clientLogger.info(
+      `Video ${videoId} - sourceType: ${sourceType}, status: ${muxStatus}`,
+      'components/ThumbnailCell',
+    )
+  }
 
   const renderContent = () => {
+    // For embedded videos, always show the thumbnail
+    if (sourceType === 'embedded') {
+      return (
+        <div className="relative">
+          <Image
+            src={imageUrl}
+            alt="Video Thumbnail"
+            width={100}
+            height={56}
+            className="object-cover w-full h-full"
+          />
+          <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs px-1 py-0.5 rounded-bl">
+            Embedded
+          </div>
+        </div>
+      )
+    }
+
+    // For Mux videos, handle different statuses
     switch (muxStatus) {
       case 'uploading':
       case 'processing':
@@ -88,13 +124,18 @@ const ThumbnailCell = (props: DefaultCellComponentProps) => {
       case 'ready':
       default:
         return (
-          <Image
-            src={imageUrl}
-            alt="Video Thumbnail"
-            width={100}
-            height={56}
-            className="object-cover w-full h-full"
-          />
+          <div className="relative">
+            <Image
+              src={imageUrl}
+              alt="Video Thumbnail"
+              width={100}
+              height={56}
+              className="object-cover w-full h-full"
+            />
+            <div className="absolute top-0 right-0 bg-green-500 text-white text-xs px-1 py-0.5 rounded-bl">
+              Mux
+            </div>
+          </div>
         )
     }
   }
