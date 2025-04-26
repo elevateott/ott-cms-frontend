@@ -208,11 +208,11 @@ export interface Page {
   layout: (CallToActionBlock | ContentBlock | MediaBlock | ArchiveBlock | FormBlock)[];
   meta?: {
     title?: string | null;
+    description?: string | null;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
-    description?: string | null;
   };
   publishedAt?: string | null;
   slug?: string | null;
@@ -248,11 +248,11 @@ export interface Post {
   categories?: (string | Category)[] | null;
   meta?: {
     title?: string | null;
+    description?: string | null;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
-    description?: string | null;
   };
   publishedAt?: string | null;
   authors?: (string | User)[] | null;
@@ -392,6 +392,14 @@ export interface Category {
         id?: string | null;
       }[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -887,6 +895,14 @@ export interface Content {
    * Categories this content belongs to
    */
   categories?: (string | Category)[] | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -1197,8 +1213,8 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
-        image?: T;
         description?: T;
+        image?: T;
       };
   publishedAt?: T;
   slug?: T;
@@ -1305,8 +1321,8 @@ export interface PostsSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
-        image?: T;
         description?: T;
+        image?: T;
       };
   publishedAt?: T;
   authors?: T;
@@ -1437,6 +1453,13 @@ export interface CategoriesSelect<T extends boolean = true> {
         label?: T;
         id?: T;
       };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1526,6 +1549,13 @@ export interface ContentSelect<T extends boolean = true> {
         id?: T;
       };
   categories?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

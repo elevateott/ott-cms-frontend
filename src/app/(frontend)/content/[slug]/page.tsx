@@ -27,7 +27,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params: paramsPromise }: PageParams): Promise<Metadata> {
   const { slug } = await paramsPromise
   const payload = await getPayload({ config: configPromise })
-  
+
   const contentItems = await payload.find({
     collection: 'content',
     where: {
@@ -35,31 +35,54 @@ export async function generateMetadata({ params: paramsPromise }: PageParams): P
         equals: slug,
       },
     },
+    depth: 1, // To get meta.image populated
   })
 
   const content = contentItems.docs[0]
-  
+
   if (!content) {
     return {
       title: 'Content Not Found',
     }
   }
 
+  // Use SEO metadata if available, otherwise fall back to content fields
+  const title = content.meta?.title || content.title
+  const description = content.meta?.description || content.description
+  const image =
+    content.meta?.image?.url ||
+    (content.posterImage && typeof content.posterImage === 'object'
+      ? content.posterImage.url
+      : undefined)
+
+  // Get Twitter card settings if available
+  const twitterCard = content.meta?.socialMedia?.twitterCard || 'summary_large_image'
+  const twitterHandle = content.meta?.socialMedia?.twitterHandle
+
   return {
-    title: content.title,
-    description: content.description,
+    title,
+    description,
     openGraph: {
-      title: content.title,
-      description: content.description,
+      title,
+      description,
       type: 'video.other',
+      images: image ? [{ url: image }] : undefined,
     },
+    twitter: {
+      card: twitterCard as 'summary' | 'summary_large_image' | 'player',
+      creator: twitterHandle || undefined,
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+    robots: content.meta?.noIndex ? { index: false } : undefined,
   }
 }
 
 export default async function ContentPage({ params: paramsPromise }: PageParams) {
   const { slug } = await paramsPromise
   const payload = await getPayload({ config: configPromise })
-  
+
   const contentItems = await payload.find({
     collection: 'content',
     where: {
@@ -71,17 +94,17 @@ export default async function ContentPage({ params: paramsPromise }: PageParams)
   })
 
   const content = contentItems.docs[0]
-  
+
   if (!content) {
     notFound()
   }
 
   // Get related content based on category
   let relatedContent = []
-  
+
   if (content.category) {
     const categoryId = typeof content.category === 'object' ? content.category.id : content.category
-    
+
     const sameCategory = await payload.find({
       collection: 'content',
       where: {
@@ -110,10 +133,10 @@ export default async function ContentPage({ params: paramsPromise }: PageParams)
         <div className="lg:w-3/4">
           <ContentPlayer content={content} />
         </div>
-        
+
         <div className="lg:w-1/4 mt-8 lg:mt-0">
           <h3 className="text-xl font-bold mb-4">Related Content</h3>
-          
+
           {relatedContent.length > 0 ? (
             <div className="space-y-6">
               {relatedContent.map((item) => (

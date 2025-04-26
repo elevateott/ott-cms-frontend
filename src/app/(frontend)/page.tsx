@@ -9,6 +9,11 @@ import { Button } from '@/components/ui/button'
 export const metadata: Metadata = {
   title: 'OTT Platform - Home',
   description: 'Welcome to our OTT streaming platform',
+  openGraph: {
+    title: 'OTT Platform - Home',
+    description: 'Welcome to our OTT streaming platform',
+    type: 'website',
+  },
 }
 
 export default async function HomePage() {

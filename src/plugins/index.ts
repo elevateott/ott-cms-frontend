@@ -52,8 +52,33 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ''),
   }),
   seoPlugin({
-    generateTitle,
-    generateURL,
+    collections: ['pages', 'posts', 'content', 'videos', 'categories'],
+    uploadsCollection: 'media',
+    generateTitle: ({ doc }) => {
+      // Fallback chain: meta.title -> title -> collection name
+      return doc.meta?.title || doc.title || `${doc.collection} | OTT CMS`
+    },
+    generateDescription: ({ doc }) => {
+      // Fallback chain: meta.description -> description -> excerpt
+      return doc.meta?.description || doc.description || doc.excerpt || ''
+    },
+    generateURL: ({ doc }) => {
+      // Handle different collection URL patterns
+      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+
+      switch (doc.collection) {
+        case 'posts':
+          return `${baseUrl}/posts/${doc.slug}`
+        case 'content':
+          return `${baseUrl}/content/${doc.slug}`
+        case 'videos':
+          return `${baseUrl}/video/${doc.slug}`
+        case 'categories':
+          return `${baseUrl}/category/${doc.slug}`
+        default:
+          return `${baseUrl}/${doc.slug}`
+      }
+    },
   }),
   formBuilderPlugin({
     fields: {

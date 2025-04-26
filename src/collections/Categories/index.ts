@@ -17,6 +17,14 @@ export const Categories: CollectionConfig = {
     defaultColumns: ['title', 'slug', 'order', 'createdAt'],
     group: 'Content',
   },
+  defaultPopulate: {
+    title: true,
+    slug: true,
+    meta: {
+      image: true,
+      description: true,
+    },
+  },
   fields: [
     {
       name: 'title',
@@ -68,7 +76,7 @@ export const Categories: CollectionConfig = {
   hooks: {
     beforeChange: [
       // Optional hook to handle category hierarchy validation
-      ({ data, req }) => {
+      ({ data }) => {
         // Logic to prevent circular references in category hierarchy
         return data
       },

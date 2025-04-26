@@ -117,14 +117,16 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
     const fetchSettings = async () => {
       try {
         setLoading(true)
+        setError(null)
         clientLogger.info('Fetching cloud integration settings', 'CloudProviderButtons')
 
         const response = await fetchWithTimeout('/api/cloud-integrations', {
+          method: 'GET',
           headers: {
             'Cache-Control': 'no-cache',
             Pragma: 'no-cache',
           },
-        }, 10000) // 10 second timeout
+        }, 10000)
 
         if (!isMounted) return
 
@@ -138,14 +140,18 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
           throw new Error(data.error)
         }
 
-        setSettings(data)
-        clientLogger.info('Cloud integration settings loaded', 'CloudProviderButtons')
-      } catch (error) {
-        clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        })
-
         if (isMounted) {
+          setSettings(data)
+          clientLogger.info('Cloud integration settings loaded', 'CloudProviderButtons', data)
+        }
+      } catch (error) {
+        if (isMounted) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
+            error: errorMessage
+          })
+          setError(errorMessage)
+          // Set default settings on error
           setSettings({
             dropboxAppKey: null,
             googleApiKey: null,
@@ -737,6 +743,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 }
 
 export default CloudProviderButtons
+
 
 
 

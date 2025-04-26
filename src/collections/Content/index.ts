@@ -23,6 +23,14 @@ export const Content: CollectionConfig = {
     defaultColumns: ['title'],
     group: 'Content',
   },
+  defaultPopulate: {
+    title: true,
+    slug: true,
+    meta: {
+      image: true,
+      description: true,
+    },
+  },
   fields: [
     {
       name: 'title',

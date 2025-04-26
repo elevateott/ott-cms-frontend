@@ -4,37 +4,20 @@ import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 
 export async function GET() {
-  logger.info({ context: 'cloudIntegrationsAPI' }, 'Cloud integrations API endpoint called')
-
   try {
-    logger.info({ context: 'cloudIntegrationsAPI' }, 'Getting Payload instance')
     const payload = await getPayload({ config: configPromise })
 
-    logger.info({ context: 'cloudIntegrationsAPI' }, 'Fetching cloud integrations settings')
+    // First check if the cloud-integrations global exists
+    const cloudIntegrations = await payload.findGlobal({
+      slug: 'cloud-integrations',
+    }).catch(() => null)
 
-    // Check if the global exists first
-    const globals = await payload.globals.find()
-    logger.info({ context: 'cloudIntegrationsAPI' }, 'Available globals:', globals)
-
-    // Try to find the cloud-integrations global
-    let cloudIntegrations
-    try {
-      cloudIntegrations = await payload.findGlobal({
-        slug: 'cloud-integrations',
-      })
+    // Return default settings if the global doesn't exist
+    if (!cloudIntegrations) {
       logger.info(
         { context: 'cloudIntegrationsAPI' },
-        'Cloud integrations settings found:',
-        cloudIntegrations,
+        'Cloud integrations global not found, returning defaults'
       )
-    } catch (findError) {
-      logger.error(
-        { context: 'cloudIntegrationsAPI' },
-        'Error finding cloud-integrations global:',
-        findError,
-      )
-
-      // Return default settings if the global doesn't exist yet
       return NextResponse.json({
         dropboxAppKey: null,
         googleApiKey: null,
@@ -44,33 +27,35 @@ export async function GET() {
       })
     }
 
-    // Only return the necessary fields for client-side use
+    // Return the settings
     const clientSettings = {
-      dropboxAppKey: cloudIntegrations?.dropboxAppKey || null,
-      googleApiKey: cloudIntegrations?.googleApiKey || null,
-      googleClientId: cloudIntegrations?.googleClientId || null,
-      onedriveClientId: cloudIntegrations?.onedriveClientId || null,
+      dropboxAppKey: cloudIntegrations.dropboxAppKey || null,
+      googleApiKey: cloudIntegrations.googleApiKey || null,
+      googleClientId: cloudIntegrations.googleClientId || null,
+      onedriveClientId: cloudIntegrations.onedriveClientId || null,
     }
 
-    logger.info({ context: 'cloudIntegrationsAPI' }, 'Returning client settings:', clientSettings)
+    logger.info(
+      { context: 'cloudIntegrationsAPI' },
+      'Returning cloud integration settings'
+    )
     return NextResponse.json(clientSettings)
   } catch (error) {
     logger.error(
-      { context: 'cloudIntegrationsAPI' },
-      'Error fetching cloud integration settings:',
-      error,
+      { context: 'cloudIntegrationsAPI', error },
+      'Error fetching cloud integration settings'
     )
 
-    // Return default settings in case of error
     return NextResponse.json(
       {
         dropboxAppKey: null,
         googleApiKey: null,
         googleClientId: null,
         onedriveClientId: null,
-        error: 'Error fetching cloud integration settings',
+        error: 'Failed to fetch cloud integration settings',
       },
-      { status: 200 }, // Return 200 instead of 500 to prevent the client from getting stuck
+      { status: 200 } // Return 200 to prevent client from getting stuck
     )
   }
 }
+

@@ -5,13 +5,18 @@ import React from 'react'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Categories',
-  description: 'Browse all content categories',
+  title: 'Categories | OTT Platform',
+  description: 'Browse all content categories and series',
+  openGraph: {
+    title: 'Categories | OTT Platform',
+    description: 'Browse all content categories and series',
+    type: 'website',
+  },
 }
 
 export default async function CategoriesPage() {
   const payload = await getPayload({ config: configPromise })
-  
+
   const categories = await payload.find({
     collection: 'categories',
     sort: 'title',
@@ -20,11 +25,11 @@ export default async function CategoriesPage() {
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-bold mb-8">Categories</h1>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {categories.docs.map((category) => (
-          <Link 
-            key={category.id} 
+          <Link
+            key={category.id}
             href={`/category/${category.slug}`}
             className="bg-card hover:bg-card/80 transition-colors border border-border rounded-lg p-6"
           >

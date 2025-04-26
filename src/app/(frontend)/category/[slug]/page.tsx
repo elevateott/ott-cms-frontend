@@ -53,6 +53,7 @@ export async function generateMetadata(
         equals: slug,
       },
     },
+    depth: 1, // To get meta.image populated
   })
 
   const category = categories.docs[0]
@@ -63,9 +64,35 @@ export async function generateMetadata(
     }
   }
 
+  // Use SEO metadata if available, otherwise fall back to category fields
+  const title = category.meta?.title || `${category.title} | OTT Platform`
+  const description = category.meta?.description || category.description
+  const image =
+    category.meta?.image?.url ||
+    (category.thumbnail && typeof category.thumbnail === 'object'
+      ? category.thumbnail.url
+      : undefined)
+
+  // Get Twitter card settings if available
+  const twitterCard = category.meta?.socialMedia?.twitterCard || 'summary_large_image'
+  const twitterHandle = category.meta?.socialMedia?.twitterHandle
+
   return {
-    title: `${category.title} | OTT Platform`,
-    description: category.description,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: twitterCard as 'summary' | 'summary_large_image',
+      creator: twitterHandle || undefined,
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+    robots: category.meta?.noIndex ? { index: false } : undefined,
   }
 }
 

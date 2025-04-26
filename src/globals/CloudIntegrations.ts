@@ -16,9 +16,9 @@ const CloudIntegrations: GlobalConfig = {
   fields: [
     {
       type: 'ui',
-      name: 'cloudIntegrationInstructions',
+      name: 'instructions',
       admin: {
-        position: 'sidebar', // Or 'main'
+        position: 'sidebar',
         components: {
           Field: CloudIntegrationInstructions,
         },

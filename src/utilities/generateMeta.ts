@@ -8,7 +8,7 @@ import { getServerSideURL } from './getURL'
 const getImageURL = (image?: Media | Config['db']['defaultIDType'] | null) => {
   const serverUrl = getServerSideURL()
 
-  let url = serverUrl + '/website-template-OG.webp'
+  let url = serverUrl + '/og-image.png'
 
   if (image && typeof image === 'object' && 'url' in image) {
     const ogUrl = image.sizes?.og?.url
@@ -26,9 +26,11 @@ export const generateMeta = async (args: {
 
   const ogImage = getImageURL(doc?.meta?.image)
 
-  const title = doc?.meta?.title
-    ? doc?.meta?.title + ' | Payload Website Template'
-    : 'Payload Website Template'
+  const title = doc?.meta?.title ? doc?.meta?.title + ' | OTT CMS' : 'OTT CMS'
+
+  // Get Twitter card settings if available
+  const twitterCard = doc?.meta?.socialMedia?.twitterCard || 'summary_large_image'
+  const twitterHandle = doc?.meta?.socialMedia?.twitterHandle
 
   return {
     description: doc?.meta?.description,
@@ -45,5 +47,13 @@ export const generateMeta = async (args: {
       url: Array.isArray(doc?.slug) ? doc?.slug.join('/') : '/',
     }),
     title,
+    twitter: {
+      card: twitterCard as 'summary' | 'summary_large_image' | 'player',
+      creator: twitterHandle || undefined,
+      title,
+      description: doc?.meta?.description,
+      images: ogImage ? [ogImage] : undefined,
+    },
+    robots: doc?.meta?.noIndex ? { index: false } : undefined,
   }
 }
