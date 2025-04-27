@@ -939,9 +939,13 @@ export interface Content {
    */
   categories?: (string | Category)[] | null;
   /**
-   * Only published content will be publicly visible
+   * Content status (draft or published)
    */
   status: 'draft' | 'published';
+  /**
+   * Uncheck to hide this content from users.
+   */
+  isPublished?: boolean | null;
   /**
    * Schedule when this content should go live.
    */
@@ -1623,6 +1627,7 @@ export interface ContentSelect<T extends boolean = true> {
       };
   categories?: T;
   status?: T;
+  isPublished?: T;
   publishAt?: T;
   unpublishAt?: T;
   meta?:
