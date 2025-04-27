@@ -1,4 +1,5 @@
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
+import { MuxUploadRequest, MuxAsset, MuxWebhookEvent, MuxTrack } from '@/types/mux'
+import { SubtitleTrack } from '@/types/videoAsset'
 
 export interface IMuxService {
   createDirectUpload(options?: MuxUploadRequest): Promise<{
@@ -71,5 +72,52 @@ export interface IMuxService {
     count: number
     failedCount: number
     totalCount: number
+  }>
+
+  /**
+   * Create a subtitle track for a Mux asset
+   * @param assetId Mux asset ID
+   * @param subtitleData Subtitle track data
+   * @param fileUrl URL to the subtitle file
+   */
+  createSubtitleTrack(
+    assetId: string,
+    subtitleData: {
+      language: string
+      name?: string
+      closedCaptions?: boolean
+      type?: 'subtitles' | 'captions'
+    },
+    fileUrl: string,
+  ): Promise<{
+    id: string
+    url?: string
+  }>
+
+  /**
+   * Get all subtitle tracks for a Mux asset
+   * @param assetId Mux asset ID
+   */
+  getSubtitleTracks(assetId: string): Promise<MuxTrack[]>
+
+  /**
+   * Delete a subtitle track from a Mux asset
+   * @param assetId Mux asset ID
+   * @param trackId Mux track ID
+   */
+  deleteSubtitleTrack(assetId: string, trackId: string): Promise<boolean>
+
+  /**
+   * Generate auto-captions for a Mux asset
+   * @param assetId Mux asset ID
+   * @param language Language code for the captions
+   */
+  generateAutoCaptions(
+    assetId: string,
+    options?: {
+      language?: string
+    },
+  ): Promise<{
+    id: string
   }>
 }

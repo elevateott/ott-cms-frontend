@@ -18,6 +18,19 @@ export interface MuxAdvancedSettings {
   autoGenerateCaptions?: boolean
 }
 
+export interface SubtitleTrack {
+  language: string
+  name?: string
+  kind: 'subtitles' | 'captions' | 'descriptions'
+  closedCaptions?: boolean
+  muxTrackId?: string
+  url?: string
+}
+
+export interface Subtitles {
+  tracks?: SubtitleTrack[]
+}
+
 export interface VideoAsset {
   id: string
   title: string
@@ -28,6 +41,7 @@ export interface VideoAsset {
   drmConfigurationId?: string
   muxData?: MuxData
   muxAdvancedSettings?: MuxAdvancedSettings
+  subtitles?: Subtitles
   embeddedUrl?: string
   muxThumbnailUrl?: string
   duration?: number

@@ -108,3 +108,54 @@ export const updateMuxAsset = async (
   const muxService = await getMuxService()
   return muxService.updateAsset(assetId, data)
 }
+
+/**
+ * Create a subtitle track for a Mux asset
+ */
+export const createSubtitleTrack = async (
+  assetId: string,
+  subtitleData: {
+    language: string
+    name?: string
+    closedCaptions?: boolean
+    type?: 'subtitles' | 'captions'
+  },
+  fileUrl: string,
+): Promise<{
+  id: string
+  url?: string
+}> => {
+  const muxService = await getMuxService()
+  return muxService.createSubtitleTrack(assetId, subtitleData, fileUrl)
+}
+
+/**
+ * Get all subtitle tracks for a Mux asset
+ */
+export const getSubtitleTracks = async (assetId: string) => {
+  const muxService = await getMuxService()
+  return muxService.getSubtitleTracks(assetId)
+}
+
+/**
+ * Delete a subtitle track from a Mux asset
+ */
+export const deleteSubtitleTrack = async (assetId: string, trackId: string): Promise<boolean> => {
+  const muxService = await getMuxService()
+  return muxService.deleteSubtitleTrack(assetId, trackId)
+}
+
+/**
+ * Generate auto-captions for a Mux asset
+ */
+export const generateAutoCaptions = async (
+  assetId: string,
+  options?: {
+    language?: string
+  },
+): Promise<{
+  id: string
+}> => {
+  const muxService = await getMuxService()
+  return muxService.generateAutoCaptions(assetId, options)
+}

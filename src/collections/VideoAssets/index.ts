@@ -6,6 +6,7 @@ import { fetchMuxMetadataForVideoAsset } from '@/hooks/mux/updateVideoAssetOnWeb
 import { deleteAssetOnVideoAssetDelete } from '@/hooks/mux/deleteAssetOnVideoAssetDelete'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 import { checkDependenciesBeforeDelete } from '@/hooks/videoAssets/checkDependenciesBeforeDelete'
+import { updateSubtitleTracks } from '@/hooks/videoAssets/updateSubtitleTracks'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
@@ -249,6 +250,93 @@ export const VideoAssets: CollectionConfig = {
       ],
     },
     {
+      name: 'subtitles',
+      type: 'group',
+      label: 'Subtitles & Captions',
+      admin: {
+        className: 'subtitles-group',
+        description: 'Manage subtitle and caption tracks for this video',
+        condition: (data) => data.sourceType === 'mux' && data.muxData?.status === 'ready',
+      },
+      fields: [
+        {
+          name: 'tracks',
+          type: 'array',
+          label: 'Subtitle Tracks',
+          admin: {
+            components: {
+              RowLabel: ({ data }: { data: { name?: string; language?: string } }) =>
+                data?.name
+                  ? `${data.name} (${data.language})`
+                  : data?.language
+                    ? `${data.language} Subtitles`
+                    : 'Subtitle Track',
+            },
+            description: 'List of subtitle and caption tracks for this video',
+          },
+          fields: [
+            {
+              name: 'language',
+              type: 'text',
+              required: true,
+              admin: {
+                description: 'Language code (e.g., en, es, fr)',
+              },
+            },
+            {
+              name: 'name',
+              type: 'text',
+              admin: {
+                description: 'Display name for this track (e.g., English, Spanish)',
+              },
+            },
+            {
+              name: 'kind',
+              type: 'select',
+              options: [
+                { label: 'Subtitles', value: 'subtitles' },
+                { label: 'Captions', value: 'captions' },
+                { label: 'Descriptions', value: 'descriptions' },
+              ],
+              defaultValue: 'subtitles',
+              required: true,
+            },
+            {
+              name: 'closedCaptions',
+              type: 'checkbox',
+              label: 'Closed Captions',
+              defaultValue: false,
+            },
+            {
+              name: 'muxTrackId',
+              type: 'text',
+              admin: {
+                readOnly: true,
+                description: 'Mux Track ID (automatically populated)',
+              },
+            },
+            {
+              name: 'url',
+              type: 'text',
+              admin: {
+                readOnly: true,
+                description: 'URL to the subtitle file (automatically populated)',
+              },
+            },
+          ],
+        },
+        {
+          name: 'uploadSubtitles',
+          type: 'ui',
+          admin: {
+            components: {
+              Field: '@/collections/VideoAssets/components/SubtitleUploader',
+            },
+          },
+        },
+      ],
+    },
+    {
       name: 'embeddedUrl',
       type: 'text',
       admin: {
@@ -344,7 +432,7 @@ export const VideoAssets: CollectionConfig = {
     // Add logging hooks
     ...createCollectionLoggingHooks('videoassets'),
     // Add existing hooks
-    afterChange: [fetchMuxMetadataForVideoAsset],
+    afterChange: [fetchMuxMetadataForVideoAsset, updateSubtitleTracks],
     beforeDelete: [checkDependenciesBeforeDelete, deleteAssetOnVideoAssetDelete],
   },
 }

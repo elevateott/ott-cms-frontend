@@ -6,7 +6,8 @@ import { logger } from '@/utils/logger'
  */
 
 import Mux from '@mux/mux-node'
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
+import { MuxUploadRequest, MuxAsset, MuxWebhookEvent, MuxTrack } from '@/types/mux'
+import { SubtitleTrack } from '@/types/videoAsset'
 import { logError } from '@/utils/errorHandler'
 import { IMuxService } from '@/services/mux/IMuxService'
 import { getMuxSettings, getMuxSettingsSync, MuxSettings } from '@/utilities/getMuxSettings'
@@ -876,6 +877,253 @@ export class MuxService implements IMuxService {
     } catch (error) {
       logger.error({ context: 'muxService' }, 'Error in deleteBatchOfAssets:', error)
       throw error
+    }
+  }
+
+  /**
+   * Create a subtitle track for a Mux asset
+   * @param assetId Mux asset ID
+   * @param subtitleData Subtitle track data
+   * @param fileUrl URL to the subtitle file
+   */
+  async createSubtitleTrack(
+    assetId: string,
+    subtitleData: {
+      language: string
+      name?: string
+      closedCaptions?: boolean
+      type?: 'subtitles' | 'captions'
+    },
+    fileUrl: string,
+  ): Promise<{
+    id: string
+    url?: string
+  }> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `Creating subtitle track for asset ${assetId} with language ${subtitleData.language}`,
+      )
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before creating subtitle track`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Prepare the request data
+      const data = {
+        url: fileUrl,
+        type: 'text',
+        text_type: subtitleData.type || 'subtitles',
+        language_code: subtitleData.language,
+        name: subtitleData.name || subtitleData.language,
+        closed_captions: subtitleData.closedCaptions || false,
+      }
+
+      // Create the track using the Mux API
+      const response = await this.video._client.post(`/video/v1/assets/${assetId}/tracks`, {
+        data,
+      })
+
+      // Clear the cache for this asset to ensure fresh data on next fetch
+      this.clearAssetCache(assetId)
+
+      logger.info(
+        { context: 'muxService' },
+        `Successfully created subtitle track for asset ${assetId}`,
+        response,
+      )
+
+      return {
+        id: response.id,
+        url: response.url,
+      }
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error creating subtitle track for asset ${assetId}:`,
+        error,
+      )
+      logError(error, 'MuxService.createSubtitleTrack')
+      throw new Error(
+        `Failed to create subtitle track: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  /**
+   * Get all subtitle tracks for a Mux asset
+   * @param assetId Mux asset ID
+   */
+  async getSubtitleTracks(assetId: string): Promise<MuxTrack[]> {
+    try {
+      logger.info({ context: 'muxService' }, `Getting subtitle tracks for asset ${assetId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before getting subtitle tracks`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Get the asset to retrieve its tracks
+      const asset = await this.getAsset(assetId)
+      if (!asset) {
+        throw new Error(`Asset ${assetId} not found`)
+      }
+
+      // Filter for text tracks only
+      const textTracks = asset.tracks?.filter((track) => track.type === 'text') || []
+
+      logger.info(
+        { context: 'muxService' },
+        `Found ${textTracks.length} text tracks for asset ${assetId}`,
+      )
+
+      return textTracks
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error getting subtitle tracks for asset ${assetId}:`,
+        error,
+      )
+      logError(error, 'MuxService.getSubtitleTracks')
+      return []
+    }
+  }
+
+  /**
+   * Delete a subtitle track from a Mux asset
+   * @param assetId Mux asset ID
+   * @param trackId Mux track ID
+   */
+  async deleteSubtitleTrack(assetId: string, trackId: string): Promise<boolean> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `Deleting subtitle track ${trackId} from asset ${assetId}`,
+      )
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before deleting subtitle track`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Delete the track using the Mux API
+      await this.video._client.delete(`/video/v1/assets/${assetId}/tracks/${trackId}`)
+
+      // Clear the cache for this asset to ensure fresh data on next fetch
+      this.clearAssetCache(assetId)
+
+      logger.info(
+        { context: 'muxService' },
+        `Successfully deleted subtitle track ${trackId} from asset ${assetId}`,
+      )
+
+      return true
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error deleting subtitle track ${trackId} from asset ${assetId}:`,
+        error,
+      )
+      logError(error, 'MuxService.deleteSubtitleTrack')
+      return false
+    }
+  }
+
+  /**
+   * Generate auto-captions for a Mux asset
+   * @param assetId Mux asset ID
+   * @param options Options for auto-caption generation
+   */
+  async generateAutoCaptions(
+    assetId: string,
+    options?: {
+      language?: string
+    },
+  ): Promise<{
+    id: string
+  }> {
+    try {
+      const language = options?.language || 'en'
+      logger.info(
+        { context: 'muxService' },
+        `Generating auto-captions for asset ${assetId} in language ${language}`,
+      )
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before generating auto-captions`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Generate auto-captions using the Mux API
+      const response = await this.video._client.post(
+        `/video/v1/assets/${assetId}/generate-subtitles`,
+        {
+          data: {
+            generated_subtitles: [
+              {
+                name: language === 'en' ? 'English' : language,
+                language_code: language,
+              },
+            ],
+          },
+        },
+      )
+
+      // Clear the cache for this asset to ensure fresh data on next fetch
+      this.clearAssetCache(assetId)
+
+      logger.info(
+        { context: 'muxService' },
+        `Successfully requested auto-captions for asset ${assetId}`,
+        response,
+      )
+
+      return {
+        id: response.id || 'pending',
+      }
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error generating auto-captions for asset ${assetId}:`,
+        error,
+      )
+      logError(error, 'MuxService.generateAutoCaptions')
+      throw new Error(
+        `Failed to generate auto-captions: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 

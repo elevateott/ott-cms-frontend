@@ -847,6 +847,37 @@ export interface Videoasset {
     autoGenerateCaptions?: boolean | null;
   };
   /**
+   * Manage subtitle and caption tracks for this video
+   */
+  subtitles?: {
+    /**
+     * List of subtitle and caption tracks for this video
+     */
+    tracks?:
+      | {
+          /**
+           * Language code (e.g., en, es, fr)
+           */
+          language: string;
+          /**
+           * Display name for this track (e.g., English, Spanish)
+           */
+          name?: string | null;
+          kind: 'subtitles' | 'captions' | 'descriptions';
+          closedCaptions?: boolean | null;
+          /**
+           * Mux Track ID (automatically populated)
+           */
+          muxTrackId?: string | null;
+          /**
+           * URL to the subtitle file (automatically populated)
+           */
+          url?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
    * Enter an HLS stream URL (e.g., from Vimeo or DaCast)
    */
   embeddedUrl?: string | null;
@@ -1533,6 +1564,21 @@ export interface VideoassetsSelect<T extends boolean = true> {
         playbackPolicy?: T;
         normalizeAudio?: T;
         autoGenerateCaptions?: T;
+      };
+  subtitles?:
+    | T
+    | {
+        tracks?:
+          | T
+          | {
+              language?: T;
+              name?: T;
+              kind?: T;
+              closedCaptions?: T;
+              muxTrackId?: T;
+              url?: T;
+              id?: T;
+            };
       };
   embeddedUrl?: T;
   duration?: T;

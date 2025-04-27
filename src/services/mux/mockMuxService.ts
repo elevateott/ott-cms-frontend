@@ -5,7 +5,8 @@ import { logger } from '@/utils/logger'
  * A mock implementation of the Mux service for testing and development
  */
 
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
+import { MuxUploadRequest, MuxAsset, MuxWebhookEvent, MuxTrack } from '@/types/mux'
+import { SubtitleTrack } from '@/types/videoAsset'
 import { logError } from '@/utils/errorHandler'
 import { IMuxService } from '@/services/mux/IMuxService'
 
@@ -289,6 +290,187 @@ export class MockMuxService implements IMuxService {
 
   // Track if we've already returned assets
   private _assetsReturned = false
+
+  // Store mock subtitle tracks
+  private _mockSubtitleTracks: Map<string, MuxTrack[]> = new Map()
+
+  /**
+   * Create a subtitle track for a Mux asset
+   * @param assetId Mux asset ID
+   * @param subtitleData Subtitle track data
+   * @param fileUrl URL to the subtitle file
+   */
+  async createSubtitleTrack(
+    assetId: string,
+    subtitleData: {
+      language: string
+      name?: string
+      closedCaptions?: boolean
+      type?: 'subtitles' | 'captions'
+    },
+    fileUrl: string,
+  ): Promise<{
+    id: string
+    url?: string
+  }> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Creating subtitle track for asset ${assetId} with language ${subtitleData.language}`,
+      )
+
+      // Generate a mock track ID
+      const trackId = `mock-track-${Date.now()}`
+
+      // Create a mock track
+      const track: MuxTrack = {
+        id: trackId,
+        type: 'text',
+        // Add additional properties as needed
+      }
+
+      // Store the track in our mock storage
+      if (!this._mockSubtitleTracks.has(assetId)) {
+        this._mockSubtitleTracks.set(assetId, [])
+      }
+      this._mockSubtitleTracks.get(assetId)?.push(track)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully created subtitle track ${trackId} for asset ${assetId}`,
+      )
+
+      return {
+        id: trackId,
+        url: fileUrl,
+      }
+    } catch (error) {
+      logError(error, 'MockMuxService.createSubtitleTrack')
+      throw new Error('Failed to create mock subtitle track')
+    }
+  }
+
+  /**
+   * Get all subtitle tracks for a Mux asset
+   * @param assetId Mux asset ID
+   */
+  async getSubtitleTracks(assetId: string): Promise<MuxTrack[]> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Getting subtitle tracks for asset ${assetId}`,
+      )
+
+      // Return stored tracks or empty array
+      const tracks = this._mockSubtitleTracks.get(assetId) || []
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Found ${tracks.length} subtitle tracks for asset ${assetId}`,
+      )
+
+      return tracks
+    } catch (error) {
+      logError(error, 'MockMuxService.getSubtitleTracks')
+      return []
+    }
+  }
+
+  /**
+   * Delete a subtitle track from a Mux asset
+   * @param assetId Mux asset ID
+   * @param trackId Mux track ID
+   */
+  async deleteSubtitleTrack(assetId: string, trackId: string): Promise<boolean> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Deleting subtitle track ${trackId} from asset ${assetId}`,
+      )
+
+      // Check if we have tracks for this asset
+      if (!this._mockSubtitleTracks.has(assetId)) {
+        return false
+      }
+
+      // Get current tracks
+      const tracks = this._mockSubtitleTracks.get(assetId) || []
+
+      // Find the track index
+      const trackIndex = tracks.findIndex((track) => track.id === trackId)
+
+      // If track not found, return false
+      if (trackIndex === -1) {
+        return false
+      }
+
+      // Remove the track
+      tracks.splice(trackIndex, 1)
+
+      // Update the stored tracks
+      this._mockSubtitleTracks.set(assetId, tracks)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully deleted subtitle track ${trackId} from asset ${assetId}`,
+      )
+
+      return true
+    } catch (error) {
+      logError(error, 'MockMuxService.deleteSubtitleTrack')
+      return false
+    }
+  }
+
+  /**
+   * Generate auto-captions for a Mux asset
+   * @param assetId Mux asset ID
+   * @param options Options for auto-caption generation
+   */
+  async generateAutoCaptions(
+    assetId: string,
+    options?: {
+      language?: string
+    },
+  ): Promise<{
+    id: string
+  }> {
+    try {
+      const language = options?.language || 'en'
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Generating auto-captions for asset ${assetId} in language ${language}`,
+      )
+
+      // Generate a mock track ID
+      const trackId = `mock-auto-caption-${Date.now()}`
+
+      // Create a mock track
+      const track: MuxTrack = {
+        id: trackId,
+        type: 'text',
+        // Add additional properties as needed
+      }
+
+      // Store the track in our mock storage
+      if (!this._mockSubtitleTracks.has(assetId)) {
+        this._mockSubtitleTracks.set(assetId, [])
+      }
+      this._mockSubtitleTracks.get(assetId)?.push(track)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully generated auto-captions for asset ${assetId}`,
+      )
+
+      return {
+        id: trackId,
+      }
+    } catch (error) {
+      logError(error, 'MockMuxService.generateAutoCaptions')
+      throw new Error('Failed to generate mock auto-captions')
+    }
+  }
 
   /**
    * Delete all Mux assets recursively
