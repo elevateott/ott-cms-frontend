@@ -1,6 +1,6 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
-import StreamingSettings from './globals/streamingSettings'
+import StreamingSettings from './globals/streamingSettings.tsx'
 import OTTSettings from './globals/OTTSettings'
 import CloudIntegrations from './globals/CloudIntegrations'
 import SiteSettings from './globals/SiteSettings'
@@ -63,6 +63,7 @@ export default buildConfig({
     },
     importMap: {
       baseDir: path.resolve(dirname),
+      importMapPath: path.resolve(dirname, 'payload-import-map.ts'),
     },
     user: Users.slug,
     livePreview: {

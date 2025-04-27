@@ -15,6 +15,9 @@ export interface MuxAssetSettings {
   perTitleEncode?: boolean
   normalizeAudio?: boolean
   masterAccess?: 'temporary' | 'none'
+  drm?: {
+    drmConfigurationIds?: string[]
+  }
 }
 
 export interface MuxUploadResponse {

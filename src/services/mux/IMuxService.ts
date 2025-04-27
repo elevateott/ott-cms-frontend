@@ -19,7 +19,7 @@ export interface IMuxService {
       fitMode?: 'preserve' | 'cover' | 'crop'
     },
   ): string
-  verifyWebhookSignature(signature: string, body: string): boolean
+  verifyWebhookSignature(signature: string, body: string): Promise<boolean>
   parseWebhookEvent(body: string): MuxWebhookEvent | null
   getStoryboardUrl(
     playbackId: string,
@@ -47,7 +47,7 @@ export interface IMuxService {
       keyId?: string
       keySecret?: string
     },
-  ): string
+  ): Promise<string>
 
   /**
    * Create a Mux thumbnail for an asset

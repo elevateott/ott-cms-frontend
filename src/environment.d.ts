@@ -8,6 +8,7 @@ declare global {
       MUX_TOKEN_ID: string
       MUX_TOKEN_SECRET: string
       MUX_WEBHOOK_SECRET: string
+      MUX_DRM_CONFIGURATION_ID: string
       CRON_SECRET: string
     }
   }

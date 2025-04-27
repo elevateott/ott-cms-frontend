@@ -299,9 +299,18 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
   const [sourceType, setSourceType] = useState<'mux' | 'embedded'>('mux')
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+
+  // DRM settings
+  const [overrideDRM, setOverrideDRM] = useState(false)
+  const [useDRM, setUseDRM] = useState(false)
+  const [drmConfigId, setDrmConfigId] = useState('')
+
+  // Global settings
   const [streamingSourceTypes, setStreamingSourceTypes] = useState<'Mux' | 'Embedded' | 'Both'>(
     'Both',
   )
+  const [globalDRMEnabled, setGlobalDRMEnabled] = useState(false)
+  const [globalDRMConfigId, setGlobalDRMConfigId] = useState('')
   const [isLoadingSettings, setIsLoadingSettings] = useState(true)
 
   // Fetch global streaming settings
@@ -326,8 +335,21 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
           setSourceType('embedded')
         }
 
+        // Load DRM settings
+        const muxSettings = data.muxSettings || {}
+        setGlobalDRMEnabled(muxSettings.enableDRMByDefault || false)
+        setGlobalDRMConfigId(muxSettings.defaultDRMConfigurationId || '')
+
+        // If not overriding, use global settings
+        if (!overrideDRM) {
+          setUseDRM(muxSettings.enableDRMByDefault || false)
+          setDrmConfigId(muxSettings.defaultDRMConfigurationId || '')
+        }
+
         clientLogger.info('Streaming settings loaded', 'videoVideoAdmin', {
           streamingSourceTypes: sourceTypes,
+          globalDRMEnabled: muxSettings.enableDRMByDefault,
+          globalDRMConfigId: muxSettings.defaultDRMConfigurationId,
         })
       } catch (error) {
         clientLogger.error(
@@ -402,6 +424,91 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
               </div>
             )}
 
+            {/* DRM Options - only show for Mux uploads */}
+            {(sourceType === 'mux' || streamingSourceTypes === 'Mux') && (
+              <div className="space-y-4 mt-4 p-4 border border-gray-200 rounded-md">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-md font-medium">DRM Settings</h3>
+                  {globalDRMEnabled && !overrideDRM && (
+                    <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      Using Global Settings
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-sm text-gray-500 mb-2">
+                  <p>
+                    DRM (Digital Rights Management) protects your videos from unauthorized
+                    downloading and copying.
+                  </p>
+                  {globalDRMEnabled && (
+                    <p className="mt-1 font-medium">
+                      Global setting: DRM is <span className="text-green-600">enabled</span> by
+                      default.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="overrideDRM"
+                    checked={overrideDRM}
+                    onChange={(e) => {
+                      setOverrideDRM(e.target.checked)
+                      if (!e.target.checked) {
+                        // Reset to global defaults when not overriding
+                        setUseDRM(globalDRMEnabled)
+                        setDrmConfigId(globalDRMConfigId)
+                      }
+                    }}
+                    disabled={isUploading}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="overrideDRM" className="text-sm font-medium text-gray-700">
+                    Override Global DRM Settings
+                  </Label>
+                </div>
+
+                {overrideDRM && (
+                  <div className="ml-6 space-y-3 border-l-2 border-gray-200 pl-4 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="useDRM"
+                        checked={useDRM}
+                        onChange={(e) => setUseDRM(e.target.checked)}
+                        disabled={isUploading}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <Label htmlFor="useDRM" className="text-sm font-medium text-gray-700">
+                        Enable DRM Protection (Widevine / FairPlay)
+                      </Label>
+                    </div>
+
+                    {useDRM && (
+                      <div className="space-y-2">
+                        <Label htmlFor="drmConfigId" className="text-sm font-medium text-gray-700">
+                          DRM Configuration ID
+                        </Label>
+                        <Input
+                          id="drmConfigId"
+                          value={drmConfigId}
+                          onChange={(e) => setDrmConfigId(e.target.value)}
+                          disabled={isUploading}
+                          placeholder="Enter Mux DRM Configuration ID"
+                          className="w-full max-w-md"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Enter the Mux DRM Configuration ID for this video.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Show appropriate component based on source type */}
             {/* Mux Uploader - shown when sourceType is 'mux' */}
             {(sourceType === 'mux' || streamingSourceTypes === 'Mux') && (
@@ -422,10 +529,31 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
                   endpoint={async (file?: File) => {
                     if (!file) return '' // Return empty string if no file provided
 
+                    // Determine if DRM should be enabled based on override settings
+                    const shouldUseDRM = overrideDRM ? useDRM : globalDRMEnabled
+                    const drmConfigurationId = overrideDRM ? drmConfigId : globalDRMConfigId
+
+                    clientLogger.info(
+                      'Creating Mux upload with DRM settings:',
+                      {
+                        overrideDRM,
+                        useDRM: shouldUseDRM,
+                        drmConfigId: drmConfigurationId,
+                        globalDRMEnabled,
+                        globalDRMConfigId,
+                      },
+                      'videoVideoAdmin',
+                    )
+
                     const response = await fetch('/api/mux/direct-upload', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ filename: file.name }),
+                      body: JSON.stringify({
+                        filename: file.name,
+                        enableDRM: shouldUseDRM,
+                        drmConfigurationId: shouldUseDRM ? drmConfigurationId : undefined,
+                        overrideDRM: overrideDRM,
+                      }),
                     })
 
                     const result = await response.json()

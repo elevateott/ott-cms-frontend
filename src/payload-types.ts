@@ -791,6 +791,18 @@ export interface Videoasset {
    * Choose how this video is delivered
    */
   sourceType: 'mux' | 'embedded';
+  /**
+   * When checked, this video will use its own DRM settings instead of the global defaults.
+   */
+  overrideDRM?: boolean | null;
+  /**
+   * Protect this video with DRM (Widevine / FairPlay). Playback will require a compatible player. Can only be set before upload.
+   */
+  useDRM?: boolean | null;
+  /**
+   * The Mux DRM Configuration ID to use for this video.
+   */
+  drmConfigurationId?: string | null;
   muxData?: {
     /**
      * Mux Upload ID (automatically populated)
@@ -1502,6 +1514,9 @@ export interface VideoassetsSelect<T extends boolean = true> {
   slug?: T;
   slugLock?: T;
   sourceType?: T;
+  overrideDRM?: T;
+  useDRM?: T;
+  drmConfigurationId?: T;
   muxData?:
     | T
     | {
@@ -1893,6 +1908,43 @@ export interface StreamingSetting {
      * Default playback policy for new Mux videos
      */
     defaultPlaybackPolicy?: ('public' | 'signed') | null;
+    /**
+     * The Mux DRM Configuration ID to use when DRM is enabled by default
+     */
+    defaultDRMConfigurationId?: string | null;
+    /**
+     * Mux API credentials (leave empty to use environment variables)
+     */
+    apiCredentials?: {
+      /**
+       * Mux API Token ID for authentication
+       */
+      tokenId?: string | null;
+      /**
+       * Secret key for Mux API authentication
+       */
+      tokenSecret?: string | null;
+      /**
+       * Secret used to verify webhook signatures from Mux
+       */
+      webhookSecret?: string | null;
+      /**
+       * Mux Signing Key ID (for signed playback)
+       */
+      signingKeyId?: string | null;
+      /**
+       * Private key used for signing playback URLs (in PEM format)
+       */
+      signingKeyPrivateKey?: string | null;
+      /**
+       * When enabled, all new Mux videos will use DRM protection unless overridden at the video level
+       */
+      enableDRMByDefault?: boolean | null;
+      /**
+       * Mux DRM Configuration ID (for DRM-protected videos)
+       */
+      drmConfigurationId?: string | null;
+    };
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -2067,6 +2119,18 @@ export interface StreamingSettingsSelect<T extends boolean = true> {
     | {
         autoGenerateThumbnails?: T;
         defaultPlaybackPolicy?: T;
+        defaultDRMConfigurationId?: T;
+        apiCredentials?:
+          | T
+          | {
+              tokenId?: T;
+              tokenSecret?: T;
+              webhookSecret?: T;
+              signingKeyId?: T;
+              signingKeyPrivateKey?: T;
+              enableDRMByDefault?: T;
+              drmConfigurationId?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

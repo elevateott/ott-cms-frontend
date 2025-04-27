@@ -1,23 +1,76 @@
-import { logger } from '@/utils/logger';
+import { logger } from '@/utils/logger'
 import { NextResponse } from 'next/server'
 import { createMuxService } from '@/services/mux/index'
 import { logError } from '@/utils/errorHandler'
+import { getMuxSettings } from '@/utilities/getMuxSettings'
 
 export async function POST(request: Request) {
   try {
     logger.info({ context: 'direct-upload/route' }, 'direct-upload API endpoint called')
-    const muxService = createMuxService()
+    const muxService = await createMuxService()
+    const muxSettings = await getMuxSettings()
 
-    // Get the filename from the request body
+    // Get the request parameters from the body
     const body = await request.json()
-    const { filename } = body
-    logger.info({ context: 'direct-upload/route' }, 'Received request with filename:', filename)
+    const { filename, enableDRM, drmConfigurationId, overrideDRM } = body
+    logger.info({ context: 'direct-upload/route' }, 'Received request with:', {
+      filename,
+      enableDRM,
+      drmConfigurationId,
+      overrideDRM,
+    })
 
     logger.info({ context: 'direct-upload/route' }, 'Creating direct upload with Mux service')
+
+    // Determine which DRM configuration ID to use
+    let drmConfigId = ''
+
+    if (enableDRM) {
+      // If DRM is enabled, determine which configuration ID to use
+      if (overrideDRM && drmConfigurationId) {
+        // Use the provided DRM configuration ID if overriding
+        drmConfigId = drmConfigurationId
+        logger.info(
+          { context: 'direct-upload/route' },
+          'Using override DRM configuration ID:',
+          drmConfigId,
+        )
+      } else if (muxSettings.enableDRMByDefault) {
+        // Use the global default DRM configuration ID
+        drmConfigId = muxSettings.defaultDRMConfigurationId
+        logger.info(
+          { context: 'direct-upload/route' },
+          'Using global default DRM configuration ID:',
+          drmConfigId,
+        )
+      } else {
+        // Fallback to the API credentials DRM configuration ID
+        drmConfigId = muxSettings.drmConfigurationId
+        logger.info(
+          { context: 'direct-upload/route' },
+          'Using fallback DRM configuration ID:',
+          drmConfigId,
+        )
+      }
+    }
+
+    // Use the createMuxUpload utility to handle DRM configuration
     const upload = await muxService.createDirectUpload({
       ...(filename ? { metadata: { filename } } : {}),
+      ...(enableDRM && drmConfigId
+        ? {
+            newAssetSettings: {
+              playbackPolicy: ['signed'], // DRM requires signed playback policy
+              drm: {
+                drmConfigurationIds: [drmConfigId],
+              },
+            },
+          }
+        : {}),
     })
-    logger.info({ context: 'direct-upload/route' }, 'Mux direct upload created:', { uploadId: upload.uploadId })
+    logger.info({ context: 'direct-upload/route' }, 'Mux direct upload created:', {
+      uploadId: upload.uploadId,
+    })
 
     // The Mux upload response should contain both the URL and upload ID
     const response = {

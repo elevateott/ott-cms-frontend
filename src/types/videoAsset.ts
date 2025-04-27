@@ -23,6 +23,9 @@ export interface VideoAsset {
   title: string
   slug?: string
   sourceType: 'mux' | 'embedded'
+  overrideDRM?: boolean
+  useDRM?: boolean
+  drmConfigurationId?: string
   muxData?: MuxData
   muxAdvancedSettings?: MuxAdvancedSettings
   embeddedUrl?: string

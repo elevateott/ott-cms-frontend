@@ -140,7 +140,7 @@ export class MockMuxService implements IMuxService {
   /**
    * Verify a webhook signature
    */
-  verifyWebhookSignature(signature: string, body: string): boolean {
+  async verifyWebhookSignature(signature: string, body: string): Promise<boolean> {
     // Always return true in mock mode
     return true
   }
@@ -194,7 +194,7 @@ export class MockMuxService implements IMuxService {
   /**
    * Generate a signed playback URL
    */
-  generateSignedPlaybackUrl(
+  async generateSignedPlaybackUrl(
     playbackId: string,
     options: {
       expiresIn?: number // seconds
@@ -202,7 +202,7 @@ export class MockMuxService implements IMuxService {
       keyId?: string
       keySecret?: string
     } = {},
-  ): string {
+  ): Promise<string> {
     try {
       const {
         expiresIn = 3600, // 1 hour

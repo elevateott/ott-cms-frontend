@@ -10,12 +10,13 @@ import { EventService } from '@/services/eventService'
 import { EVENTS } from '@/constants/events'
 import { MUX_WEBHOOK_EVENT_TYPES } from '@/constants'
 import { createMuxService } from '@/services/mux'
+import { getMuxSettings } from '@/utilities/getMuxSettings'
 
 export class VideoAssetWebhookHandler {
   private eventService!: EventService
   private videoAssetRepository!: VideoAssetRepository
   private initialized: boolean = false
-  private muxService = createMuxService()
+  private muxService: any = null
 
   constructor(options?: { payload?: any }) {
     this.initializeServices(options?.payload)
@@ -36,6 +37,10 @@ export class VideoAssetWebhookHandler {
 
       this.videoAssetRepository = new VideoAssetRepository({ payload })
       logger.info({ context: 'muxService' }, '✅ VideoAssetRepository initialized')
+
+      // Initialize Mux service
+      this.muxService = await createMuxService()
+      logger.info({ context: 'muxService' }, '✅ MuxService initialized')
 
       this.initialized = true
       logger.info({ context: 'muxService' }, '✅ VideoAssetWebhookHandler initialized successfully')
@@ -623,6 +628,23 @@ export class VideoAssetWebhookHandler {
         `🔔 WEBHOOK [${timestamp}] Will update status: ${updateStatus ? 'Yes' : 'No'}`,
       )
 
+      // Check if this is a DRM-protected asset by examining the playback policy
+      const isDrmProtected =
+        data.playback_policy?.includes('signed') && data.drm?.drm_configuration_ids?.length > 0
+
+      // Get the DRM configuration ID if available
+      const drmConfigurationId =
+        isDrmProtected && data.drm?.drm_configuration_ids?.length > 0
+          ? data.drm.drm_configuration_ids[0]
+          : null
+
+      if (isDrmProtected) {
+        logger.info(
+          { context: 'muxService' },
+          `🔔 WEBHOOK [${timestamp}] DRM detected for asset with configuration ID: ${drmConfigurationId}`,
+        )
+      }
+
       const updateData: any = {
         muxData: {
           ...video.muxData,
@@ -630,6 +652,31 @@ export class VideoAssetWebhookHandler {
           // Only update the status if it's not already 'ready'
           ...(updateStatus ? { status: 'processing' } : {}),
         },
+      }
+
+      // If DRM is detected, update the DRM settings
+      if (isDrmProtected) {
+        // Get the global settings to determine if this is using global defaults
+        const muxSettings = await getMuxSettings()
+        const isUsingGlobalDefaults =
+          muxSettings.enableDRMByDefault &&
+          drmConfigurationId === muxSettings.defaultDRMConfigurationId
+
+        // Update the DRM settings
+        updateData.overrideDRM = !isUsingGlobalDefaults
+        updateData.useDRM = true
+
+        // Only set the configuration ID if overriding the global defaults
+        if (!isUsingGlobalDefaults && drmConfigurationId) {
+          updateData.drmConfigurationId = drmConfigurationId
+        }
+
+        logger.info({ context: 'muxService' }, `🔔 WEBHOOK [${timestamp}] Setting DRM fields:`, {
+          overrideDRM: updateData.overrideDRM,
+          useDRM: updateData.useDRM,
+          drmConfigurationId: updateData.drmConfigurationId || '(using global default)',
+          isUsingGlobalDefaults,
+        })
       }
 
       logger.info(

@@ -27,6 +27,7 @@ export const VideoAssets: CollectionConfig = {
       'thumbnailPreview',
       'title',
       'sourceType',
+      'drmBadge',
       'duration',
       'status',
       'createdAt',
@@ -52,6 +53,16 @@ export const VideoAssets: CollectionConfig = {
       admin: {
         components: {
           Cell: '@/collections/VideoAssets/components/ThumbnailCell',
+        },
+      },
+    },
+    {
+      name: 'drmBadge',
+      type: 'ui',
+      label: 'DRM',
+      admin: {
+        components: {
+          Cell: '@/collections/VideoAssets/components/DRMBadgeCell',
         },
       },
     },
@@ -84,6 +95,38 @@ export const VideoAssets: CollectionConfig = {
       required: true,
       admin: {
         description: 'Choose how this video is delivered',
+      },
+    },
+    {
+      name: 'overrideDRM',
+      type: 'checkbox',
+      label: 'Override Global DRM Settings?',
+      defaultValue: false,
+      admin: {
+        condition: (data) => data.sourceType === 'mux',
+        description:
+          'When checked, this video will use its own DRM settings instead of the global defaults.',
+      },
+    },
+    {
+      name: 'useDRM',
+      type: 'checkbox',
+      label: 'Use DRM for this video?',
+      defaultValue: false,
+      admin: {
+        condition: (data) => data.sourceType === 'mux' && data.overrideDRM === true,
+        description:
+          'Protect this video with DRM (Widevine / FairPlay). Playback will require a compatible player. Can only be set before upload.',
+      },
+    },
+    {
+      name: 'drmConfigurationId',
+      type: 'text',
+      label: 'DRM Configuration ID',
+      admin: {
+        condition: (data) =>
+          data.sourceType === 'mux' && data.overrideDRM === true && data.useDRM === true,
+        description: 'The Mux DRM Configuration ID to use for this video.',
       },
     },
     {

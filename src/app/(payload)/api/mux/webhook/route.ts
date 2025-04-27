@@ -13,6 +13,7 @@ import { createMuxService } from '@/services/mux'
 import VideoAssetWebhookHandler from '@/services/mux/videoAssetWebhookHandler'
 import { logError } from '@/utils/errorHandler'
 import { eventService } from '@/services/eventService'
+import { getMuxSettings } from '@/utilities/getMuxSettings'
 
 /**
  * POST /api/mux/webhook
@@ -61,23 +62,24 @@ export async function POST(req: NextRequest) {
     }
 
     // Initialize services
-    const muxService = createMuxService()
+    const muxService = await createMuxService()
+    const muxSettings = await getMuxSettings()
 
     // Verify signature
     try {
       logger.info({ context: 'webhook/route' }, '🔐 Attempting to verify Mux webhook signature')
 
       // Check if webhook secret is configured
-      const webhookSecret = process.env.MUX_WEBHOOK_SECRET
+      const webhookSecret = muxSettings.webhookSecret
       if (!webhookSecret) {
         logger.error(
           { context: 'webhook/route' },
-          '🚨 MUX_WEBHOOK_SECRET environment variable is not set!',
+          '🚨 Mux webhook secret is not configured in global settings or environment variables!',
         )
       } else {
         logger.info(
           { context: 'webhook/route' },
-          `🔑 MUX_WEBHOOK_SECRET is configured (first 4 chars: ${webhookSecret.substring(0, 4)}...)`,
+          `🔑 Mux webhook secret is configured (first 4 chars: ${webhookSecret.substring(0, 4)}...)`,
         )
       }
 
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
         )
       } else {
         // Verify the signature
-        const isValid = muxService.verifyWebhookSignature(signature, rawBody)
+        const isValid = await muxService.verifyWebhookSignature(signature, rawBody)
 
         if (!isValid) {
           logger.warn(

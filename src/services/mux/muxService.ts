@@ -9,7 +9,7 @@ import Mux from '@mux/mux-node'
 import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
 import { logError } from '@/utils/errorHandler'
 import { IMuxService } from '@/services/mux/IMuxService'
-import { muxConfig } from '@/config'
+import { getMuxSettings, getMuxSettingsSync, MuxSettings } from '@/utilities/getMuxSettings'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 
@@ -138,7 +138,7 @@ export class MuxService implements IMuxService {
 
   constructor({ tokenId, tokenSecret }: { tokenId: string; tokenSecret: string }) {
     if (!tokenId || !tokenSecret) {
-      throw new Error('MUX_TOKEN_ID and MUX_TOKEN_SECRET are required')
+      throw new Error('Mux API credentials are required')
     }
 
     logger.info(
@@ -160,9 +160,6 @@ export class MuxService implements IMuxService {
       if (!this.video) {
         throw new Error('Mux Video client initialization failed - video object is undefined')
       }
-
-      // Log available properties for debugging
-      //logger.info({ context: 'muxService' }, 'Mux video client properties:', Object.keys(this.video))
 
       // Check for uploads property (could be lowercase or uppercase)
       const hasUploads = this.video.uploads || this.video.Uploads
@@ -205,15 +202,30 @@ export class MuxService implements IMuxService {
         options,
       )
 
+      // Prepare new asset settings with DRM if enabled
+      const newAssetSettings = {
+        playback_policy: options.newAssetSettings?.playbackPolicy || ['public'],
+      } as any
+
+      // If DRM is enabled, add DRM configuration and ensure playback policy is signed
+      if (options.newAssetSettings?.drm?.drmConfigurationIds?.length) {
+        logger.info({ context: 'muxService' }, 'DRM is enabled for this upload')
+        // Override playback policy to signed when DRM is enabled
+        newAssetSettings.playback_policy = ['signed']
+        // Add DRM configuration
+        newAssetSettings.drm = {
+          drm_configuration_ids: options.newAssetSettings.drm.drmConfigurationIds,
+        }
+      }
+
       // Check if video.uploads exists (lowercase 'u')
       if (this.video.uploads) {
         logger.info({ context: 'muxService' }, 'Using video.uploads.create')
         const uploadOptions = {
           cors_origin: '*',
-          new_asset_settings: {
-            playback_policy: ['public'],
-          },
-          ...options,
+          new_asset_settings: newAssetSettings,
+          metadata: options.metadata,
+          passthrough: options.passthrough,
         }
         logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
 
@@ -230,10 +242,9 @@ export class MuxService implements IMuxService {
         logger.info({ context: 'muxService' }, 'Using video.Uploads.create')
         const uploadOptions = {
           cors_origin: '*',
-          new_asset_settings: {
-            playback_policy: ['public'],
-          },
-          ...options,
+          new_asset_settings: newAssetSettings,
+          metadata: options.metadata,
+          passthrough: options.passthrough,
         }
         logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
 
@@ -567,10 +578,13 @@ export class MuxService implements IMuxService {
   /**
    * Verify a webhook signature
    */
-  verifyWebhookSignature(signature: string, body: string): boolean {
+  async verifyWebhookSignature(signature: string, body: string): Promise<boolean> {
     try {
-      if (!muxConfig.webhookSecret) {
-        throw new Error('MUX_WEBHOOK_SECRET is required for webhook verification')
+      // Get Mux settings
+      const muxSettings = await getMuxSettings()
+
+      if (!muxSettings.webhookSecret) {
+        throw new Error('Webhook secret is required for webhook verification')
       }
 
       // Mux signatures are in the format "t=timestamp,v1=signature"
@@ -588,7 +602,7 @@ export class MuxService implements IMuxService {
 
       // Calculate HMAC
       const calculatedSignature = crypto
-        .createHmac('sha256', muxConfig.webhookSecret)
+        .createHmac('sha256', muxSettings.webhookSecret)
         .update(stringToSign)
         .digest('hex')
 
@@ -648,7 +662,7 @@ export class MuxService implements IMuxService {
   /**
    * Generate a signed playback URL
    */
-  generateSignedPlaybackUrl(
+  async generateSignedPlaybackUrl(
     playbackId: string,
     options: {
       expiresIn?: number // seconds
@@ -656,13 +670,20 @@ export class MuxService implements IMuxService {
       keyId?: string
       keySecret?: string
     } = {},
-  ): string {
+  ): Promise<string> {
     try {
+      // Get Mux settings
+      const muxSettings = await getMuxSettings()
+
       // Extract options with defaults
       const expiresIn = options.expiresIn || 3600 // 1 hour default
       // tokenType is not used but kept in the interface for API compatibility
-      const keyId = options.keyId || muxConfig.signingKeyId
-      const keySecret = options.keySecret || muxConfig.signingKeyPrivateKey
+      const keyId = options.keyId || muxSettings.signingKeyId
+      const keySecret = options.keySecret || muxSettings.signingKeyPrivateKey
+
+      if (!keyId || !keySecret) {
+        throw new Error('Signing key ID and private key are required for signed playback URLs')
+      }
 
       // Calculate expiration time
       const expirationTime = Math.floor(Date.now() / 1000) + expiresIn

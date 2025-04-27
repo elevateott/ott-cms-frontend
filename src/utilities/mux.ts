@@ -7,9 +7,11 @@
 
 import { createMuxService } from '@/services/mux'
 import { MuxAsset } from '@/types/mux'
+import { getMuxSettings } from '@/utilities/getMuxSettings'
+import { logger } from '@/utils/logger'
 
 // Initialize the Mux service
-const getMuxService = () => createMuxService()
+const getMuxService = async () => await createMuxService()
 
 /**
  * Create a Mux upload
@@ -17,8 +19,35 @@ const getMuxService = () => createMuxService()
 export const createMuxUpload = async (options?: {
   metadata?: Record<string, string>
   passthrough?: Record<string, string>
+  enableDRM?: boolean
 }) => {
-  const muxService = getMuxService()
+  const muxService = await getMuxService()
+  const muxSettings = await getMuxSettings()
+
+  // If DRM is enabled, add the DRM configuration
+  if (options?.enableDRM) {
+    const drmConfigId = muxSettings.drmConfigurationId
+
+    if (!drmConfigId) {
+      logger.warn(
+        { context: 'mux' },
+        'DRM is enabled but no DRM configuration ID is set in global settings or environment variables',
+      )
+    } else {
+      // Add DRM configuration to the upload options
+      return muxService.createDirectUpload({
+        ...options,
+        newAssetSettings: {
+          playbackPolicy: ['signed'], // DRM requires signed playback policy
+          drm: {
+            drmConfigurationIds: [drmConfigId],
+          },
+        },
+      })
+    }
+  }
+
+  // Default case without DRM
   return muxService.createDirectUpload(options)
 }
 
@@ -26,7 +55,7 @@ export const createMuxUpload = async (options?: {
  * Get a Mux asset
  */
 export const getMuxAsset = async (assetId: string): Promise<MuxAsset | null> => {
-  const muxService = getMuxService()
+  const muxService = await getMuxService()
   return muxService.getAsset(assetId)
 }
 
@@ -37,7 +66,7 @@ export const createMuxThumbnail = async (
   assetId: string,
   time: number = 0,
 ): Promise<{ url: string }> => {
-  const muxService = getMuxService()
+  const muxService = await getMuxService()
   return muxService.createMuxThumbnail(assetId, time)
 }
 
@@ -45,7 +74,7 @@ export const createMuxThumbnail = async (
  * Delete a Mux asset
  */
 export const deleteMuxAsset = async (assetId: string): Promise<boolean> => {
-  const muxService = getMuxService()
+  const muxService = await getMuxService()
   return muxService.deleteAsset(assetId)
 }
 
@@ -58,7 +87,7 @@ export const deleteAllMuxAssets = async (): Promise<{
   failedCount: number
   totalCount: number
 }> => {
-  const muxService = getMuxService()
+  const muxService = await getMuxService()
   return muxService.deleteAllMuxAssets()
 }
 
@@ -76,6 +105,6 @@ export const updateMuxAsset = async (
     generated_subtitles?: { name: string; language_code: string }[]
   },
 ): Promise<any> => {
-  const muxService = getMuxService()
+  const muxService = await getMuxService()
   return muxService.updateAsset(assetId, data)
 }
