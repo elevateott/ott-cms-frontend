@@ -529,40 +529,80 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
                   endpoint={async (file?: File) => {
                     if (!file) return '' // Return empty string if no file provided
 
-                    // Determine if DRM should be enabled based on override settings
-                    const shouldUseDRM = overrideDRM ? useDRM : globalDRMEnabled
-                    const drmConfigurationId = overrideDRM ? drmConfigId : globalDRMConfigId
+                    try {
+                      // Determine if DRM should be enabled based on override settings
+                      const shouldUseDRM = overrideDRM ? useDRM : globalDRMEnabled
+                      const drmConfigurationId = overrideDRM ? drmConfigId : globalDRMConfigId
 
-                    clientLogger.info(
-                      'Creating Mux upload with DRM settings:',
-                      {
-                        overrideDRM,
-                        useDRM: shouldUseDRM,
-                        drmConfigId: drmConfigurationId,
-                        globalDRMEnabled,
-                        globalDRMConfigId,
-                      },
-                      'videoVideoAdmin',
-                    )
+                      // Validate DRM configuration
+                      if (shouldUseDRM && !drmConfigurationId) {
+                        clientLogger.warn(
+                          'DRM enabled but no configuration ID provided',
+                          'videoVideoAdmin',
+                        )
+                        throw new Error(
+                          'DRM is enabled but no DRM Configuration ID is provided. Please enter a DRM Configuration ID or disable DRM.',
+                        )
+                      }
 
-                    const response = await fetch('/api/mux/direct-upload', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        filename: file.name,
-                        enableDRM: shouldUseDRM,
-                        drmConfigurationId: shouldUseDRM ? drmConfigurationId : undefined,
-                        overrideDRM: overrideDRM,
-                      }),
-                    })
+                      clientLogger.info(
+                        'Creating Mux upload with DRM settings:',
+                        {
+                          overrideDRM,
+                          useDRM: shouldUseDRM,
+                          drmConfigId: drmConfigurationId,
+                          globalDRMEnabled,
+                          globalDRMConfigId,
+                        },
+                        'videoVideoAdmin',
+                      )
 
-                    const result = await response.json()
+                      // Set a timeout for the fetch request
+                      const controller = new AbortController()
+                      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
 
-                    if (!result.data?.url) {
-                      throw new Error('Invalid upload URL response')
+                      try {
+                        const response = await fetch('/api/mux/direct-upload', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            filename: file.name,
+                            enableDRM: shouldUseDRM,
+                            drmConfigurationId: shouldUseDRM ? drmConfigurationId : undefined,
+                            overrideDRM: overrideDRM,
+                          }),
+                          signal: controller.signal,
+                        })
+
+                        // Clear the timeout since the request completed
+                        clearTimeout(timeoutId)
+
+                        if (!response.ok) {
+                          const errorData = await response.json()
+                          throw new Error(
+                            errorData.error || `Server responded with status ${response.status}`,
+                          )
+                        }
+
+                        const result = await response.json()
+
+                        if (!result.data?.url) {
+                          throw new Error('Invalid upload URL response')
+                        }
+
+                        return result.data.url // Return the URL string directly
+                      } catch (fetchError) {
+                        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                          throw new Error('Request timed out. Please try again.')
+                        }
+                        throw fetchError
+                      }
+                    } catch (error) {
+                      clientLogger.error('Error creating Mux upload', 'videoVideoAdmin', {
+                        error: error instanceof Error ? error.message : 'Unknown error',
+                      })
+                      throw error
                     }
-
-                    return result.data.url // Return the URL string directly
                   }}
                   onUploadingStateChange={setIsUploading}
                 />

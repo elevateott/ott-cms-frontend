@@ -1,7 +1,6 @@
 // src/globals/streamingSettings.tsx
 import type { GlobalConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
-import React from 'react'
 
 const StreamingSettings: GlobalConfig = {
   slug: 'streaming-settings',
@@ -58,21 +57,6 @@ const StreamingSettings: GlobalConfig = {
           },
         },
         {
-          name: 'defaultDRMConfigurationId',
-          type: 'text',
-          label: 'Default DRM Configuration ID',
-          admin: {
-            description: 'The Mux DRM Configuration ID to use when DRM is enabled by default',
-            condition: (data) => data.enableDRMByDefault === true,
-          },
-          validate: (value, { data }) => {
-            if (data.enableDRMByDefault && !value) {
-              return 'A DRM Configuration ID is required when DRM is enabled by default'
-            }
-            return true
-          },
-        },
-        {
           name: 'apiCredentials',
           type: 'group',
           admin: {
@@ -83,46 +67,67 @@ const StreamingSettings: GlobalConfig = {
               name: 'tokenId',
               type: 'text',
               label: 'Mux API Token ID',
+              required: false,
               admin: {
-                description: 'Mux API Token ID for authentication',
+                description: 'Token ID for Mux API authentication',
+                components: {
+                  Field: '@/components/fields/SecureTextField',
+                },
               },
             },
             {
               name: 'tokenSecret',
               type: 'text',
               label: 'Mux API Token Secret',
+              required: false,
               admin: {
                 description: 'Secret key for Mux API authentication',
+                components: {
+                  Field: '@/components/fields/SecureTextField',
+                },
               },
             },
             {
               name: 'webhookSecret',
               type: 'text',
               label: 'Mux Webhook Secret',
+              required: false,
               admin: {
                 description: 'Secret used to verify webhook signatures from Mux',
+                components: {
+                  Field: '@/components/fields/SecureTextField',
+                },
               },
             },
             {
               name: 'signingKeyId',
               type: 'text',
               label: 'Mux Signing Key ID',
+              required: false,
               admin: {
                 description: 'Mux Signing Key ID (for signed playback)',
+                components: {
+                  Field: '@/components/fields/SecureTextField',
+                },
               },
             },
             {
               name: 'signingKeyPrivateKey',
               type: 'textarea',
               label: 'Mux Signing Key Private Key',
+              required: false,
               admin: {
                 description: 'Private key used for signing playback URLs (in PEM format)',
+                components: {
+                  Field: '@/components/fields/SecureTextareaField',
+                },
               },
             },
             {
               name: 'enableDRMByDefault',
               type: 'checkbox',
               label: 'Enable DRM By Default?',
+              required: false,
               defaultValue: false,
               admin: {
                 description:
@@ -133,8 +138,12 @@ const StreamingSettings: GlobalConfig = {
               name: 'drmConfigurationId',
               type: 'text',
               label: 'Mux DRM Configuration ID',
+              required: false,
               admin: {
                 description: 'Mux DRM Configuration ID (for DRM-protected videos)',
+                components: {
+                  Field: '@/components/fields/SecureTextField',
+                },
               },
             },
           ],

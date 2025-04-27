@@ -1,13 +1,7 @@
-// src/types/UIFieldProps.ts
+import type { Field } from 'payload'
+
 export interface UIFieldProps {
   path: string
-  field: {
-    name: string
-    label?: string
-    admin?: {
-      description?: string
-    }
-  }
   value?: unknown
   onChange?: (value: unknown) => void
   preferencesKey?: string
@@ -17,4 +11,13 @@ export interface UIFieldProps {
     email?: string
     roles?: string[]
   }
+  field: Field & {
+    admin?: {
+      description?: string
+      // Any other admin settings you expect
+    }
+  }
+
+  // 👇 Extra props passed through `FieldProps`
+  [key: string]: unknown
 }

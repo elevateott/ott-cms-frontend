@@ -1909,15 +1909,11 @@ export interface StreamingSetting {
      */
     defaultPlaybackPolicy?: ('public' | 'signed') | null;
     /**
-     * The Mux DRM Configuration ID to use when DRM is enabled by default
-     */
-    defaultDRMConfigurationId?: string | null;
-    /**
      * Mux API credentials (leave empty to use environment variables)
      */
     apiCredentials?: {
       /**
-       * Mux API Token ID for authentication
+       * Token ID for Mux API authentication
        */
       tokenId?: string | null;
       /**
@@ -2119,7 +2115,6 @@ export interface StreamingSettingsSelect<T extends boolean = true> {
     | {
         autoGenerateThumbnails?: T;
         defaultPlaybackPolicy?: T;
-        defaultDRMConfigurationId?: T;
         apiCredentials?:
           | T
           | {

@@ -189,87 +189,138 @@ export class MuxService implements IMuxService {
   }
 
   /**
-   * Create a direct upload URL
+   * Create a direct upload URL with retry logic
    */
   async createDirectUpload(options: MuxUploadRequest = {}): Promise<{
     uploadId: string
     url: string
   }> {
-    try {
-      logger.info(
-        { context: 'muxService' },
-        'MuxService.createDirectUpload called with options:',
-        options,
-      )
+    const MAX_RETRIES = 3
+    let retryCount = 0
+    let lastError: Error | null = null
 
-      // Prepare new asset settings with DRM if enabled
-      const newAssetSettings = {
-        playback_policy: options.newAssetSettings?.playbackPolicy || ['public'],
-      } as any
+    while (retryCount < MAX_RETRIES) {
+      try {
+        logger.info(
+          { context: 'muxService' },
+          `MuxService.createDirectUpload attempt ${retryCount + 1}/${MAX_RETRIES} with options:`,
+          options,
+        )
 
-      // If DRM is enabled, add DRM configuration and ensure playback policy is signed
-      if (options.newAssetSettings?.drm?.drmConfigurationIds?.length) {
-        logger.info({ context: 'muxService' }, 'DRM is enabled for this upload')
-        // Override playback policy to signed when DRM is enabled
-        newAssetSettings.playback_policy = ['signed']
-        // Add DRM configuration
-        newAssetSettings.drm = {
-          drm_configuration_ids: options.newAssetSettings.drm.drmConfigurationIds,
+        // Prepare new asset settings with DRM if enabled
+        const newAssetSettings = {
+          playback_policy: options.newAssetSettings?.playbackPolicy || ['public'],
+        } as any
+
+        // If DRM is enabled, add DRM configuration and ensure playback policy is signed
+        if (options.newAssetSettings?.drm?.drmConfigurationIds?.length) {
+          logger.info({ context: 'muxService' }, 'DRM is enabled for this upload')
+          // Override playback policy to signed when DRM is enabled
+          newAssetSettings.playback_policy = ['signed']
+          // Add DRM configuration
+          newAssetSettings.drm = {
+            drm_configuration_ids: options.newAssetSettings.drm.drmConfigurationIds,
+          }
         }
-      }
 
-      // Check if video.uploads exists (lowercase 'u')
-      if (this.video.uploads) {
-        logger.info({ context: 'muxService' }, 'Using video.uploads.create')
-        const uploadOptions = {
-          cors_origin: '*',
-          new_asset_settings: newAssetSettings,
-          metadata: options.metadata,
-          passthrough: options.passthrough,
+        // Check if video.uploads exists (lowercase 'u')
+        if (this.video.uploads) {
+          logger.info({ context: 'muxService' }, 'Using video.uploads.create')
+          const uploadOptions = {
+            cors_origin: '*',
+            new_asset_settings: newAssetSettings,
+            metadata: options.metadata,
+            passthrough: options.passthrough,
+          }
+          logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
+
+          // Set a timeout for the API call
+          const uploadPromise = this.video.uploads.create(uploadOptions)
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Mux API call timed out after 30 seconds')), 30000)
+          })
+
+          const upload = (await Promise.race([uploadPromise, timeoutPromise])) as any
+          logger.info({ context: 'muxService' }, 'Upload created successfully:', { id: upload.id })
+
+          return {
+            uploadId: upload.id,
+            url: upload.url,
+          }
         }
-        logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
+        // Fallback to video.Uploads if it exists (capital 'U')
+        else if (this.video.Uploads) {
+          logger.info({ context: 'muxService' }, 'Using video.Uploads.create')
+          const uploadOptions = {
+            cors_origin: '*',
+            new_asset_settings: newAssetSettings,
+            metadata: options.metadata,
+            passthrough: options.passthrough,
+          }
+          logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
 
-        const upload = await this.video.uploads.create(uploadOptions)
-        logger.info({ context: 'muxService' }, 'Upload created successfully:', { id: upload.id })
+          // Set a timeout for the API call
+          const uploadPromise = this.video.Uploads.create(uploadOptions)
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Mux API call timed out after 30 seconds')), 30000)
+          })
 
-        return {
-          uploadId: upload.id,
-          url: upload.url,
+          const upload = (await Promise.race([uploadPromise, timeoutPromise])) as any
+          logger.info({ context: 'muxService' }, 'Upload created successfully:', { id: upload.id })
+
+          return {
+            uploadId: upload.id,
+            url: upload.url,
+          }
         }
-      }
-      // Fallback to video.Uploads if it exists (capital 'U')
-      else if (this.video.Uploads) {
-        logger.info({ context: 'muxService' }, 'Using video.Uploads.create')
-        const uploadOptions = {
-          cors_origin: '*',
-          new_asset_settings: newAssetSettings,
-          metadata: options.metadata,
-          passthrough: options.passthrough,
+        // Log error if neither exists
+        else {
+          logger.error(
+            { context: 'muxService' },
+            'Mux video client is missing uploads property',
+            this.video,
+          )
+          throw new Error('Mux video client is missing uploads property')
         }
-        logger.info({ context: 'muxService' }, 'Upload options:', uploadOptions)
-
-        const upload = await this.video.Uploads.create(uploadOptions)
-        logger.info({ context: 'muxService' }, 'Upload created successfully:', { id: upload.id })
-
-        return {
-          uploadId: upload.id,
-          url: upload.url,
-        }
-      }
-      // Log error if neither exists
-      else {
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
         logger.error(
           { context: 'muxService' },
-          'Mux video client is missing uploads property',
-          this.video,
+          `Error in MuxService.createDirectUpload (attempt ${retryCount + 1}/${MAX_RETRIES}):`,
+          error,
         )
-        throw new Error('Mux video client is missing uploads property')
+
+        // Check if this is a rate limiting or timeout error
+        const errorMessage = lastError.message.toLowerCase()
+        const shouldRetry =
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('timed out') ||
+          errorMessage.includes('rate limit') ||
+          errorMessage.includes('429') ||
+          errorMessage.includes('too many requests')
+
+        if (shouldRetry && retryCount < MAX_RETRIES - 1) {
+          retryCount++
+          const delay = 2000 * retryCount // Exponential backoff: 2s, 4s, 6s
+
+          logger.warn(
+            { context: 'muxService' },
+            `Retrying createDirectUpload in ${delay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+          )
+
+          // Wait before retrying
+          await new Promise((resolve) => setTimeout(resolve, delay))
+        } else {
+          // Don't retry for other errors or if we've reached max retries
+          logError(error, 'MuxService.createDirectUpload')
+          throw lastError
+        }
       }
-    } catch (error) {
-      logger.error({ context: 'muxService' }, 'Error in MuxService.createDirectUpload:', error)
-      logError(error, 'MuxService.createDirectUpload')
-      throw error
     }
+
+    // This should never be reached due to the throw in the loop,
+    // but TypeScript requires a return value
+    throw lastError || new Error('Failed to create direct upload after multiple attempts')
   }
 
   // Add rate limiting and caching for Mux API calls

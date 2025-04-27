@@ -168,6 +168,71 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     return () => clearTimeout(timer)
   }, [])
 
+  // Create a wrapper for the endpoint function with retry capability
+  const endpointWithRetry = useCallback(
+    async (file?: File) => {
+      if (!file || !endpoint) return ''
+
+      const MAX_RETRIES = 3
+      let retryCount = 0
+      let lastError: Error | null = null
+
+      while (retryCount < MAX_RETRIES) {
+        try {
+          clientLogger.info(
+            `Attempting to get upload URL (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+            'MuxVideoUploader',
+          )
+
+          // Call the original endpoint function
+          const url = await endpoint(file)
+
+          if (url) {
+            clientLogger.info('Successfully got upload URL', 'MuxVideoUploader')
+            return url
+          } else {
+            throw new Error('Empty URL returned from endpoint')
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error))
+
+          // Only retry on timeout or network errors
+          const errorMessage = lastError.message.toLowerCase()
+          const isTimeoutError =
+            errorMessage.includes('timeout') ||
+            errorMessage.includes('timed out') ||
+            errorMessage.includes('network') ||
+            errorMessage.includes('failed to get endpoint')
+
+          if (isTimeoutError && retryCount < MAX_RETRIES - 1) {
+            retryCount++
+            const delay = 2000 * retryCount // Exponential backoff: 2s, 4s, 6s
+
+            clientLogger.warn(
+              `Endpoint error: ${lastError.message}. Retrying in ${delay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+              'MuxVideoUploader',
+            )
+
+            // Wait before retrying
+            await new Promise((resolve) => setTimeout(resolve, delay))
+          } else {
+            // Don't retry for other errors or if we've reached max retries
+            clientLogger.error(
+              `Failed to get endpoint after ${retryCount + 1} attempts: ${lastError.message}`,
+              'MuxVideoUploader',
+            )
+            throw lastError
+          }
+        }
+      }
+
+      // This should never be reached due to the throw in the loop,
+      // but TypeScript requires a return value
+      throw lastError || new Error('Failed to get upload URL after multiple attempts')
+    },
+    [endpoint],
+  )
+
   // Function to clean up old uploads
   const cleanupOldUploads = useCallback(() => {
     const now = Date.now()
@@ -383,7 +448,40 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
 
   // Function to handle upload error
   const handleError = (event: CustomEvent) => {
-    const error = event.detail as Error
+    // Log the full error event for debugging
+    clientLogger.error('Upload error event', 'MuxVideoUploader', {
+      eventDetail: event.detail ? JSON.stringify(event.detail) : 'No detail',
+      eventType: event.type,
+    })
+
+    let errorMessage = 'Unknown error'
+    let errorObj: Error | null = null
+
+    // Extract error details from the event
+    if (event.detail) {
+      if (typeof event.detail === 'string') {
+        errorMessage = event.detail
+      } else if (event.detail instanceof Error) {
+        errorObj = event.detail
+        errorMessage = event.detail.message || 'Unknown error'
+      } else if (typeof event.detail === 'object') {
+        // Try to extract message from object
+        errorMessage = event.detail.message || event.detail.error || JSON.stringify(event.detail)
+      }
+    }
+
+    // Special handling for "Server responded with 0" error
+    if (errorMessage.includes('Server responded with 0')) {
+      errorMessage =
+        'Connection to upload server was lost. Please check your network connection and try again.'
+
+      // Reset the uploader to allow for retry
+      setTimeout(() => {
+        setUploaderKey((prev) => prev + 1)
+      }, 1000)
+    }
+
+    clientLogger.error(`Upload error: ${errorMessage}`, 'MuxVideoUploader')
 
     setUploadedVideos((prev) => {
       const updatedVideos = [...prev]
@@ -393,7 +491,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         updatedVideos[lastVideoIndex] = ensureValidVideo({
           ...updatedVideos[lastVideoIndex],
           status: 'error',
-          error: error?.message || 'Unknown error',
+          error: errorMessage,
         })
       }
 
@@ -408,7 +506,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     })
 
     if (onUploadError) {
-      onUploadError(error)
+      onUploadError(errorObj || new Error(errorMessage))
     }
   }
 
@@ -653,7 +751,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
           // Show uploader when ready
           <MuxUploader
             key={uploaderKey}
-            endpoint={endpoint}
+            endpoint={endpointWithRetry}
             onUploadStart={handleUploadStart as any}
             onProgress={handleProgress as any}
             onSuccess={handleSuccess as any}
