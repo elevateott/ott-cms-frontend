@@ -5,12 +5,25 @@ import { useField, useDocumentInfo } from '@payloadcms/ui'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2, Upload, X, AlertCircle, CheckCircle } from 'lucide-react'
 import { clientLogger } from '@/utils/clientLogger'
-import { useToast } from '@/components/ui/use-toast'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 
@@ -85,16 +98,14 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0]
-      
+
       // Validate file type
       const validTypes = ['.vtt', '.srt', 'text/vtt', 'application/x-subrip']
       const fileType = selectedFile.type
       const fileName = selectedFile.name
       const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase()
-      
-      if (!validTypes.some(type => 
-        fileType.includes(type) || fileExtension.includes(type)
-      )) {
+
+      if (!validTypes.some((type) => fileType.includes(type) || fileExtension.includes(type))) {
         toast({
           title: 'Invalid file type',
           description: 'Only .vtt and .srt files are supported',
@@ -102,9 +113,9 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
         })
         return
       }
-      
+
       setFile(selectedFile)
-      
+
       // Set name based on file name if not already set
       if (!name) {
         const baseName = fileName.substring(0, fileName.lastIndexOf('.'))
@@ -136,7 +147,9 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
       })
 
       if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload file: ${uploadResponse.status} ${uploadResponse.statusText}`)
+        throw new Error(
+          `Failed to upload file: ${uploadResponse.status} ${uploadResponse.statusText}`,
+        )
       }
 
       const uploadData = await uploadResponse.json()
@@ -163,7 +176,9 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
       })
 
       if (!createResponse.ok) {
-        throw new Error(`Failed to create subtitle track: ${createResponse.status} ${createResponse.statusText}`)
+        throw new Error(
+          `Failed to create subtitle track: ${createResponse.status} ${createResponse.statusText}`,
+        )
       }
 
       const createData = await createResponse.json()
@@ -215,9 +230,12 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
     setIsDeleting(track.id)
 
     try {
-      const response = await fetch(`/api/mux/subtitles/${track.muxTrackId}?assetId=${muxData.assetId}`, {
-        method: 'DELETE',
-      })
+      const response = await fetch(
+        `/api/mux/subtitles/${track.muxTrackId}?assetId=${muxData.assetId}`,
+        {
+          method: 'DELETE',
+        },
+      )
 
       if (!response.ok) {
         throw new Error(`Failed to delete track: ${response.status} ${response.statusText}`)
@@ -356,7 +374,9 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
               <Label htmlFor="kind">Kind</Label>
               <Select
                 value={kind}
-                onValueChange={(value) => setKind(value as 'subtitles' | 'captions' | 'descriptions')}
+                onValueChange={(value) =>
+                  setKind(value as 'subtitles' | 'captions' | 'descriptions')
+                }
                 disabled={isLoading}
               >
                 <SelectTrigger id="kind">
@@ -420,12 +440,13 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500 mb-4">
-            Mux can automatically generate captions for your video. This process may take a few minutes to complete.
+            Mux can automatically generate captions for your video. This process may take a few
+            minutes to complete.
           </p>
         </CardContent>
         <CardFooter>
-          <Button 
-            onClick={handleGenerateAutoCaptions} 
+          <Button
+            onClick={handleGenerateAutoCaptions}
             disabled={isGeneratingCaptions}
             variant="secondary"
           >
@@ -447,15 +468,16 @@ const SubtitleUploader: React.FC<SubtitleUploaderProps> = ({ path }) => {
       <Card>
         <CardHeader>
           <CardTitle>Subtitle Tracks</CardTitle>
-          <CardDescription>
-            Manage existing subtitle tracks for this video
-          </CardDescription>
+          <CardDescription>Manage existing subtitle tracks for this video</CardDescription>
         </CardHeader>
         <CardContent>
           {tracks && tracks.length > 0 ? (
             <div className="space-y-4">
               {tracks.map((track) => (
-                <div key={track.id} className="flex items-center justify-between p-3 border rounded-md">
+                <div
+                  key={track.id}
+                  className="flex items-center justify-between p-3 border rounded-md"
+                >
                   <div className="flex flex-col">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium">{track.name || track.language}</span>

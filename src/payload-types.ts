@@ -938,6 +938,18 @@ export interface Content {
    * Categories this content belongs to
    */
   categories?: (string | Category)[] | null;
+  /**
+   * Only published content will be publicly visible
+   */
+  status: 'draft' | 'published';
+  /**
+   * Schedule when this content should go live.
+   */
+  publishAt?: string | null;
+  /**
+   * Schedule when this content should expire.
+   */
+  unpublishAt?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1610,6 +1622,9 @@ export interface ContentSelect<T extends boolean = true> {
         id?: T;
       };
   categories?: T;
+  status?: T;
+  publishAt?: T;
+  unpublishAt?: T;
   meta?:
     | T
     | {

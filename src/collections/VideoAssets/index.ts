@@ -265,12 +265,7 @@ export const VideoAssets: CollectionConfig = {
           label: 'Subtitle Tracks',
           admin: {
             components: {
-              RowLabel: ({ data }: { data: { name?: string; language?: string } }) =>
-                data?.name
-                  ? `${data.name} (${data.language})`
-                  : data?.language
-                    ? `${data.language} Subtitles`
-                    : 'Subtitle Track',
+              RowLabel: '@/collections/VideoAssets/components/SubtitleTrackRowLabel',
             },
             description: 'List of subtitle and caption tracks for this video',
           },

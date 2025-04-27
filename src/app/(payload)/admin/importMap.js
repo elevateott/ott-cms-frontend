@@ -20,6 +20,8 @@ import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { default as default_7365299d83dfa761a1edff1100fe1231 } from '@/collections/VideoAssets/components/ThumbnailCell'
 import { default as default_d29df0c872707cc6bb1ebbb53813222d } from '@/collections/VideoAssets/components/DRMBadgeCell'
 import { default as default_3015ae6f5ca8b3e35eef170b626e5e37 } from '@/collections/VideoAssets/components/StatusCell'
+import { default as default_58ba97879d71b247948e56d85248d77c } from '@/collections/VideoAssets/components/SubtitleTrackRowLabel'
+import { default as default_474e3bc46a4fdcb6c5691911ac30a984 } from '@/collections/VideoAssets/components/SubtitleUploader'
 import { default as default_3a1cc515ff3d8bb85bfb3a92af6f4a6c } from '@/components/FormattedDurationCell'
 import { default as default_721908e44a8c8af0fe5b708f29a74efb } from '@/components/FormattedDateCell'
 import { default as default_d1773cd31f37c9924e701f2341c74113 } from '@/collections/VideoAssets/components/ActionsCell'
@@ -27,6 +29,9 @@ import { default as default_2bd5f1326dc90247fa5fc166638f6821 } from '@/collectio
 import { default as default_103936ce4210ac65790b25e3a792d754 } from '@/collections/VideoAssets/components/VideoManagement'
 import { default as default_e4e90e70e2f2dedb1c73872c8d10cb69 } from '@/components/EventMonitor'
 import { default as default_75412e40a17b9fc2b0e06c87153b4090 } from '@/collections/VideoAssets/components/ListViewRefresher'
+import { default as default_4331b44e154ccd948d19f64759c580bd } from '@/collections/Content/components/PublishingStatusCell'
+import { default as default_f7f51ca3d5041217fd3b2041f14340df } from '@/collections/Content/components/ScheduledPublishingField'
+import { default as default_63b621dd77e052b96270f257ad0acfed } from '@/collections/Content/components/ScheduledUnpublishingField'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -62,6 +67,8 @@ export const importMap = {
   "@/collections/VideoAssets/components/ThumbnailCell#default": default_7365299d83dfa761a1edff1100fe1231,
   "@/collections/VideoAssets/components/DRMBadgeCell#default": default_d29df0c872707cc6bb1ebbb53813222d,
   "@/collections/VideoAssets/components/StatusCell#default": default_3015ae6f5ca8b3e35eef170b626e5e37,
+  "@/collections/VideoAssets/components/SubtitleTrackRowLabel#default": default_58ba97879d71b247948e56d85248d77c,
+  "@/collections/VideoAssets/components/SubtitleUploader#default": default_474e3bc46a4fdcb6c5691911ac30a984,
   "@/components/FormattedDurationCell#default": default_3a1cc515ff3d8bb85bfb3a92af6f4a6c,
   "@/components/FormattedDateCell#default": default_721908e44a8c8af0fe5b708f29a74efb,
   "@/collections/VideoAssets/components/ActionsCell#default": default_d1773cd31f37c9924e701f2341c74113,
@@ -69,6 +76,9 @@ export const importMap = {
   "@/collections/VideoAssets/components/VideoManagement#default": default_103936ce4210ac65790b25e3a792d754,
   "@/components/EventMonitor#default": default_e4e90e70e2f2dedb1c73872c8d10cb69,
   "@/collections/VideoAssets/components/ListViewRefresher#default": default_75412e40a17b9fc2b0e06c87153b4090,
+  "@/collections/Content/components/PublishingStatusCell#default": default_4331b44e154ccd948d19f64759c580bd,
+  "@/collections/Content/components/ScheduledPublishingField#default": default_f7f51ca3d5041217fd3b2041f14340df,
+  "@/collections/Content/components/ScheduledUnpublishingField#default": default_63b621dd77e052b96270f257ad0acfed,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,

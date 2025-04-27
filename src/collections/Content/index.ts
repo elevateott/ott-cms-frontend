@@ -4,6 +4,8 @@ import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
+import { enforcePublishingWindow } from '@/hooks/content/enforcePublishingWindow'
+import { updateContentStatus } from '@/hooks/content/updateContentStatus'
 
 export const Content: CollectionConfig = {
   slug: 'content',
@@ -13,14 +15,21 @@ export const Content: CollectionConfig = {
   },
   defaultSort: ['-createdAt'],
   access: {
-    read: () => true,
+    read: enforcePublishingWindow,
     create: authenticated,
     update: authenticated,
     delete: authenticated,
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title'],
+    defaultColumns: [
+      'publishingStatus',
+      'title',
+      'status',
+      'publishAt',
+      'unpublishAt',
+      'createdAt',
+    ],
     group: 'Content',
   },
   defaultPopulate: {
@@ -32,6 +41,15 @@ export const Content: CollectionConfig = {
     },
   },
   fields: [
+    {
+      name: 'publishingStatus',
+      type: 'ui',
+      admin: {
+        components: {
+          Cell: '@/collections/Content/components/PublishingStatusCell',
+        },
+      },
+    },
     {
       name: 'title',
       type: 'text',
@@ -111,6 +129,68 @@ export const Content: CollectionConfig = {
         description: 'Categories this content belongs to',
       },
     },
+    {
+      name: 'status',
+      type: 'select',
+      required: true,
+      defaultValue: 'draft',
+      options: [
+        {
+          label: 'Draft',
+          value: 'draft',
+        },
+        {
+          label: 'Published',
+          value: 'published',
+        },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Only published content will be publicly visible',
+      },
+    },
+    {
+      name: 'publishAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        description: 'Schedule when this content should go live.',
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+      },
+    },
+    {
+      name: 'unpublishAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        description: 'Schedule when this content should expire.',
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+      },
+    },
+    {
+      name: '_scheduledPublishing',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '@/collections/Content/components/ScheduledPublishingField',
+        },
+      },
+    },
+    {
+      name: '_scheduledUnpublishing',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '@/collections/Content/components/ScheduledUnpublishingField',
+        },
+      },
+    },
   ],
   hooks: {
     // Add logging hooks
@@ -141,6 +221,7 @@ export const Content: CollectionConfig = {
       },
     ],
     beforeChange: [
+      updateContentStatus,
       ({ data, operation }) => {
         // Set default release date to now if not provided
         if (operation === 'create' && !data.releaseDate) {
