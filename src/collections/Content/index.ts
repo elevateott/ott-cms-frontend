@@ -26,6 +26,7 @@ export const Content: CollectionConfig = {
       'publishingStatus',
       'title',
       'status',
+      'isPublished',
       'publishAt',
       'unpublishAt',
       'createdAt',
@@ -146,7 +147,17 @@ export const Content: CollectionConfig = {
       ],
       admin: {
         position: 'sidebar',
-        description: 'Only published content will be publicly visible',
+        description: 'Content status (draft or published)',
+      },
+    },
+    {
+      name: 'isPublished',
+      type: 'checkbox',
+      label: 'Published',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'Uncheck to hide this content from users.',
       },
     },
     {
@@ -188,6 +199,16 @@ export const Content: CollectionConfig = {
         position: 'sidebar',
         components: {
           Field: '@/collections/Content/components/ScheduledUnpublishingField',
+        },
+      },
+    },
+    {
+      name: '_manualPublishingNote',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '@/collections/Content/components/ManualPublishingNoteField',
         },
       },
     },

@@ -32,6 +32,7 @@ import { default as default_75412e40a17b9fc2b0e06c87153b4090 } from '@/collectio
 import { default as default_4331b44e154ccd948d19f64759c580bd } from '@/collections/Content/components/PublishingStatusCell'
 import { default as default_f7f51ca3d5041217fd3b2041f14340df } from '@/collections/Content/components/ScheduledPublishingField'
 import { default as default_63b621dd77e052b96270f257ad0acfed } from '@/collections/Content/components/ScheduledUnpublishingField'
+import { default as default_388c4887794a7c72d4a900d8b27fa304 } from '@/collections/Content/components/ManualPublishingNoteField'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -79,6 +80,7 @@ export const importMap = {
   "@/collections/Content/components/PublishingStatusCell#default": default_4331b44e154ccd948d19f64759c580bd,
   "@/collections/Content/components/ScheduledPublishingField#default": default_f7f51ca3d5041217fd3b2041f14340df,
   "@/collections/Content/components/ScheduledUnpublishingField#default": default_63b621dd77e052b96270f257ad0acfed,
+  "@/collections/Content/components/ManualPublishingNoteField#default": default_388c4887794a7c72d4a900d8b27fa304,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,

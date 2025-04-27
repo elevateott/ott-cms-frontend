@@ -6,13 +6,14 @@ import { format } from 'date-fns'
 interface PublishingStatusCellProps {
   rowData: {
     status?: string
+    isPublished?: boolean
     publishAt?: string
     unpublishAt?: string
   }
 }
 
 const PublishingStatusCell: React.FC<PublishingStatusCellProps> = ({ rowData }) => {
-  const { status, publishAt, unpublishAt } = rowData
+  const { status, isPublished, publishAt, unpublishAt } = rowData
   const now = new Date()
   const publishDate = publishAt ? new Date(publishAt) : null
   const unpublishDate = unpublishAt ? new Date(unpublishAt) : null
@@ -20,14 +21,19 @@ const PublishingStatusCell: React.FC<PublishingStatusCellProps> = ({ rowData }) 
   // Determine if the content is currently active
   const isActive =
     status === 'published' &&
+    isPublished === true &&
     (!publishDate || publishDate <= now) &&
     (!unpublishDate || unpublishDate > now)
 
   // Determine if the content is scheduled to be published in the future
-  const isScheduled = status === 'published' && publishDate && publishDate > now
+  const isScheduled =
+    status === 'published' && isPublished === true && publishDate && publishDate > now
 
   // Determine if the content is expired
   const isExpired = status === 'published' && unpublishDate && unpublishDate <= now
+
+  // Determine if the content is manually unpublished
+  const isManuallyUnpublished = status === 'published' && isPublished === false
 
   // Determine the status text and color
   let statusText = 'Draft'
@@ -42,6 +48,9 @@ const PublishingStatusCell: React.FC<PublishingStatusCellProps> = ({ rowData }) 
   } else if (isExpired) {
     statusText = `Expired on ${format(unpublishDate!, 'MMM d, yyyy h:mm a')}`
     statusColor = 'bg-red-100 text-red-800'
+  } else if (isManuallyUnpublished) {
+    statusText = 'Unpublished'
+    statusColor = 'bg-yellow-100 text-yellow-800'
   }
 
   return (
