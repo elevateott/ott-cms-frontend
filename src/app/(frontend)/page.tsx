@@ -2,9 +2,9 @@ import { Metadata } from 'next'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import React from 'react'
-import { ContentList } from '@/components/ContentList'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { CarouselsContainer } from '@/components/CarouselsContainer'
 
 export const metadata: Metadata = {
   title: 'OTT Platform - Home',
@@ -19,11 +19,25 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const payload = await getPayload({ config: configPromise })
 
-  // Get featured content
-  const featuredContent = await payload.find({
-    collection: 'content',
-    limit: 4,
-    sort: '-releaseDate',
+  // Get carousels for the home page
+  const carouselsResult = await payload.find({
+    collection: 'carousels',
+    sort: 'order',
+    where: {
+      and: [
+        {
+          isActive: {
+            equals: true,
+          },
+        },
+        {
+          showOnPages: {
+            contains: 'home',
+          },
+        },
+      ],
+    },
+    depth: 2, // Include related content/series data
   })
 
   // Get featured categories
@@ -53,21 +67,10 @@ export default async function HomePage() {
 
   return (
     <div className="container py-12">
-      <section className="mb-16">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">Featured Content</h2>
-          <Link href="/content">
-            <Button variant="outline">View All</Button>
-          </Link>
-        </div>
+      {/* Dynamic Carousels */}
+      <CarouselsContainer page="home" initialData={carouselsResult.docs} />
 
-        <ContentList
-          initialData={featuredContent.docs}
-          title=""
-          emptyMessage="No featured content available yet."
-        />
-      </section>
-
+      {/* Categories Section */}
       <section className="mb-16">
         <h2 className="text-3xl font-bold mb-8">Browse by Category</h2>
 

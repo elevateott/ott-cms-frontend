@@ -30,6 +30,7 @@ import { Content } from './collections/Content'
 import { Creators } from './collections/Creators'
 import { Series } from './collections/Series'
 import { Filters } from './collections/Filters'
+import { Carousels } from './collections/Carousels'
 import { csvExportEndpoints } from './endpoints/csvExport'
 
 const filename = fileURLToPath(import.meta.url)
@@ -110,6 +111,7 @@ export default buildConfig({
     Creators,
     Series,
     Filters,
+    Carousels,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, StreamingSettings, OTTSettings, CloudIntegrations, SiteSettings],

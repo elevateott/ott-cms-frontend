@@ -78,6 +78,7 @@ export interface Config {
     creators: Creator;
     series: Series;
     filters: Filter;
+    carousels: Carousel;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -100,6 +101,7 @@ export interface Config {
     creators: CreatorsSelect<false> | CreatorsSelect<true>;
     series: SeriesSelect<false> | SeriesSelect<true>;
     filters: FiltersSelect<false> | FiltersSelect<true>;
+    carousels: CarouselsSelect<false> | CarouselsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -1225,6 +1227,110 @@ export interface Filter {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carousels".
+ */
+export interface Carousel {
+  id: string;
+  /**
+   * The title displayed above the carousel (e.g., "Latest Releases", "Top Picks")
+   */
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Optional description to display below the carousel title
+   */
+  description?: string | null;
+  /**
+   * Add content or series to this carousel
+   */
+  items?:
+    | {
+        /**
+         * Select the type of item to add
+         */
+        itemType: 'content' | 'series';
+        /**
+         * Select the content or series to add to this carousel
+         */
+        item?:
+          | ({
+              relationTo: 'content';
+              value: string | Content;
+            } | null)
+          | ({
+              relationTo: 'series';
+              value: string | Series;
+            } | null);
+        /**
+         * Position in the carousel (1 = first, 2 = second, etc.)
+         */
+        order: number;
+        /**
+         * Optional custom title to override the original title
+         */
+        customTitle?: string | null;
+        /**
+         * Optional custom description to override the original description
+         */
+        customDescription?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Configure how this carousel is displayed
+   */
+  displayOptions: {
+    /**
+     * The visual style of the carousel
+     */
+    layout: 'standard' | 'featured' | 'compact';
+    /**
+     * Number of items visible at once
+     */
+    itemsPerView: 'auto' | '2' | '3' | '4' | '5';
+    /**
+     * Show navigation arrows on the sides
+     */
+    showArrows?: boolean | null;
+    /**
+     * Show navigation dots below the carousel
+     */
+    showDots?: boolean | null;
+    /**
+     * Automatically scroll through items
+     */
+    autoplay?: boolean | null;
+    /**
+     * Time between slides in milliseconds (if autoplay is enabled)
+     */
+    autoplaySpeed?: number | null;
+  };
+  /**
+   * Toggle to show/hide this carousel
+   */
+  isActive?: boolean | null;
+  /**
+   * Order of this carousel on the page (lower numbers appear first)
+   */
+  order?: number | null;
+  /**
+   * Select which pages this carousel should appear on
+   */
+  showOnPages?: ('home' | 'content' | 'series')[] | null;
+  /**
+   * Optional date when this carousel should start being visible
+   */
+  visibleFrom?: string | null;
+  /**
+   * Optional date when this carousel should stop being visible
+   */
+  visibleUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1438,6 +1544,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'filters';
         value: string | Filter;
+      } | null)
+    | ({
+        relationTo: 'carousels';
+        value: string | Carousel;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -2021,6 +2131,43 @@ export interface FiltersSelect<T extends boolean = true> {
   order?: T;
   isActive?: T;
   group?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carousels_select".
+ */
+export interface CarouselsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  description?: T;
+  items?:
+    | T
+    | {
+        itemType?: T;
+        item?: T;
+        order?: T;
+        customTitle?: T;
+        customDescription?: T;
+        id?: T;
+      };
+  displayOptions?:
+    | T
+    | {
+        layout?: T;
+        itemsPerView?: T;
+        showArrows?: T;
+        showDots?: T;
+        autoplay?: T;
+        autoplaySpeed?: T;
+      };
+  isActive?: T;
+  order?: T;
+  showOnPages?: T;
+  visibleFrom?: T;
+  visibleUntil?: T;
   updatedAt?: T;
   createdAt?: T;
 }
