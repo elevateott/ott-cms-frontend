@@ -29,12 +29,14 @@ import { default as default_2bd5f1326dc90247fa5fc166638f6821 } from '@/collectio
 import { default as default_103936ce4210ac65790b25e3a792d754 } from '@/collections/VideoAssets/components/VideoManagement'
 import { default as default_e4e90e70e2f2dedb1c73872c8d10cb69 } from '@/components/EventMonitor'
 import { default as default_75412e40a17b9fc2b0e06c87153b4090 } from '@/collections/VideoAssets/components/ListViewRefresher'
+import { default as default_7ce40fb6ba33b8d505a0ac5d29cd35f6 } from '@/collections/VideoAssets/components/ExportButtonBar'
 import { default as default_4331b44e154ccd948d19f64759c580bd } from '@/collections/Content/components/PublishingStatusCell'
 import { default as default_f0813d1ffb5c8c3123a1e3bb3f524988 } from '@/collections/Content/components/TagsCell'
 import { default as default_f7f51ca3d5041217fd3b2041f14340df } from '@/collections/Content/components/ScheduledPublishingField'
 import { default as default_63b621dd77e052b96270f257ad0acfed } from '@/collections/Content/components/ScheduledUnpublishingField'
 import { default as default_388c4887794a7c72d4a900d8b27fa304 } from '@/collections/Content/components/ManualPublishingNoteField'
 import { default as default_f1e33a4b225e7192cbc66810817a0942 } from '@/components/admin/SimpleSEOPreview'
+import { default as default_0e8cc95af714c002dadcfbc134fcf5ed } from '@/collections/Content/components/ExportButtonBar'
 import { default as default_4e734c8eb614822eb7d309a8c5affe16 } from '@/collections/Series/components/TagsCell'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
@@ -80,12 +82,14 @@ export const importMap = {
   "@/collections/VideoAssets/components/VideoManagement#default": default_103936ce4210ac65790b25e3a792d754,
   "@/components/EventMonitor#default": default_e4e90e70e2f2dedb1c73872c8d10cb69,
   "@/collections/VideoAssets/components/ListViewRefresher#default": default_75412e40a17b9fc2b0e06c87153b4090,
+  "@/collections/VideoAssets/components/ExportButtonBar#default": default_7ce40fb6ba33b8d505a0ac5d29cd35f6,
   "@/collections/Content/components/PublishingStatusCell#default": default_4331b44e154ccd948d19f64759c580bd,
   "@/collections/Content/components/TagsCell#default": default_f0813d1ffb5c8c3123a1e3bb3f524988,
   "@/collections/Content/components/ScheduledPublishingField#default": default_f7f51ca3d5041217fd3b2041f14340df,
   "@/collections/Content/components/ScheduledUnpublishingField#default": default_63b621dd77e052b96270f257ad0acfed,
   "@/collections/Content/components/ManualPublishingNoteField#default": default_388c4887794a7c72d4a900d8b27fa304,
   "@/components/admin/SimpleSEOPreview#default": default_f1e33a4b225e7192cbc66810817a0942,
+  "@/collections/Content/components/ExportButtonBar#default": default_0e8cc95af714c002dadcfbc134fcf5ed,
   "@/collections/Series/components/TagsCell#default": default_4e734c8eb614822eb7d309a8c5affe16,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,

@@ -33,6 +33,10 @@ export const Content: CollectionConfig = {
       'createdAt',
     ],
     group: 'Content',
+    components: {
+      // Add our export button before the list view
+      beforeList: ['@/collections/Content/components/ExportButtonBar'],
+    },
   },
   defaultPopulate: {
     title: true,

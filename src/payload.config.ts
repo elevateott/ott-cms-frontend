@@ -30,6 +30,7 @@ import { Content } from './collections/Content'
 import { Creators } from './collections/Creators'
 import { Series } from './collections/Series'
 import { Filters } from './collections/Filters'
+import { csvExportEndpoints } from './endpoints/csvExport'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -117,6 +118,7 @@ export default buildConfig({
     payloadCloudPlugin(),
     // storage-adapter-placeholder
   ],
+  endpoints: [...csvExportEndpoints],
   secret: process.env.PAYLOAD_SECRET,
   sharp,
   typescript: {
