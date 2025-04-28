@@ -75,6 +75,8 @@ export interface Config {
     'mux-webhook-jobs': MuxWebhookJob;
     videoassets: Videoasset;
     content: Content;
+    creators: Creator;
+    series: Series;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -94,6 +96,8 @@ export interface Config {
     'mux-webhook-jobs': MuxWebhookJobsSelect<false> | MuxWebhookJobsSelect<true>;
     videoassets: VideoassetsSelect<false> | VideoassetsSelect<true>;
     content: ContentSelect<false> | ContentSelect<true>;
+    creators: CreatorsSelect<false> | CreatorsSelect<true>;
+    series: SeriesSelect<false> | SeriesSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -967,6 +971,120 @@ export interface Content {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creators".
+ */
+export interface Creator {
+  id: string;
+  name: string;
+  bio?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Profile image for this creator
+   */
+  image?: (string | null) | Media;
+  /**
+   * Social media links for this creator
+   */
+  socialLinks?:
+    | {
+        platform: 'website' | 'twitter' | 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'tiktok' | 'other';
+        url: string;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series".
+ */
+export interface Series {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Main thumbnail image for this series
+   */
+  thumbnail: string | Media;
+  /**
+   * Optional video trailer shown before watching the full series
+   */
+  trailer?: (string | null) | Videoasset;
+  /**
+   * Episodes or videos that are part of this series (custom order will be preserved)
+   */
+  content?: (string | Content)[] | null;
+  /**
+   * Creators associated with this series
+   */
+  creators?: (string | Creator)[] | null;
+  /**
+   * Categories this series belongs to
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * How the series content is displayed on the frontend
+   */
+  layout?: ('grid' | 'list' | 'carousel') | null;
+  /**
+   * Mark this series as featured on the homepage or catalog
+   */
+  isFeatured?: boolean | null;
+  /**
+   * Allows free access to this series
+   */
+  isFree?: boolean | null;
+  /**
+   * Optional price for the series if monetized individually
+   */
+  price?: number | null;
+  /**
+   * Controls whether this series is publicly visible
+   */
+  isPublished?: boolean | null;
+  /**
+   * When to automatically publish this series
+   */
+  publishAt?: string | null;
+  /**
+   * When to automatically unpublish this series
+   */
+  unpublishAt?: string | null;
+  createdAt: string;
+  /**
+   * SEO metadata for this series
+   */
+  meta?: {
+    /**
+     * Custom title for SEO (defaults to series title if not provided)
+     */
+    title?: string | null;
+    /**
+     * Custom description for SEO (defaults to series description if not provided)
+     */
+    description?: string | null;
+    /**
+     * Custom image for social sharing (defaults to series thumbnail if not provided)
+     */
+    image?: (string | null) | Media;
+    /**
+     * Optional canonical URL if this content exists elsewhere
+     */
+    canonicalURL?: string | null;
+    /**
+     * Prevent search engines from indexing this series
+     */
+    noIndex?: boolean | null;
+  };
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1168,6 +1286,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'content';
         value: string | Content;
+      } | null)
+    | ({
+        relationTo: 'creators';
+        value: string | Creator;
+      } | null)
+    | ({
+        relationTo: 'series';
+        value: string | Series;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1639,6 +1765,60 @@ export interface ContentSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creators_select".
+ */
+export interface CreatorsSelect<T extends boolean = true> {
+  name?: T;
+  bio?: T;
+  slug?: T;
+  slugLock?: T;
+  image?: T;
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series_select".
+ */
+export interface SeriesSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  thumbnail?: T;
+  trailer?: T;
+  content?: T;
+  creators?: T;
+  categories?: T;
+  layout?: T;
+  isFeatured?: T;
+  isFree?: T;
+  price?: T;
+  isPublished?: T;
+  publishAt?: T;
+  unpublishAt?: T;
+  createdAt?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        canonicalURL?: T;
+        noIndex?: T;
+      };
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

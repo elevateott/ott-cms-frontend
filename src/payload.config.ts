@@ -27,6 +27,8 @@ import { getServerSideURL } from './utilities/getURL'
 
 import { VideoAssets } from './collections/VideoAssets'
 import { Content } from './collections/Content'
+import { Creators } from './collections/Creators'
+import { Series } from './collections/Series'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -94,7 +96,18 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  collections: [Pages, Posts, Media, Categories, Users, MuxWebhookJobs, VideoAssets, Content],
+  collections: [
+    Pages,
+    Posts,
+    Media,
+    Categories,
+    Users,
+    MuxWebhookJobs,
+    VideoAssets,
+    Content,
+    Creators,
+    Series,
+  ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, StreamingSettings, OTTSettings, CloudIntegrations, SiteSettings],
   plugins: [
