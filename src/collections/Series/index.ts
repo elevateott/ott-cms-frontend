@@ -19,7 +19,7 @@ export const Series: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'isFeatured', 'isFree', 'price', 'createdAt'],
+    defaultColumns: ['title', 'slug', 'tags', 'isFeatured', 'isFree', 'price', 'createdAt'],
     group: 'Media',
   },
   defaultPopulate: {
@@ -27,6 +27,7 @@ export const Series: CollectionConfig = {
     slug: true,
     description: true,
     thumbnail: true,
+    tags: true,
   },
   fields: [
     {
@@ -63,7 +64,8 @@ export const Series: CollectionConfig = {
       relationTo: 'content',
       hasMany: true,
       admin: {
-        description: 'Episodes or videos that are part of this series (custom order will be preserved)',
+        description:
+          'Episodes or videos that are part of this series (custom order will be preserved)',
       },
     },
     {
@@ -83,6 +85,24 @@ export const Series: CollectionConfig = {
       admin: {
         description: 'Categories this series belongs to',
       },
+    },
+    {
+      name: 'tags',
+      type: 'array',
+      label: 'Tags',
+      admin: {
+        description: 'Add relevant keywords for filtering and discovery',
+        components: {
+          Cell: '@/collections/Series/components/TagsCell',
+        },
+      },
+      fields: [
+        {
+          type: 'text',
+          name: 'value',
+          required: true,
+        },
+      ],
     },
     {
       name: 'layout',
@@ -188,7 +208,8 @@ export const Series: CollectionConfig = {
           name: 'description',
           type: 'textarea',
           admin: {
-            description: 'Custom description for SEO (defaults to series description if not provided)',
+            description:
+              'Custom description for SEO (defaults to series description if not provided)',
           },
         },
         {
@@ -196,7 +217,8 @@ export const Series: CollectionConfig = {
           type: 'upload',
           relationTo: 'media',
           admin: {
-            description: 'Custom image for social sharing (defaults to series thumbnail if not provided)',
+            description:
+              'Custom image for social sharing (defaults to series thumbnail if not provided)',
           },
         },
         {

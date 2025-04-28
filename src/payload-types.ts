@@ -477,6 +477,15 @@ export interface Content {
    */
   creators?: (string | Creator)[] | null;
   /**
+   * Add relevant keywords for filtering and discovery
+   */
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Content status (draft or published)
    */
   status: 'draft' | 'published';
@@ -1062,6 +1071,15 @@ export interface Series {
    * Categories this series belongs to
    */
   categories?: (string | Category)[] | null;
+  /**
+   * Add relevant keywords for filtering and discovery
+   */
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * How the series content is displayed on the frontend
    */
@@ -1791,6 +1809,12 @@ export interface ContentSelect<T extends boolean = true> {
       };
   categories?: T;
   creators?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
   status?: T;
   isPublished?: T;
   publishAt?: T;
@@ -1841,6 +1865,12 @@ export interface SeriesSelect<T extends boolean = true> {
   content?: T;
   creators?: T;
   categories?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
   layout?: T;
   isFeatured?: T;
   isFree?: T;

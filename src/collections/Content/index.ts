@@ -27,6 +27,7 @@ export const Content: CollectionConfig = {
       'title',
       'status',
       'isPublished',
+      'tags',
       'publishAt',
       'unpublishAt',
       'createdAt',
@@ -36,6 +37,7 @@ export const Content: CollectionConfig = {
   defaultPopulate: {
     title: true,
     slug: true,
+    tags: true,
     meta: {
       image: true,
       description: true,
@@ -138,6 +140,24 @@ export const Content: CollectionConfig = {
       admin: {
         description: 'Creators associated with this content',
       },
+    },
+    {
+      name: 'tags',
+      type: 'array',
+      label: 'Tags',
+      admin: {
+        description: 'Add relevant keywords for filtering and discovery',
+        components: {
+          Cell: '@/collections/Content/components/TagsCell',
+        },
+      },
+      fields: [
+        {
+          type: 'text',
+          name: 'value',
+          required: true,
+        },
+      ],
     },
     {
       name: 'status',
