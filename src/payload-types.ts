@@ -943,6 +943,10 @@ export interface Content {
    */
   categories?: (string | Category)[] | null;
   /**
+   * Creators associated with this content
+   */
+  creators?: (string | Creator)[] | null;
+  /**
    * Content status (draft or published)
    */
   status: 'draft' | 'published';
@@ -976,13 +980,20 @@ export interface Content {
 export interface Creator {
   id: string;
   name: string;
+  /**
+   * Displayed on the creator's public profile.
+   */
   bio?: string | null;
   slug?: string | null;
   slugLock?: boolean | null;
   /**
    * Profile image for this creator
    */
-  image?: (string | null) | Media;
+  avatar?: (string | null) | Media;
+  /**
+   * Controls whether this creator is visible on the public site
+   */
+  publicProfile?: boolean | null;
   /**
    * Social media links for this creator
    */
@@ -1752,6 +1763,7 @@ export interface ContentSelect<T extends boolean = true> {
         id?: T;
       };
   categories?: T;
+  creators?: T;
   status?: T;
   isPublished?: T;
   publishAt?: T;
@@ -1775,7 +1787,8 @@ export interface CreatorsSelect<T extends boolean = true> {
   bio?: T;
   slug?: T;
   slugLock?: T;
-  image?: T;
+  avatar?: T;
+  publicProfile?: T;
   socialLinks?:
     | T
     | {

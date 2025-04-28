@@ -2,6 +2,7 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
+import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 
 export const Creators: CollectionConfig = {
   slug: 'creators',
@@ -18,13 +19,13 @@ export const Creators: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'slug', 'createdAt'],
+    defaultColumns: ['name', 'slug', 'publicProfile', 'createdAt'],
     group: 'Content',
   },
   defaultPopulate: {
     name: true,
     slug: true,
-    image: true,
+    avatar: true,
   },
   fields: [
     {
@@ -35,14 +36,27 @@ export const Creators: CollectionConfig = {
     {
       name: 'bio',
       type: 'textarea',
+      admin: {
+        description: "Displayed on the creator's public profile.",
+      },
     },
     ...slugField(),
     {
-      name: 'image',
+      name: 'avatar',
       type: 'upload',
       relationTo: 'media',
       admin: {
         description: 'Profile image for this creator',
+      },
+    },
+    {
+      name: 'publicProfile',
+      type: 'checkbox',
+      label: 'Show on site',
+      defaultValue: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Controls whether this creator is visible on the public site',
       },
     },
     {
@@ -94,6 +108,9 @@ export const Creators: CollectionConfig = {
       },
     },
   ],
+  hooks: {
+    ...createCollectionLoggingHooks('creators'),
+  },
   timestamps: true,
 }
 

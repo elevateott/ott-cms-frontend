@@ -131,6 +131,15 @@ export const Content: CollectionConfig = {
       },
     },
     {
+      name: 'creators',
+      type: 'relationship',
+      relationTo: 'creators',
+      hasMany: true,
+      admin: {
+        description: 'Creators associated with this content',
+      },
+    },
+    {
       name: 'status',
       type: 'select',
       required: true,
