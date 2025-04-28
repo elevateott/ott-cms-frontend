@@ -9,12 +9,39 @@ import { logError } from '@/utils/errorHandler'
 import { EVENTS } from '@/constants/events'
 import { EventEmitter } from 'events'
 import { logger } from '@/utils/logger'
-export const eventBus = new EventEmitter()
+
+// Create the event bus with a higher limit of listeners
+const eventBusInstance = new EventEmitter()
+// Set a higher limit for listeners (default is 10)
+eventBusInstance.setMaxListeners(50)
+
+// Log the current number of listeners for debugging
+const logListenerCount = () => {
+  const counts: Record<string, number> = {}
+
+  // Count listeners for each event
+  Object.values(EVENTS).forEach((event) => {
+    counts[event] = eventBusInstance.listenerCount(event)
+  })
+
+  logger.debug({ context: 'eventsService' }, `Current event listener counts:`, counts)
+}
+
+// Export the event bus
+export const eventBus = eventBusInstance
 
 // Store active connections with cleanup
 class ConnectionManager {
   private clients: Map<string, ReadableStreamController<Uint8Array>> = new Map()
+  private connectionTimes: Map<string, number> = new Map() // Track when connections were established
+  private cleanupInterval: NodeJS.Timeout | null = null
+  private readonly MAX_CONNECTION_AGE_MS = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
   private static instance: ConnectionManager
+
+  constructor() {
+    // Start the cleanup interval
+    this.startCleanupInterval()
+  }
 
   // Singleton pattern
   static getInstance(): ConnectionManager {
@@ -22,6 +49,56 @@ class ConnectionManager {
       ConnectionManager.instance = new ConnectionManager()
     }
     return ConnectionManager.instance
+  }
+
+  // Start the interval to clean up stale connections
+  private startCleanupInterval(): void {
+    // Run cleanup every 30 minutes
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupStaleConnections()
+      },
+      30 * 60 * 1000,
+    )
+
+    logger.info({ context: 'eventsService' }, 'Started connection cleanup interval')
+  }
+
+  // Clean up connections that have been open for too long
+  private cleanupStaleConnections(): void {
+    const now = Date.now()
+    let staleCount = 0
+
+    // Check each connection
+    for (const [id, _] of this.clients) {
+      const connectionTime = this.connectionTimes.get(id) || now
+      const connectionAge = now - connectionTime
+
+      // If the connection is older than the maximum age, remove it
+      if (connectionAge > this.MAX_CONNECTION_AGE_MS) {
+        logger.info(
+          { context: 'eventsService' },
+          `Removing stale connection ${id} (age: ${Math.round(connectionAge / 1000 / 60)} minutes)`,
+        )
+        this.removeClient(id)
+        staleCount++
+      }
+    }
+
+    if (staleCount > 0) {
+      logger.info(
+        { context: 'eventsService' },
+        `Cleaned up ${staleCount} stale connections, ${this.clients.size} remaining`,
+      )
+    } else {
+      logger.debug(
+        { context: 'eventsService' },
+        `No stale connections found, ${this.clients.size} active connections`,
+      )
+    }
+
+    // Log current listener counts
+    logListenerCount()
   }
 
   // Add a client
@@ -33,31 +110,56 @@ class ConnectionManager {
     }
 
     this.clients.set(id, controller)
+    this.connectionTimes.set(id, Date.now()) // Record the connection time
+
     logger.info(
       { context: 'eventsService' },
       `Client connected: ${id}, total clients: ${this.clients.size}`,
     )
+
+    // Log current listener counts after adding a new client
+    logListenerCount()
   }
 
   // Remove a client
   removeClient(id: string): void {
+    // Check if client exists before attempting to remove
+    if (!this.clients.has(id)) {
+      logger.debug(
+        { context: 'eventsService' },
+        `Client ${id} already removed or doesn't exist, skipping removal`,
+      )
+      return
+    }
+
     const controller = this.clients.get(id)
     if (controller) {
       try {
+        // Only close the controller if it's not already closed
+        // Note: There's no direct way to check if a controller is closed,
+        // so we have to use try/catch
         controller.close()
       } catch (error) {
-        logger.error(
+        // This is likely because the controller is already closed
+        // Log at debug level instead of error since this is expected in some cases
+        logger.debug(
           { context: 'eventsService' },
-          `Error closing controller for client ${id}:`,
-          error,
+          `Controller for client ${id} already closed or in invalid state`,
         )
       }
     }
+
+    // Always remove from the clients map
     this.clients.delete(id)
+    this.connectionTimes.delete(id) // Remove the connection time
+
     logger.info(
       { context: 'eventsService' },
       `Client disconnected: ${id}, total clients: ${this.clients.size}`,
     )
+
+    // Log current listener counts after removing a client
+    logListenerCount()
   }
 
   // Add a method to check if a client exists
@@ -120,6 +222,21 @@ class ConnectionManager {
   // Get the number of connected clients
   getClientCount(): number {
     return this.clients.size
+  }
+
+  // Clean up resources when the server is shutting down
+  shutdown(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+
+    // Close all connections
+    for (const [id, _] of this.clients) {
+      this.removeClient(id)
+    }
+
+    logger.info({ context: 'eventsService' }, 'Connection manager shut down')
   }
 }
 
