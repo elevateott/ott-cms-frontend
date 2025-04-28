@@ -190,53 +190,16 @@ export const Series: CollectionConfig = {
         update: () => false,
       },
     },
+
     {
-      name: 'meta',
-      type: 'group',
+      name: '_seoPreview',
+      type: 'ui',
       admin: {
-        description: 'SEO metadata for this series',
+        position: 'sidebar',
+        components: {
+          Field: '@/components/admin/SimpleSEOPreview',
+        },
       },
-      fields: [
-        {
-          name: 'title',
-          type: 'text',
-          admin: {
-            description: 'Custom title for SEO (defaults to series title if not provided)',
-          },
-        },
-        {
-          name: 'description',
-          type: 'textarea',
-          admin: {
-            description:
-              'Custom description for SEO (defaults to series description if not provided)',
-          },
-        },
-        {
-          name: 'image',
-          type: 'upload',
-          relationTo: 'media',
-          admin: {
-            description:
-              'Custom image for social sharing (defaults to series thumbnail if not provided)',
-          },
-        },
-        {
-          name: 'canonicalURL',
-          type: 'text',
-          admin: {
-            description: 'Optional canonical URL if this content exists elsewhere',
-          },
-        },
-        {
-          name: 'noIndex',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: {
-            description: 'Prevent search engines from indexing this series',
-          },
-        },
-      ],
     },
   ],
   hooks: {
@@ -267,6 +230,13 @@ export const Series: CollectionConfig = {
         if (!data.meta.canonicalURL && data.slug) {
           const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
           data.meta.canonicalURL = `${baseUrl}/series/${data.slug}`
+        }
+
+        // Add social media settings if not provided
+        if (!data.meta.socialMedia) {
+          data.meta.socialMedia = {
+            twitterCard: 'summary_large_image',
+          }
         }
 
         return data

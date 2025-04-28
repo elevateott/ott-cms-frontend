@@ -52,7 +52,7 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ''),
   }),
   seoPlugin({
-    collections: ['pages', 'posts', 'content', 'videos', 'categories'],
+    collections: ['pages', 'posts', 'content', 'videos', 'categories', 'series'],
     uploadsCollection: 'media',
     generateTitle: ({ doc }) => {
       // Fallback chain: meta.title -> title -> collection name
@@ -75,9 +75,45 @@ export const plugins: Plugin[] = [
           return `${baseUrl}/video/${doc.slug}`
         case 'categories':
           return `${baseUrl}/category/${doc.slug}`
+        case 'series':
+          return `${baseUrl}/series/${doc.slug}`
         default:
           return `${baseUrl}/${doc.slug}`
       }
+    },
+    fields: ({ defaultFields }) => {
+      return [
+        ...defaultFields,
+        {
+          name: 'socialMedia',
+          type: 'group',
+          admin: {
+            description: 'Social media specific settings',
+          },
+          fields: [
+            {
+              name: 'twitterCard',
+              type: 'select',
+              defaultValue: 'summary_large_image',
+              options: [
+                { label: 'Summary', value: 'summary' },
+                { label: 'Summary with Large Image', value: 'summary_large_image' },
+                { label: 'Player', value: 'player' },
+              ],
+              admin: {
+                description: 'The type of Twitter card to use',
+              },
+            },
+            {
+              name: 'twitterHandle',
+              type: 'text',
+              admin: {
+                description: 'Twitter handle (e.g. @yourbrand)',
+              },
+            },
+          ],
+        },
+      ]
     },
   }),
   formBuilderPlugin({

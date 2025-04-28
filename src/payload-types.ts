@@ -217,6 +217,19 @@ export interface Page {
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   publishedAt?: string | null;
   slug?: string | null;
@@ -257,6 +270,19 @@ export interface Post {
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   publishedAt?: string | null;
   authors?: (string | User)[] | null;
@@ -427,6 +453,19 @@ export interface Category {
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   updatedAt: string;
   createdAt: string;
@@ -508,6 +547,19 @@ export interface Content {
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   updatedAt: string;
   createdAt: string;
@@ -1109,30 +1161,26 @@ export interface Series {
    */
   unpublishAt?: string | null;
   createdAt: string;
-  /**
-   * SEO metadata for this series
-   */
   meta?: {
-    /**
-     * Custom title for SEO (defaults to series title if not provided)
-     */
     title?: string | null;
-    /**
-     * Custom description for SEO (defaults to series description if not provided)
-     */
     description?: string | null;
     /**
-     * Custom image for social sharing (defaults to series thumbnail if not provided)
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
     /**
-     * Optional canonical URL if this content exists elsewhere
+     * Social media specific settings
      */
-    canonicalURL?: string | null;
-    /**
-     * Prevent search engines from indexing this series
-     */
-    noIndex?: boolean | null;
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   updatedAt: string;
 }
@@ -1453,6 +1501,12 @@ export interface PagesSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   publishedAt?: T;
   slug?: T;
@@ -1561,6 +1615,12 @@ export interface PostsSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   publishedAt?: T;
   authors?: T;
@@ -1700,6 +1760,12 @@ export interface CategoriesSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1825,6 +1891,12 @@ export interface ContentSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1885,8 +1957,12 @@ export interface SeriesSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
-        canonicalURL?: T;
-        noIndex?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   updatedAt?: T;
 }

@@ -241,6 +241,16 @@ export const Content: CollectionConfig = {
         },
       },
     },
+    {
+      name: '_seoPreview',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '@/components/admin/SimpleSEOPreview',
+        },
+      },
+    },
   ],
   hooks: {
     // Add logging hooks
@@ -265,6 +275,18 @@ export const Content: CollectionConfig = {
         if (!data.meta.canonicalURL && data.slug) {
           const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
           data.meta.canonicalURL = `${baseUrl}/content/${data.slug}`
+        }
+
+        // Set meta.image from posterImage if not provided
+        if (!data.meta.image && data.posterImage) {
+          data.meta.image = data.posterImage
+        }
+
+        // Add social media settings if not provided
+        if (!data.meta.socialMedia) {
+          data.meta.socialMedia = {
+            twitterCard: 'summary_large_image',
+          }
         }
 
         return data
