@@ -4,6 +4,7 @@ import type { CollectionConfig } from 'payload'
 
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
+import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -15,12 +16,14 @@ export const Categories: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'order', 'createdAt'],
+    defaultColumns: ['title', 'slug', 'showInCatalog', 'featuredCategory', 'order'],
     group: 'Content',
   },
   defaultPopulate: {
     title: true,
     slug: true,
+    description: true,
+    featuredImage: true,
     meta: {
       image: true,
       description: true,
@@ -31,23 +34,66 @@ export const Categories: CollectionConfig = {
       name: 'title',
       type: 'text',
       required: true,
+      admin: {
+        description: 'The name of the category displayed to users',
+      },
     },
     {
       name: 'description',
       type: 'textarea',
+      admin: {
+        description: "Displayed on the category's public page",
+      },
     },
-    ...slugField(),
+    ...slugField('title', {
+      slugOverrides: {
+        admin: {
+          description: 'Used for the category URL (must be unique)',
+        },
+        unique: true,
+      },
+    }),
     {
-      name: 'thumbnail',
-      label: 'Category Thumbnail',
+      name: 'featuredImage',
       type: 'upload',
       relationTo: 'media',
+      admin: {
+        description: 'Shown as a preview image or banner on catalog pages',
+      },
+    },
+    {
+      name: 'featuredCategory',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'If checked, this category is featured on the homepage or catalog',
+      },
+    },
+    {
+      name: 'showInCatalog',
+      type: 'checkbox',
+      defaultValue: true,
+      admin: {
+        position: 'sidebar',
+        description: 'Controls whether the category is visible to customers',
+      },
+    },
+    {
+      name: 'content',
+      type: 'relationship',
+      relationTo: 'content',
+      hasMany: true,
+      admin: {
+        description: 'Content linked to this category',
+      },
     },
     {
       name: 'order',
       type: 'number',
       label: 'Sort Order',
       admin: {
+        position: 'sidebar',
         description: 'Used for manual sorting in menus or grids',
       },
     },
@@ -56,6 +102,7 @@ export const Categories: CollectionConfig = {
       type: 'relationship',
       relationTo: 'categories',
       admin: {
+        position: 'sidebar',
         description: 'Optional parent category for hierarchical organization',
       },
     },
@@ -75,6 +122,8 @@ export const Categories: CollectionConfig = {
     },
   ],
   hooks: {
+    // Add logging hooks
+    ...createCollectionLoggingHooks('categories'),
     beforeValidate: [
       ({ data }) => {
         // Auto-generate SEO metadata if not provided
@@ -96,9 +145,9 @@ export const Categories: CollectionConfig = {
           data.meta.canonicalURL = `${baseUrl}/category/${data.slug}`
         }
 
-        // Set meta.image from thumbnail if not provided
-        if (!data.meta.image && data.thumbnail) {
-          data.meta.image = data.thumbnail
+        // Set meta.image from featuredImage if not provided
+        if (!data.meta.image && data.featuredImage) {
+          data.meta.image = data.featuredImage
         }
 
         return data

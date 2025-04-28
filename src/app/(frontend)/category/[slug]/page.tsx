@@ -3,6 +3,7 @@ import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import React from 'react'
+import Link from 'next/link'
 import { VideoCard } from '@/components/VideoCard'
 import type { Video as PayloadVideo } from '@/payload-types'
 import { VIDEO_SOURCE_TYPES } from '@/constants/video'
@@ -116,7 +117,22 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
-  // Get videos in this category
+  // Get content in this category
+  const contentItems = await payload.find({
+    collection: 'content',
+    where: {
+      categories: {
+        contains: category.id,
+      },
+      isPublished: {
+        equals: true,
+      },
+    },
+    sort: '-releaseDate',
+    depth: 1, // To get related data
+  })
+
+  // For backward compatibility, also get videos in this category
   const videos = await payload.find({
     collection: 'videos',
     where: {
@@ -177,19 +193,77 @@ export default async function CategoryPage(props: Props) {
         {category.description && (
           <p className="text-lg text-gray-600 dark:text-gray-300">{category.description}</p>
         )}
-      </header>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {validVideos.map((video) => (
-          <VideoCard key={video.id} video={video} />
-        ))}
-
-        {validVideos.length === 0 && (
-          <div className="col-span-full text-center py-12">
-            <p className="text-gray-500">No videos in this category yet.</p>
+        {category.featuredCategory && (
+          <div className="mt-3">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+              Featured Category
+            </span>
           </div>
         )}
-      </div>
+      </header>
+
+      {category.featuredImage && (
+        <div className="w-full h-64 md:h-80 mb-12 rounded-lg overflow-hidden">
+          <img
+            src={`/media/${category.featuredImage.filename}`}
+            alt={category.featuredImage.alt || category.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      {contentItems.docs.length > 0 && (
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-6">Content</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {contentItems.docs.map((content) => (
+              <Link
+                key={content.id}
+                href={`/content/${content.slug}`}
+                className="bg-card hover:bg-card/80 transition-colors border border-border rounded-lg overflow-hidden flex flex-col"
+              >
+                {content.posterImage && (
+                  <div className="w-full h-40 relative">
+                    <img
+                      src={`/media/${content.posterImage.filename}`}
+                      alt={content.posterImage.alt || content.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="text-lg font-medium">{content.title}</h3>
+                  {content.description && (
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                      {content.description}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {validVideos.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Videos</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {validVideos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {contentItems.docs.length === 0 && validVideos.length === 0 && (
+        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <h3 className="text-xl font-medium text-gray-600 dark:text-gray-300">
+            No content found in this category
+          </h3>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">Check back later for new content</p>
+        </div>
+      )}
     </div>
   )
 }

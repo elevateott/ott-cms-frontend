@@ -26,11 +26,29 @@ export default async function HomePage() {
     sort: '-releaseDate',
   })
 
-  // Get categories
+  // Get featured categories
   const categories = await payload.find({
     collection: 'categories',
     limit: 5,
-    sort: 'title',
+    sort: 'order',
+    where: {
+      or: [
+        // Support both old and new featured fields for backward compatibility
+        {
+          featuredCategory: {
+            equals: true,
+          },
+        },
+        {
+          featuredOn: {
+            in: ['home', 'both'],
+          },
+        },
+      ],
+      showInCatalog: {
+        equals: true,
+      },
+    },
   })
 
   return (
@@ -58,9 +76,25 @@ export default async function HomePage() {
             <Link
               key={category.id}
               href={`/category/${category.slug}`}
-              className="bg-card hover:bg-card/80 transition-colors border border-border rounded-lg p-6 text-center"
+              className="bg-card hover:bg-card/80 transition-colors border border-border rounded-lg overflow-hidden flex flex-col"
             >
-              <h3 className="text-lg font-medium">{category.title}</h3>
+              {category.featuredImage && (
+                <div className="w-full h-32 relative">
+                  <img
+                    src={`/media/${category.featuredImage.filename}`}
+                    alt={category.featuredImage.alt || category.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="p-4 text-center">
+                <h3 className="text-lg font-medium">{category.title}</h3>
+                {category.description && (
+                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {category.description}
+                  </p>
+                )}
+              </div>
             </Link>
           ))}
 

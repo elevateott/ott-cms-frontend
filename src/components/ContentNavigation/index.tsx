@@ -28,7 +28,8 @@ export const ContentNavigation: React.FC = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories?featuredOn=nav')
+        // Support both old and new featured fields for backward compatibility
+        const response = await fetch('/api/categories?featuredOn=nav&showInCatalog=true')
         if (!response.ok) throw new Error('Failed to fetch categories')
         const data = await response.json()
         setCategories(data.docs || [])

@@ -20,6 +20,11 @@ export default async function CategoriesPage() {
   const categories = await payload.find({
     collection: 'categories',
     sort: 'title',
+    where: {
+      showInCatalog: {
+        equals: true,
+      },
+    },
   })
 
   return (
@@ -31,14 +36,30 @@ export default async function CategoriesPage() {
           <Link
             key={category.id}
             href={`/category/${category.slug}`}
-            className="bg-card hover:bg-card/80 transition-colors border border-border rounded-lg p-6"
+            className="bg-card hover:bg-card/80 transition-colors border border-border rounded-lg overflow-hidden flex flex-col"
           >
-            <h2 className="text-xl font-semibold mb-2">{category.title}</h2>
-            {category.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                {category.description}
-              </p>
+            {category.featuredImage && (
+              <div className="w-full h-40 relative">
+                <img
+                  src={`/media/${category.featuredImage.filename}`}
+                  alt={category.featuredImage.alt || category.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             )}
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-2">{category.title}</h2>
+              {category.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">{category.description}</p>
+              )}
+              {category.featuredCategory && (
+                <div className="mt-3">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                    Featured
+                  </span>
+                </div>
+              )}
+            </div>
           </Link>
         ))}
       </div>

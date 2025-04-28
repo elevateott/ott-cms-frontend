@@ -370,11 +370,35 @@ export interface Media {
  */
 export interface Category {
   id: string;
+  /**
+   * The name of the category displayed to users
+   */
   title: string;
+  /**
+   * Displayed on the category's public page
+   */
   description?: string | null;
+  /**
+   * Used for the category URL (must be unique)
+   */
   slug?: string | null;
   slugLock?: boolean | null;
-  thumbnail?: (string | null) | Media;
+  /**
+   * Shown as a preview image or banner on catalog pages
+   */
+  featuredImage?: (string | null) | Media;
+  /**
+   * If checked, this category is featured on the homepage or catalog
+   */
+  featuredCategory?: boolean | null;
+  /**
+   * Controls whether the category is visible to customers
+   */
+  showInCatalog?: boolean | null;
+  /**
+   * Content linked to this category
+   */
+  content?: (string | Content)[] | null;
   /**
    * Used for manual sorting in menus or grids
    */
@@ -406,6 +430,232 @@ export interface Category {
   };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content".
+ */
+export interface Content {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Main poster image for this content
+   */
+  posterImage: string | Media;
+  /**
+   * When this content was or will be released
+   */
+  releaseDate?: string | null;
+  /**
+   * The main video for this content
+   */
+  mainVideo: string | Videoasset;
+  /**
+   * Optional trailer video for this content
+   */
+  trailerVideo?: (string | null) | Videoasset;
+  /**
+   * Additional bonus videos for this content
+   */
+  bonusVideos?:
+    | {
+        title: string;
+        description?: string | null;
+        video: string | Videoasset;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Categories this content belongs to
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * Creators associated with this content
+   */
+  creators?: (string | Creator)[] | null;
+  /**
+   * Content status (draft or published)
+   */
+  status: 'draft' | 'published';
+  /**
+   * Uncheck to hide this content from users.
+   */
+  isPublished?: boolean | null;
+  /**
+   * Schedule when this content should go live.
+   */
+  publishAt?: string | null;
+  /**
+   * Schedule when this content should expire.
+   */
+  unpublishAt?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videoassets".
+ */
+export interface Videoasset {
+  id: string;
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Choose how this video is delivered
+   */
+  sourceType: 'mux' | 'embedded';
+  /**
+   * When checked, this video will use its own DRM settings instead of the global defaults.
+   */
+  overrideDRM?: boolean | null;
+  /**
+   * Protect this video with DRM (Widevine / FairPlay). Playback will require a compatible player. Can only be set before upload.
+   */
+  useDRM?: boolean | null;
+  /**
+   * The Mux DRM Configuration ID to use for this video.
+   */
+  drmConfigurationId?: string | null;
+  muxData?: {
+    /**
+     * Mux Upload ID (automatically populated)
+     */
+    uploadId?: string | null;
+    /**
+     * Mux Asset ID (automatically populated)
+     */
+    assetId?: string | null;
+    /**
+     * Mux Playback ID (automatically populated)
+     */
+    playbackId?: string | null;
+    /**
+     * Current status of the Mux video
+     */
+    status?: ('uploading' | 'processing' | 'ready' | 'error') | null;
+  };
+  /**
+   * Configure advanced settings for this Mux video
+   */
+  muxAdvancedSettings?: {
+    /**
+     * Select the encoding quality tier for this video
+     */
+    videoQuality?: ('basic' | 'plus' | 'premium') | null;
+    /**
+     * Maximum resolution for this video
+     */
+    maxResolution?: '1080p' | null;
+    /**
+     * Control how this video can be accessed
+     */
+    playbackPolicy?: ('public' | 'signed') | null;
+    /**
+     * Automatically adjust audio levels for consistent volume
+     */
+    normalizeAudio?: boolean | null;
+    /**
+     * Automatically generate English captions for this video
+     */
+    autoGenerateCaptions?: boolean | null;
+  };
+  /**
+   * Manage subtitle and caption tracks for this video
+   */
+  subtitles?: {
+    /**
+     * List of subtitle and caption tracks for this video
+     */
+    tracks?:
+      | {
+          /**
+           * Language code (e.g., en, es, fr)
+           */
+          language: string;
+          /**
+           * Display name for this track (e.g., English, Spanish)
+           */
+          name?: string | null;
+          kind: 'subtitles' | 'captions' | 'descriptions';
+          closedCaptions?: boolean | null;
+          /**
+           * Mux Track ID (automatically populated)
+           */
+          muxTrackId?: string | null;
+          /**
+           * URL to the subtitle file (automatically populated)
+           */
+          url?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Enter an HLS stream URL (e.g., from Vimeo or DaCast)
+   */
+  embeddedUrl?: string | null;
+  /**
+   * Video duration in seconds (automatically populated for Mux videos)
+   */
+  duration?: number | null;
+  /**
+   * Video aspect ratio (automatically populated for Mux videos)
+   */
+  aspectRatio?: string | null;
+  /**
+   * Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)
+   */
+  thumbnail?: (string | null) | Media;
+  muxThumbnailUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creators".
+ */
+export interface Creator {
+  id: string;
+  name: string;
+  /**
+   * Displayed on the creator's public profile.
+   */
+  bio?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Profile image for this creator
+   */
+  avatar?: (string | null) | Media;
+  /**
+   * Controls whether this creator is visible on the public site
+   */
+  publicProfile?: boolean | null;
+  /**
+   * Social media links for this creator
+   */
+  socialLinks?:
+    | {
+        platform: 'website' | 'twitter' | 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'tiktok' | 'other';
+        url: string;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -781,232 +1031,6 @@ export interface MuxWebhookJob {
   error?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "videoassets".
- */
-export interface Videoasset {
-  id: string;
-  title: string;
-  slug?: string | null;
-  slugLock?: boolean | null;
-  /**
-   * Choose how this video is delivered
-   */
-  sourceType: 'mux' | 'embedded';
-  /**
-   * When checked, this video will use its own DRM settings instead of the global defaults.
-   */
-  overrideDRM?: boolean | null;
-  /**
-   * Protect this video with DRM (Widevine / FairPlay). Playback will require a compatible player. Can only be set before upload.
-   */
-  useDRM?: boolean | null;
-  /**
-   * The Mux DRM Configuration ID to use for this video.
-   */
-  drmConfigurationId?: string | null;
-  muxData?: {
-    /**
-     * Mux Upload ID (automatically populated)
-     */
-    uploadId?: string | null;
-    /**
-     * Mux Asset ID (automatically populated)
-     */
-    assetId?: string | null;
-    /**
-     * Mux Playback ID (automatically populated)
-     */
-    playbackId?: string | null;
-    /**
-     * Current status of the Mux video
-     */
-    status?: ('uploading' | 'processing' | 'ready' | 'error') | null;
-  };
-  /**
-   * Configure advanced settings for this Mux video
-   */
-  muxAdvancedSettings?: {
-    /**
-     * Select the encoding quality tier for this video
-     */
-    videoQuality?: ('basic' | 'plus' | 'premium') | null;
-    /**
-     * Maximum resolution for this video
-     */
-    maxResolution?: '1080p' | null;
-    /**
-     * Control how this video can be accessed
-     */
-    playbackPolicy?: ('public' | 'signed') | null;
-    /**
-     * Automatically adjust audio levels for consistent volume
-     */
-    normalizeAudio?: boolean | null;
-    /**
-     * Automatically generate English captions for this video
-     */
-    autoGenerateCaptions?: boolean | null;
-  };
-  /**
-   * Manage subtitle and caption tracks for this video
-   */
-  subtitles?: {
-    /**
-     * List of subtitle and caption tracks for this video
-     */
-    tracks?:
-      | {
-          /**
-           * Language code (e.g., en, es, fr)
-           */
-          language: string;
-          /**
-           * Display name for this track (e.g., English, Spanish)
-           */
-          name?: string | null;
-          kind: 'subtitles' | 'captions' | 'descriptions';
-          closedCaptions?: boolean | null;
-          /**
-           * Mux Track ID (automatically populated)
-           */
-          muxTrackId?: string | null;
-          /**
-           * URL to the subtitle file (automatically populated)
-           */
-          url?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  /**
-   * Enter an HLS stream URL (e.g., from Vimeo or DaCast)
-   */
-  embeddedUrl?: string | null;
-  /**
-   * Video duration in seconds (automatically populated for Mux videos)
-   */
-  duration?: number | null;
-  /**
-   * Video aspect ratio (automatically populated for Mux videos)
-   */
-  aspectRatio?: string | null;
-  /**
-   * Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)
-   */
-  thumbnail?: (string | null) | Media;
-  muxThumbnailUrl?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "content".
- */
-export interface Content {
-  id: string;
-  title: string;
-  description?: string | null;
-  slug?: string | null;
-  slugLock?: boolean | null;
-  /**
-   * Main poster image for this content
-   */
-  posterImage: string | Media;
-  /**
-   * When this content was or will be released
-   */
-  releaseDate?: string | null;
-  /**
-   * The main video for this content
-   */
-  mainVideo: string | Videoasset;
-  /**
-   * Optional trailer video for this content
-   */
-  trailerVideo?: (string | null) | Videoasset;
-  /**
-   * Additional bonus videos for this content
-   */
-  bonusVideos?:
-    | {
-        title: string;
-        description?: string | null;
-        video: string | Videoasset;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Categories this content belongs to
-   */
-  categories?: (string | Category)[] | null;
-  /**
-   * Creators associated with this content
-   */
-  creators?: (string | Creator)[] | null;
-  /**
-   * Content status (draft or published)
-   */
-  status: 'draft' | 'published';
-  /**
-   * Uncheck to hide this content from users.
-   */
-  isPublished?: boolean | null;
-  /**
-   * Schedule when this content should go live.
-   */
-  publishAt?: string | null;
-  /**
-   * Schedule when this content should expire.
-   */
-  unpublishAt?: string | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (string | null) | Media;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "creators".
- */
-export interface Creator {
-  id: string;
-  name: string;
-  /**
-   * Displayed on the creator's public profile.
-   */
-  bio?: string | null;
-  slug?: string | null;
-  slugLock?: boolean | null;
-  /**
-   * Profile image for this creator
-   */
-  avatar?: (string | null) | Media;
-  /**
-   * Controls whether this creator is visible on the public site
-   */
-  publicProfile?: boolean | null;
-  /**
-   * Social media links for this creator
-   */
-  socialLinks?:
-    | {
-        platform: 'website' | 'twitter' | 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'tiktok' | 'other';
-        url: string;
-        label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  createdAt: string;
-  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1636,7 +1660,10 @@ export interface CategoriesSelect<T extends boolean = true> {
   description?: T;
   slug?: T;
   slugLock?: T;
-  thumbnail?: T;
+  featuredImage?: T;
+  featuredCategory?: T;
+  showInCatalog?: T;
+  content?: T;
   order?: T;
   parentCategory?: T;
   featuredOn?: T;
