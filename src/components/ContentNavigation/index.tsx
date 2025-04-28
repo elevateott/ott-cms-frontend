@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ChevronDown, Film, Layers, PlayCircle } from 'lucide-react'
+import { ChevronDown, Film, Layers, PlayCircle, FolderTree } from 'lucide-react'
 
 type Category = {
   id: string
@@ -55,6 +55,16 @@ export const ContentNavigation: React.FC = () => {
         </Button>
       </Link>
 
+      <Link href="/series" passHref>
+        <Button
+          variant={pathname === '/series' ? 'default' : 'ghost'}
+          className="flex items-center gap-2"
+        >
+          <Layers className="h-4 w-4" />
+          <span>Series</span>
+        </Button>
+      </Link>
+
       <Link href="/video" passHref>
         <Button
           variant={pathname === '/video' ? 'default' : 'ghost'}
@@ -69,7 +79,7 @@ export const ContentNavigation: React.FC = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2">
-              <Layers className="h-4 w-4" />
+              <FolderTree className="h-4 w-4" />
               <span>Categories</span>
               <ChevronDown className="h-4 w-4" />
             </Button>

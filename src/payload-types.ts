@@ -77,6 +77,7 @@ export interface Config {
     content: Content;
     creators: Creator;
     series: Series;
+    filters: Filter;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -98,6 +99,7 @@ export interface Config {
     content: ContentSelect<false> | ContentSelect<true>;
     creators: CreatorsSelect<false> | CreatorsSelect<true>;
     series: SeriesSelect<false> | SeriesSelect<true>;
+    filters: FiltersSelect<false> | FiltersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -1186,6 +1188,43 @@ export interface Series {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filters".
+ */
+export interface Filter {
+  id: string;
+  /**
+   * Display name for this filter
+   */
+  label: string;
+  /**
+   * Type of filter
+   */
+  type: 'category' | 'creator' | 'tag' | 'series' | 'custom';
+  /**
+   * Value to filter by (category ID, tag name, etc.)
+   */
+  value: string;
+  /**
+   * Path to the field in the collection (e.g., categories, tags.value)
+   */
+  fieldPath?: string | null;
+  /**
+   * Order in which this filter appears (lower numbers first)
+   */
+  order?: number | null;
+  /**
+   * Whether this filter is active and should be shown
+   */
+  isActive?: boolean | null;
+  /**
+   * Optional group name to organize filters (e.g., "Difficulty", "Format")
+   */
+  group?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1395,6 +1434,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'series';
         value: string | Series;
+      } | null)
+    | ({
+        relationTo: 'filters';
+        value: string | Filter;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1965,6 +2008,21 @@ export interface SeriesSelect<T extends boolean = true> {
             };
       };
   updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filters_select".
+ */
+export interface FiltersSelect<T extends boolean = true> {
+  label?: T;
+  type?: T;
+  value?: T;
+  fieldPath?: T;
+  order?: T;
+  isActive?: T;
+  group?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

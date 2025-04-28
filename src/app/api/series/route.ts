@@ -1,5 +1,5 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/utils/logger'
-import { NextRequest } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '12')
-    const sort = searchParams.get('sort') || '-releaseDate'
-
+    const sort = searchParams.get('sort') || '-createdAt'
+    
     // Get filter parameters
     const category = searchParams.get('category')
     const categories = searchParams.getAll('categories')
@@ -18,13 +18,13 @@ export async function GET(req: NextRequest) {
     const creators = searchParams.getAll('creators')
     const tag = searchParams.get('tag')
     const tags = searchParams.getAll('tags')
-    const series = searchParams.get('series')
-    const visibility = searchParams.get('visibility')
+    const isFeatured = searchParams.get('isFeatured') === 'true'
+    const isFree = searchParams.get('isFree') === 'true'
     const isPublished = searchParams.get('isPublished') !== 'false' // Default to true
 
     // Build the query
     const query: any = {
-      collection: 'content',
+      collection: 'series',
       page,
       limit,
       sort,
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         },
       })
     }
-
+    
     if (categories && categories.length > 0) {
       // Support multiple categories (ANY match)
       andConditions.push({
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         },
       })
     }
-
+    
     if (creators && creators.length > 0) {
       // Support multiple creators (ANY match)
       andConditions.push({
@@ -82,34 +82,34 @@ export async function GET(req: NextRequest) {
         },
       })
     }
-
+    
     if (tags && tags.length > 0) {
       // Support multiple tags (ANY match)
-      const tagConditions = tags.map((tagValue) => ({
+      const tagConditions = tags.map(tagValue => ({
         'tags.value': {
           equals: tagValue,
         },
       }))
-
+      
       andConditions.push({
         or: tagConditions,
       })
     }
 
-    // Handle series filter
-    if (series) {
+    // Handle featured filter
+    if (isFeatured) {
       andConditions.push({
-        series: {
-          equals: series,
+        isFeatured: {
+          equals: true,
         },
       })
     }
 
-    // Handle visibility filter
-    if (visibility) {
+    // Handle free filter
+    if (isFree !== undefined) {
       andConditions.push({
-        visibility: {
-          equals: visibility,
+        isFree: {
+          equals: isFree,
         },
       })
     }
@@ -126,14 +126,19 @@ export async function GET(req: NextRequest) {
       where.and = andConditions
     }
 
+    // Only add where clause if we have filters
+    if (Object.keys(where).length > 0) {
+      query.where = where
+    }
+
     const payload = await getPayload({ config: configPromise })
     const result = await payload.find(query)
 
     return createApiResponse(result)
   } catch (error: unknown) {
-    logger.error({ context: 'content/route' }, 'Error fetching content:', error)
+    logger.error({ context: 'series/route' }, 'Error fetching series:', error)
     return createErrorResponse(
-      error instanceof Error ? error.message : 'An error occurred while fetching content',
+      error instanceof Error ? error.message : 'An error occurred while fetching series',
       500,
     )
   }
@@ -145,15 +150,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
 
     const result = await payload.create({
-      collection: 'content',
+      collection: 'series',
       data: body,
     })
 
     return createApiResponse(result, 201)
   } catch (error: unknown) {
-    logger.error({ context: 'content/route' }, 'Error creating content:', error)
+    logger.error({ context: 'series/route' }, 'Error creating series:', error)
     return createErrorResponse(
-      error instanceof Error ? error.message : 'An error occurred while creating content',
+      error instanceof Error ? error.message : 'An error occurred while creating series',
       500,
     )
   }

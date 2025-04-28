@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import React from 'react'
-import { ContentList } from '@/components/ContentList'
+import { FilterableContentList } from '@/components/FilterableContentList'
 
 export const metadata: Metadata = {
   title: 'Content Library | OTT Platform',
@@ -17,17 +17,23 @@ export const metadata: Metadata = {
 export default async function ContentLibraryPage() {
   const payload = await getPayload({ config: configPromise })
 
+  // Get initial content items
   const contentItems = await payload.find({
     collection: 'content',
     limit: 12,
     sort: '-releaseDate',
+    where: {
+      isPublished: {
+        equals: true,
+      },
+    },
   })
 
   return (
     <div className="container py-12">
       <h1 className="text-4xl font-bold mb-8">Content Library</h1>
 
-      <ContentList
+      <FilterableContentList
         initialData={contentItems.docs}
         apiEndpoint="/api/content"
         title="All Content"

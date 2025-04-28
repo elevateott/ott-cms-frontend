@@ -29,6 +29,7 @@ import { VideoAssets } from './collections/VideoAssets'
 import { Content } from './collections/Content'
 import { Creators } from './collections/Creators'
 import { Series } from './collections/Series'
+import { Filters } from './collections/Filters'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -107,6 +108,7 @@ export default buildConfig({
     Content,
     Creators,
     Series,
+    Filters,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, StreamingSettings, OTTSettings, CloudIntegrations, SiteSettings],
