@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { createLiveStream } from '@/hooks/mux/createLiveStream'
+import { updateLiveStream } from '@/hooks/mux/updateLiveStream'
 import { fetchLiveStreamStatus } from '@/hooks/mux/fetchLiveStreamStatus'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 
@@ -70,6 +71,20 @@ export const LiveEvents: CollectionConfig = {
       max: 300,
       admin: {
         description: 'Time allowed to reconnect after a disconnect (in seconds, max 300)',
+      },
+    },
+    {
+      name: 'playbackPolicy',
+      type: 'select',
+      label: 'Playback Policy',
+      options: [
+        { label: 'Public', value: 'public' },
+        { label: 'Signed', value: 'signed' },
+      ],
+      defaultValue: 'public',
+      admin: {
+        description:
+          'Controls how the live stream can be accessed. Public streams are accessible to anyone with the URL. Signed streams require a signed token.',
       },
     },
     {
@@ -196,6 +211,9 @@ export const LiveEvents: CollectionConfig = {
       type: 'array',
       admin: {
         description: 'Optional targets to simulcast this live stream to (RTMP destinations)',
+        components: {
+          Field: '@/components/fields/SimulcastTargetsField',
+        },
       },
       fields: [
         {
@@ -244,8 +262,8 @@ export const LiveEvents: CollectionConfig = {
   hooks: {
     // Add logging hooks
     ...createCollectionLoggingHooks('live-events'),
-    // Add hook to create Mux live stream
-    beforeChange: [createLiveStream],
+    // Add hooks to create and update Mux live stream
+    beforeChange: [createLiveStream, updateLiveStream],
     // Add hook to fetch the latest status from Mux
     afterRead: [fetchLiveStreamStatus],
   },

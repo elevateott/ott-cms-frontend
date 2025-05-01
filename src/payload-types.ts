@@ -1355,6 +1355,10 @@ export interface LiveEvent {
    * Time allowed to reconnect after a disconnect (in seconds, max 300)
    */
   reconnectWindow?: number | null;
+  /**
+   * Controls how the live stream can be accessed. Public streams are accessible to anyone with the URL. Signed streams require a signed token.
+   */
+  playbackPolicy?: ('public' | 'signed') | null;
   status: 'draft' | 'scheduled' | 'active' | 'completed' | 'cancelled';
   /**
    * When this live event is scheduled to start
@@ -2275,6 +2279,7 @@ export interface LiveEventsSelect<T extends boolean = true> {
   thumbnail?: T;
   isRecordingEnabled?: T;
   reconnectWindow?: T;
+  playbackPolicy?: T;
   status?: T;
   scheduledStartTime?: T;
   scheduledEndTime?: T;
