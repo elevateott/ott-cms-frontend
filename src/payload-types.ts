@@ -1418,6 +1418,10 @@ export interface LiveEvent {
         id?: string | null;
       }[]
     | null;
+  /**
+   * When the live stream was completed
+   */
+  endedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -2303,6 +2307,7 @@ export interface LiveEventsSelect<T extends boolean = true> {
         streamKey?: T;
         id?: T;
       };
+  endedAt?: T;
   createdAt?: T;
   updatedAt?: T;
 }

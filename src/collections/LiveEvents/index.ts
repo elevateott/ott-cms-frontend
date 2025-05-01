@@ -250,6 +250,16 @@ export const LiveEvents: CollectionConfig = {
       ],
     },
     {
+      name: 'endedAt',
+      type: 'date',
+      label: 'Ended',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'When the live stream was completed',
+      },
+    },
+    {
       name: 'createdAt',
       type: 'date',
       label: 'Created',

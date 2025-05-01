@@ -183,4 +183,10 @@ export interface IMuxService {
    * @param liveStreamId Mux live stream ID
    */
   enableLiveStream(liveStreamId: string): Promise<boolean>
+
+  /**
+   * Complete a live stream (signal that the stream is finished)
+   * @param liveStreamId Mux live stream ID
+   */
+  completeLiveStream(liveStreamId: string): Promise<boolean>
 }

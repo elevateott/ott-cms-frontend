@@ -8,6 +8,7 @@ import DisableStreamButton from '@/components/buttons/DisableStreamButton'
 import EnableStreamButton from '@/components/buttons/EnableStreamButton'
 import DeleteStreamButton from '@/components/buttons/DeleteStreamButton'
 import ResetStreamKeyButton from '@/components/buttons/ResetStreamKeyButton'
+import EndStreamButton from '@/components/buttons/EndStreamButton'
 
 export const StreamActionsPanel: React.FC = () => {
   const { document } = useDocumentInfo()
@@ -51,9 +52,18 @@ export const StreamActionsPanel: React.FC = () => {
       <CardContent>
         <div className="flex flex-wrap gap-2">
           {document?.muxStatus === 'disabled' ? <EnableStreamButton /> : <DisableStreamButton />}
-          {document?.muxStatus !== 'disabled' && <ResetStreamKeyButton />}
+          {['active', 'disconnected'].includes(document?.muxStatus) && <EndStreamButton />}
+          {document?.muxStatus !== 'disabled' && document?.muxStatus !== 'completed' && (
+            <ResetStreamKeyButton />
+          )}
           <DeleteStreamButton />
         </div>
+        {document?.endedAt && (
+          <div className="mt-4 text-sm text-gray-500">
+            <span className="font-medium">Ended at:</span>{' '}
+            {new Date(document.endedAt).toLocaleString()}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

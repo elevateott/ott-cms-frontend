@@ -869,4 +869,41 @@ export class MockMuxService implements IMuxService {
       return false
     }
   }
+
+  /**
+   * Complete a live stream (signal that the stream is finished)
+   * @param liveStreamId Mux live stream ID
+   */
+  async completeLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Completing live stream ${liveStreamId}`,
+      )
+
+      // Check if the live stream exists
+      if (!this._mockLiveStreams.has(liveStreamId)) {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+        return false
+      }
+
+      // Update the live stream status to 'completed'
+      const liveStream = this._mockLiveStreams.get(liveStreamId)!
+      liveStream.status = 'completed'
+      this._mockLiveStreams.set(liveStreamId, liveStream)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully completed live stream ${liveStreamId}`,
+      )
+
+      return true
+    } catch (error) {
+      logError(error, 'MockMuxService.completeLiveStream')
+      return false
+    }
+  }
 }

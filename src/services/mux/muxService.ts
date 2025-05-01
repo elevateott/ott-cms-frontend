@@ -1651,4 +1651,43 @@ export class MuxService implements IMuxService {
       return false
     }
   }
+
+  /**
+   * Complete a live stream (signal that the stream is finished)
+   * @param liveStreamId Mux live stream ID
+   */
+  async completeLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info({ context: 'muxService' }, `Completing Mux live stream ${liveStreamId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before completing Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Complete the live stream
+      await this.video._client.put(`/video/v1/live-streams/${liveStreamId}/complete`)
+
+      logger.info(
+        { context: 'muxService' },
+        `Successfully completed Mux live stream ${liveStreamId}`,
+      )
+      return true
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error completing Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      return false
+    }
+  }
 }
