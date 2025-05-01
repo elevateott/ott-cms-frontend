@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
+import { useDocumentInfo } from '@payloadcms/ui'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -38,7 +38,7 @@ export const HealthStatsPanel: React.FC = () => {
       }
 
       const response = await fetch(`/api/live-events/${id}/health-stats`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to fetch health stats')
@@ -113,7 +113,7 @@ export const HealthStatsPanel: React.FC = () => {
           {healthData?.stream_health && (
             <Badge
               className={`bg-${healthColor}-500 hover:bg-${healthColor}-600 transition-colors duration-300 ${
-                (isHealthCritical || isHealthDegraded) ? 'animate-pulse' : ''
+                isHealthCritical || isHealthDegraded ? 'animate-pulse' : ''
               }`}
             >
               {healthData.stream_health.toUpperCase()}
@@ -192,8 +192,7 @@ export const HealthStatsPanel: React.FC = () => {
             </div>
 
             <div className="text-xs text-gray-500 mt-4">
-              Auto-refreshes every 30 seconds. Last updated:{' '}
-              {new Date().toLocaleTimeString()}
+              Auto-refreshes every 30 seconds. Last updated: {new Date().toLocaleTimeString()}
             </div>
           </div>
         )}

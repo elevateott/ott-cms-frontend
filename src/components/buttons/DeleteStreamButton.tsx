@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
-import { useToast } from '@/components/ui/use-toast'
+import { useDocumentInfo } from '@payloadcms/ui'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -56,7 +56,7 @@ export const DeleteStreamButton: React.FC = () => {
       window.location.reload()
     } catch (error) {
       logger.error('Error deleting live stream:', error)
-      
+
       // Show error toast
       toast({
         title: 'Error',
@@ -113,15 +113,13 @@ export const DeleteStreamButton: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action is permanent and cannot be undone. The live stream will be permanently deleted from Mux.
+              This action is permanent and cannot be undone. The live stream will be permanently
+              deleted from Mux.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-500 hover:bg-red-600"
-            >
+            <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
               Yes, Delete Stream
             </AlertDialogAction>
           </AlertDialogFooter>

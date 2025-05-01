@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
-import { useToast } from '@/components/ui/use-toast'
+import { useDocumentInfo } from '@payloadcms/ui'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -25,8 +25,7 @@ export const EnableStreamButton: React.FC = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   // Check if the button should be disabled
-  const isDisabled = !document?.muxLiveStreamId || 
-                     document?.muxStatus !== 'disabled'
+  const isDisabled = !document?.muxLiveStreamId || document?.muxStatus !== 'disabled'
 
   const handleEnable = async () => {
     try {
@@ -56,7 +55,7 @@ export const EnableStreamButton: React.FC = () => {
       window.location.reload()
     } catch (error) {
       logger.error('Error enabling live stream:', error)
-      
+
       // Show error toast
       toast({
         title: 'Error',
@@ -91,10 +90,7 @@ export const EnableStreamButton: React.FC = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleEnable}
-              className="bg-green-500 hover:bg-green-600"
-            >
+            <AlertDialogAction onClick={handleEnable} className="bg-green-500 hover:bg-green-600">
               Enable Stream
             </AlertDialogAction>
           </AlertDialogFooter>

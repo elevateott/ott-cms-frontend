@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
-import { useToast } from '@/components/ui/use-toast'
+import { useDocumentInfo } from '@payloadcms/ui'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -29,8 +29,7 @@ export const ResetStreamKeyButton: React.FC = () => {
   const [copied, setCopied] = useState(false)
 
   // Check if the button should be disabled
-  const isDisabled = !document?.muxLiveStreamId || 
-                     ['disabled', null].includes(document?.muxStatus)
+  const isDisabled = !document?.muxLiveStreamId || ['disabled', null].includes(document?.muxStatus)
 
   const handleReset = async () => {
     try {
@@ -47,15 +46,15 @@ export const ResetStreamKeyButton: React.FC = () => {
       }
 
       const data = await response.json()
-      
+
       // Store the old and new stream keys
       setOldStreamKey(document?.muxStreamKey || '')
       setNewStreamKey(data.streamKey)
-      
+
       // Copy the new stream key to clipboard
       await navigator.clipboard.writeText(data.streamKey)
       setCopied(true)
-      
+
       // Show success toast
       toast({
         title: 'Success',
@@ -67,7 +66,7 @@ export const ResetStreamKeyButton: React.FC = () => {
       window.location.reload()
     } catch (error) {
       logger.error('Error resetting stream key:', error)
-      
+
       // Show error toast
       toast({
         title: 'Error',
@@ -86,10 +85,10 @@ export const ResetStreamKeyButton: React.FC = () => {
       try {
         await navigator.clipboard.writeText(newStreamKey)
         setCopied(true)
-        
+
         // Reset copied state after 2 seconds
         setTimeout(() => setCopied(false), 2000)
-        
+
         toast({
           title: 'Copied',
           description: 'Stream key copied to clipboard',
@@ -97,7 +96,7 @@ export const ResetStreamKeyButton: React.FC = () => {
         })
       } catch (error) {
         logger.error('Error copying to clipboard:', error)
-        
+
         toast({
           title: 'Error',
           description: 'Failed to copy to clipboard',
@@ -124,15 +123,13 @@ export const ResetStreamKeyButton: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Stream Key?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will invalidate the current stream key and generate a new one. You will need to update your streaming software with the new key.
+              This will invalidate the current stream key and generate a new one. You will need to
+              update your streaming software with the new key.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleReset}
-              className="bg-purple-500 hover:bg-purple-600"
-            >
+            <AlertDialogAction onClick={handleReset} className="bg-purple-500 hover:bg-purple-600">
               Reset Key
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -154,7 +151,11 @@ export const ResetStreamKeyButton: React.FC = () => {
                 className="ml-2 h-6 w-6 p-0"
                 onClick={copyToClipboard}
               >
-                {copied ? <CheckIcon className="h-4 w-4 text-green-500" /> : <CopyIcon className="h-4 w-4" />}
+                {copied ? (
+                  <CheckIcon className="h-4 w-4 text-green-500" />
+                ) : (
+                  <CopyIcon className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>

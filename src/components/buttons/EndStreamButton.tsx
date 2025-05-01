@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
-import { useToast } from '@/components/ui/use-toast'
+import { useDocumentInfo } from '@payloadcms/ui'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -26,8 +26,8 @@ export const EndStreamButton: React.FC = () => {
 
   // Check if the button should be disabled
   // Only allow "End Stream" action if the current status is Active or Disconnected
-  const isDisabled = !document?.muxLiveStreamId || 
-                     !['active', 'disconnected'].includes(document?.muxStatus)
+  const isDisabled =
+    !document?.muxLiveStreamId || !['active', 'disconnected'].includes(document?.muxStatus)
 
   const handleEndStream = async () => {
     try {
@@ -54,7 +54,7 @@ export const EndStreamButton: React.FC = () => {
       window.location.reload()
     } catch (error) {
       logger.error('Error ending live stream:', error)
-      
+
       // Show error toast
       toast({
         title: 'Error',
@@ -85,7 +85,8 @@ export const EndStreamButton: React.FC = () => {
             <AlertDialogTitle>End Live Stream?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to end the live stream? This action cannot be undone.
-              <br /><br />
+              <br />
+              <br />
               This will signal to Mux that the stream is complete, which will:
               <ul className="list-disc pl-5 mt-2">
                 <li>Finalize any recording</li>
@@ -96,10 +97,7 @@ export const EndStreamButton: React.FC = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleEndStream}
-              className="bg-black hover:bg-gray-800"
-            >
+            <AlertDialogAction onClick={handleEndStream} className="bg-black hover:bg-gray-800">
               End Stream
             </AlertDialogAction>
           </AlertDialogFooter>

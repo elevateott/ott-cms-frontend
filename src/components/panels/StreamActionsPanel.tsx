@@ -1,13 +1,12 @@
 'use client'
 
 import React from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
+import { useDocumentInfo } from '@payloadcms/ui'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import DisableStreamButton from '@/components/buttons/DisableStreamButton'
 import EnableStreamButton from '@/components/buttons/EnableStreamButton'
 import DeleteStreamButton from '@/components/buttons/DeleteStreamButton'
-import ResetStreamKeyButton from '@/components/buttons/ResetStreamKeyButton'
 import EndStreamButton from '@/components/buttons/EndStreamButton'
 
 export const StreamActionsPanel: React.FC = () => {
@@ -53,9 +52,6 @@ export const StreamActionsPanel: React.FC = () => {
         <div className="flex flex-wrap gap-2">
           {document?.muxStatus === 'disabled' ? <EnableStreamButton /> : <DisableStreamButton />}
           {['active', 'disconnected'].includes(document?.muxStatus) && <EndStreamButton />}
-          {document?.muxStatus !== 'disabled' && document?.muxStatus !== 'completed' && (
-            <ResetStreamKeyButton />
-          )}
           <DeleteStreamButton />
         </div>
         {document?.endedAt && (

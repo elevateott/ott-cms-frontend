@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useDocumentInfo } from 'payload/components/forms'
-import { useToast } from '@/components/ui/use-toast'
+import { useDocumentInfo } from '@payloadcms/ui'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import {
   AlertDialog,
@@ -25,9 +25,8 @@ export const DisableStreamButton: React.FC = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   // Check if the button should be disabled
-  const isDisabled = !document?.muxLiveStreamId || 
-                     document?.muxStatus === 'disabled' || 
-                     document?.muxStatus === null
+  const isDisabled =
+    !document?.muxLiveStreamId || document?.muxStatus === 'disabled' || document?.muxStatus === null
 
   const handleDisable = async () => {
     try {
@@ -57,7 +56,7 @@ export const DisableStreamButton: React.FC = () => {
       window.location.reload()
     } catch (error) {
       logger.error('Error disabling live stream:', error)
-      
+
       // Show error toast
       toast({
         title: 'Error',
@@ -87,16 +86,13 @@ export const DisableStreamButton: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Disable Live Stream?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will temporarily disable the live stream. The stream will no longer be broadcastable, 
-              but all metadata will be preserved. You can re-enable it later.
+              This will temporarily disable the live stream. The stream will no longer be
+              broadcastable, but all metadata will be preserved. You can re-enable it later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDisable}
-              className="bg-amber-500 hover:bg-amber-600"
-            >
+            <AlertDialogAction onClick={handleDisable} className="bg-amber-500 hover:bg-amber-600">
               Disable Stream
             </AlertDialogAction>
           </AlertDialogFooter>

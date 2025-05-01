@@ -31,6 +31,7 @@ export const LiveEvents: CollectionConfig = {
       BeforeEditForm: [
         '@/components/panels/StreamActionsPanel',
         '@/components/panels/HealthStatsPanel',
+        '@/components/stream-key/StreamKeyManager',
       ],
     },
   },
@@ -142,7 +143,7 @@ export const LiveEvents: CollectionConfig = {
       name: 'muxStreamKey',
       type: 'text',
       admin: {
-        readOnly: true,
+        // Not readOnly anymore to allow manual override by admins
         description: 'Mux Stream Key (automatically populated)',
         components: {
           Field: '@/components/fields/SecureTextField',
