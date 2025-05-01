@@ -568,7 +568,7 @@ export class MockMuxService implements IMuxService {
       // Generate a mock playback ID
       const playbackId = `mock-playback-${Date.now()}`
 
-      // Create a mock live stream
+      // Create a mock live stream with health data
       const liveStream: MuxLiveStream = {
         id: liveStreamId,
         stream_key: streamKey,
@@ -583,6 +583,15 @@ export class MockMuxService implements IMuxService {
         recording: options.recording !== undefined ? options.recording : false,
         reconnect_window: options.reconnectWindow || 60,
         simulcast_targets: options.simulcastTargets || [],
+        // Mock health data
+        stream_health: 'healthy',
+        video_bitrate: 5000,
+        video_frame_rate: 30,
+        video_codec: 'h264',
+        video_resolution: '1920x1080',
+        audio_bitrate: 128,
+        last_seen_time: new Date().toISOString(),
+        errors: [],
       }
 
       // Store the live stream in our mock storage
@@ -613,6 +622,36 @@ export class MockMuxService implements IMuxService {
 
       if (liveStream) {
         logger.info({ context: 'muxService' }, `[MockMuxService] Found live stream ${liveStreamId}`)
+
+        // Update health data based on status
+        if (liveStream.status === 'active') {
+          liveStream.stream_health = 'healthy'
+          liveStream.video_bitrate = 5000
+          liveStream.video_frame_rate = 30
+          liveStream.video_codec = 'h264'
+          liveStream.video_resolution = '1920x1080'
+          liveStream.audio_bitrate = 128
+          liveStream.last_seen_time = new Date().toISOString()
+          liveStream.errors = []
+        } else if (liveStream.status === 'disconnected') {
+          liveStream.stream_health = 'degraded'
+          liveStream.video_bitrate = 2000
+          liveStream.video_frame_rate = 15
+          liveStream.video_codec = 'h264'
+          liveStream.video_resolution = '1280x720'
+          liveStream.audio_bitrate = 96
+          liveStream.last_seen_time = new Date(Date.now() - 60000).toISOString() // 1 minute ago
+          liveStream.errors = [{ message: 'Stream connection unstable' }]
+        } else if (liveStream.status === 'idle') {
+          liveStream.stream_health = undefined
+          liveStream.video_bitrate = undefined
+          liveStream.video_frame_rate = undefined
+          liveStream.video_codec = undefined
+          liveStream.video_resolution = undefined
+          liveStream.audio_bitrate = undefined
+          liveStream.last_seen_time = undefined
+          liveStream.errors = []
+        }
       } else {
         logger.info(
           { context: 'muxService' },

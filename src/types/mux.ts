@@ -148,6 +148,18 @@ export interface MuxSimulcastTarget {
   name?: string
 }
 
+// Health data for live streams
+export interface MuxLiveStreamHealth {
+  stream_health?: 'healthy' | 'degraded' | 'failed'
+  video_bitrate?: number
+  video_frame_rate?: number
+  video_codec?: string
+  video_resolution?: string
+  audio_bitrate?: number
+  last_seen_time?: string
+  errors?: Array<{ message: string; code?: string }>
+}
+
 export interface MuxLiveStream {
   id: string
   stream_key: string
@@ -159,6 +171,15 @@ export interface MuxLiveStream {
   simulcast_targets?: MuxSimulcastTarget[]
   active_asset_id?: string
   recent_asset_ids?: string[]
+  // Health data
+  stream_health?: 'healthy' | 'degraded' | 'failed'
+  video_bitrate?: number
+  video_frame_rate?: number
+  video_codec?: string
+  video_resolution?: string
+  audio_bitrate?: number
+  last_seen_time?: string
+  errors?: Array<{ message: string; code?: string }>
 }
 
 export type MuxLiveStreamStatus = 'idle' | 'active' | 'disconnected' | 'completed'

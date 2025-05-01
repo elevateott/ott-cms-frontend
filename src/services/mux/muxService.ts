@@ -1290,7 +1290,7 @@ export class MuxService implements IMuxService {
         throw new Error('Invalid response from Mux API')
       }
 
-      // Transform the response into our MuxLiveStream type
+      // Transform the response into our MuxLiveStream type with health data
       return {
         id: response.data.id,
         stream_key: response.data.stream_key,
@@ -1302,6 +1302,15 @@ export class MuxService implements IMuxService {
         simulcast_targets: response.data.simulcast_targets,
         active_asset_id: response.data.active_asset_id,
         recent_asset_ids: response.data.recent_asset_ids,
+        // Health data
+        stream_health: response.data.stream_health,
+        video_bitrate: response.data.video_bitrate,
+        video_frame_rate: response.data.video_frame_rate,
+        video_codec: response.data.video_codec,
+        video_resolution: response.data.video_resolution,
+        audio_bitrate: response.data.audio_bitrate,
+        last_seen_time: response.data.last_seen_time,
+        errors: response.data.errors,
       } as MuxLiveStream
     } catch (error) {
       logger.error({ context: 'muxService' }, 'Error creating Mux live stream:', error)
@@ -1339,7 +1348,7 @@ export class MuxService implements IMuxService {
         return null
       }
 
-      // Transform the response into our MuxLiveStream type
+      // Transform the response into our MuxLiveStream type with health data
       return {
         id: response.data.id,
         stream_key: response.data.stream_key,
@@ -1351,6 +1360,15 @@ export class MuxService implements IMuxService {
         simulcast_targets: response.data.simulcast_targets,
         active_asset_id: response.data.active_asset_id,
         recent_asset_ids: response.data.recent_asset_ids,
+        // Health data
+        stream_health: response.data.stream_health,
+        video_bitrate: response.data.video_bitrate,
+        video_frame_rate: response.data.video_frame_rate,
+        video_codec: response.data.video_codec,
+        video_resolution: response.data.video_resolution,
+        audio_bitrate: response.data.audio_bitrate,
+        last_seen_time: response.data.last_seen_time,
+        errors: response.data.errors,
       } as MuxLiveStream
     } catch (error) {
       logger.error(
@@ -1412,6 +1430,15 @@ export class MuxService implements IMuxService {
         simulcast_targets: stream.simulcast_targets,
         active_asset_id: stream.active_asset_id,
         recent_asset_ids: stream.recent_asset_ids,
+        // Health data
+        stream_health: stream.stream_health,
+        video_bitrate: stream.video_bitrate,
+        video_frame_rate: stream.video_frame_rate,
+        video_codec: stream.video_codec,
+        video_resolution: stream.video_resolution,
+        audio_bitrate: stream.audio_bitrate,
+        last_seen_time: stream.last_seen_time,
+        errors: stream.errors,
       })) as MuxLiveStream[]
 
       logger.info({ context: 'muxService' }, `Found ${liveStreams.length} Mux live streams`)

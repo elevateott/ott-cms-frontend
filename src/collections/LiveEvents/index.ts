@@ -28,7 +28,10 @@ export const LiveEvents: CollectionConfig = {
       // Use a string path to the component in the admin directory
       BeforeList: '@/admin/components/LiveStreamStatusLegend',
       BeforeDuplicate: '@/components/panels/StreamActionsPanel',
-      BeforeEditForm: '@/components/panels/StreamActionsPanel',
+      BeforeEditForm: [
+        '@/components/panels/StreamActionsPanel',
+        '@/components/panels/HealthStatsPanel',
+      ],
     },
   },
   defaultPopulate: {
