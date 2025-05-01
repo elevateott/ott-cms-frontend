@@ -32,6 +32,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/StreamActionsPanel',
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
+        '@/components/panels/PlaybackURLPanel',
       ],
     },
   },
@@ -156,6 +157,7 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         readOnly: true,
         description: 'Mux Playback IDs (automatically populated)',
+        position: 'sidebar',
       },
       fields: [
         {
