@@ -3,6 +3,7 @@ import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { createLiveStream } from '@/hooks/mux/createLiveStream'
+import { fetchLiveStreamStatus } from '@/hooks/mux/fetchLiveStreamStatus'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 
 export const LiveEvents: CollectionConfig = {
@@ -20,14 +21,12 @@ export const LiveEvents: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: [
-      'title',
-      'muxStatus',
-      'isRecordingEnabled',
-      'status',
-      'createdAt',
-    ],
+    defaultColumns: ['title', 'muxStatus', 'isRecordingEnabled', 'status', 'createdAt'],
     group: 'Media',
+    components: {
+      // Use a string path to the component in the admin directory
+      BeforeList: '@/admin/components/LiveStreamStatusLegend',
+    },
   },
   defaultPopulate: {
     title: true,
@@ -159,8 +158,19 @@ export const LiveEvents: CollectionConfig = {
       ],
       admin: {
         readOnly: true,
-        description: 'Current status of the Mux live stream',
+        description: 'Current status of the Mux live stream (updates automatically)',
         position: 'sidebar',
+        components: {
+          // Use string paths to the components in the admin directory
+          Field: '@/admin/components/LiveStreamStatusBadge',
+          Cell: '@/admin/components/LiveStreamStatusCell',
+        },
+        filterOptions: [
+          { label: 'Active', value: 'active' },
+          { label: 'Idle', value: 'idle' },
+          { label: 'Completed', value: 'completed' },
+          { label: 'Disconnected', value: 'disconnected' },
+        ],
       },
     },
     {
@@ -236,6 +246,8 @@ export const LiveEvents: CollectionConfig = {
     ...createCollectionLoggingHooks('live-events'),
     // Add hook to create Mux live stream
     beforeChange: [createLiveStream],
+    // Add hook to fetch the latest status from Mux
+    afterRead: [fetchLiveStreamStatus],
   },
 }
 

@@ -1383,7 +1383,7 @@ export interface LiveEvent {
       }[]
     | null;
   /**
-   * Current status of the Mux live stream
+   * Current status of the Mux live stream (updates automatically)
    */
   muxStatus?: ('idle' | 'active' | 'disconnected' | 'completed') | null;
   /**

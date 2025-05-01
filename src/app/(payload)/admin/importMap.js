@@ -41,6 +41,8 @@ import { default as default_4e734c8eb614822eb7d309a8c5affe16 } from '@/collectio
 import { default as default_2f4a68f01bdd871fbeb0520b1d8f2d42 } from '@/collections/Carousels/components/ItemRowLabel'
 import { default as default_3aa121b78bf6e47d097fe98bd49c4d16 } from '@/collections/Carousels/components/ItemCountCell'
 import { default as default_cdff2a7adda7ae40093bbe7e73b5c039 } from '@/components/fields/SecureTextField'
+import { default as default_c788ea32f4a2ab4f86cf9865ce2714cf } from '@/admin/components/LiveStreamStatusCell'
+import { default as default_f910b583dded789953b5ef06b51d760c } from '@/admin/components/LiveStreamStatusBadge'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -99,6 +101,8 @@ export const importMap = {
   "@/collections/Carousels/components/ItemRowLabel#default": default_2f4a68f01bdd871fbeb0520b1d8f2d42,
   "@/collections/Carousels/components/ItemCountCell#default": default_3aa121b78bf6e47d097fe98bd49c4d16,
   "@/components/fields/SecureTextField#default": default_cdff2a7adda7ae40093bbe7e73b5c039,
+  "@/admin/components/LiveStreamStatusCell#default": default_c788ea32f4a2ab4f86cf9865ce2714cf,
+  "@/admin/components/LiveStreamStatusBadge#default": default_f910b583dded789953b5ef06b51d760c,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,
