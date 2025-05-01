@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import DisableStreamButton from '@/components/buttons/DisableStreamButton'
 import EnableStreamButton from '@/components/buttons/EnableStreamButton'
 import DeleteStreamButton from '@/components/buttons/DeleteStreamButton'
+import ResetStreamKeyButton from '@/components/buttons/ResetStreamKeyButton'
 
 export const StreamActionsPanel: React.FC = () => {
   const { document } = useDocumentInfo()
@@ -50,6 +51,7 @@ export const StreamActionsPanel: React.FC = () => {
       <CardContent>
         <div className="flex flex-wrap gap-2">
           {document?.muxStatus === 'disabled' ? <EnableStreamButton /> : <DisableStreamButton />}
+          {document?.muxStatus !== 'disabled' && <ResetStreamKeyButton />}
           <DeleteStreamButton />
         </div>
       </CardContent>
