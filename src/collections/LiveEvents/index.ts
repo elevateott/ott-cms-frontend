@@ -6,6 +6,7 @@ import { createLiveStream } from '@/hooks/mux/createLiveStream'
 import { updateLiveStream } from '@/hooks/mux/updateLiveStream'
 import { fetchLiveStreamStatus } from '@/hooks/mux/fetchLiveStreamStatus'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
+import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
 
 export const LiveEvents: CollectionConfig = {
   slug: 'live-events',
@@ -33,6 +34,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
         '@/components/panels/PlaybackURLPanel',
+        '@/components/panels/ExternalHlsPreviewPlayer',
       ],
     },
   },
@@ -61,12 +63,45 @@ export const LiveEvents: CollectionConfig = {
       },
     },
     {
+      name: 'useExternalHlsUrl',
+      type: 'checkbox',
+      label: 'Use External HLS URL',
+      defaultValue: false,
+      admin: {
+        description: 'Enable this to use an external HLS stream URL instead of Mux',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'externalHlsUrl',
+      type: 'text',
+      label: 'External HLS Stream URL',
+      admin: {
+        description:
+          'Enter a valid HLS URL (must end with .m3u8) if using an external live streaming provider',
+        condition: (data) => data?.useExternalHlsUrl === true,
+      },
+      validate: (value, { siblingData }) => {
+        if (siblingData?.useExternalHlsUrl) {
+          if (!value) {
+            return 'External HLS URL is required when enabled'
+          }
+
+          if (!/^https?:\/\/.*\.m3u8$/i.test(value)) {
+            return 'URL must start with http:// or https:// and end with .m3u8'
+          }
+        }
+        return true
+      },
+    },
+    {
       name: 'isRecordingEnabled',
       type: 'checkbox',
       label: 'Enable Recording',
       defaultValue: true,
       admin: {
         description: 'Record this live stream for on-demand playback after the event',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -78,6 +113,7 @@ export const LiveEvents: CollectionConfig = {
       max: 300,
       admin: {
         description: 'Time allowed to reconnect after a disconnect (in seconds, max 300)',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -92,6 +128,7 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         description:
           'Controls how the live stream can be accessed. Public streams are accessible to anyone with the URL. Signed streams require a signed token.',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -138,6 +175,7 @@ export const LiveEvents: CollectionConfig = {
         readOnly: true,
         description: 'Mux Live Stream ID (automatically populated)',
         position: 'sidebar',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -149,6 +187,7 @@ export const LiveEvents: CollectionConfig = {
         components: {
           Field: '@/components/fields/SecureTextField',
         },
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -158,6 +197,7 @@ export const LiveEvents: CollectionConfig = {
         readOnly: true,
         description: 'Mux Playback IDs (automatically populated)',
         position: 'sidebar',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
       fields: [
         {
@@ -196,6 +236,7 @@ export const LiveEvents: CollectionConfig = {
           { label: 'Disconnected', value: 'disconnected' },
           { label: 'Disabled', value: 'disabled' },
         ],
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -205,6 +246,7 @@ export const LiveEvents: CollectionConfig = {
         readOnly: true,
         description: 'When the Mux live stream was created',
         position: 'sidebar',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -224,6 +266,7 @@ export const LiveEvents: CollectionConfig = {
         components: {
           Field: '@/components/fields/SimulcastTargetsField',
         },
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
       fields: [
         {
@@ -263,6 +306,7 @@ export const LiveEvents: CollectionConfig = {
         position: 'sidebar',
         readOnly: true,
         description: 'When the live stream was completed',
+        condition: (data) => data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -283,7 +327,7 @@ export const LiveEvents: CollectionConfig = {
     // Add logging hooks
     ...createCollectionLoggingHooks('live-events'),
     // Add hooks to create and update Mux live stream
-    beforeChange: [createLiveStream, updateLiveStream],
+    beforeChange: [handleExternalHlsUrl, createLiveStream, updateLiveStream],
     // Add hook to fetch the latest status from Mux
     afterRead: [fetchLiveStreamStatus],
   },

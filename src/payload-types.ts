@@ -1348,6 +1348,14 @@ export interface LiveEvent {
    */
   thumbnail?: (string | null) | Media;
   /**
+   * Enable this to use an external HLS stream URL instead of Mux
+   */
+  useExternalHlsUrl?: boolean | null;
+  /**
+   * Enter a valid HLS URL (must end with .m3u8) if using an external live streaming provider
+   */
+  externalHlsUrl?: string | null;
+  /**
    * Record this live stream for on-demand playback after the event
    */
   isRecordingEnabled?: boolean | null;
@@ -2281,6 +2289,8 @@ export interface LiveEventsSelect<T extends boolean = true> {
   slug?: T;
   slugLock?: T;
   thumbnail?: T;
+  useExternalHlsUrl?: T;
+  externalHlsUrl?: T;
   isRecordingEnabled?: T;
   reconnectWindow?: T;
   playbackPolicy?: T;
