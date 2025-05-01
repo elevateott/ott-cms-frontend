@@ -10,6 +10,8 @@ declare global {
       MUX_WEBHOOK_SECRET: string
       MUX_DRM_CONFIGURATION_ID: string
       CRON_SECRET: string
+      RESEND_API_KEY: string
+      RESEND_FROM_ADDRESS: string
     }
   }
 }

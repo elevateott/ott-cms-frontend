@@ -36,6 +36,7 @@
     "@mux/mux-video-react": "^0.25.1",
     "@payloadcms/admin-bar": "3.34.0",
     "@payloadcms/db-mongodb": "3.34.0",
+    "@payloadcms/email-resend": "^3.34.0",
     "@payloadcms/live-preview-react": "3.34.0",
     "@payloadcms/next": "3.34.0",
     "@payloadcms/payload-cloud": "3.34.0",
@@ -79,6 +80,7 @@
     "react-dom": "19.0.0",
     "react-hook-form": "7.45.4",
     "recharts": "^2.15.2",
+    "resend": "^4.4.1",
     "sharp": "0.32.6",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7"

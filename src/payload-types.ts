@@ -121,6 +121,7 @@ export interface Config {
     'ott-settings': OttSetting;
     'cloud-integrations': CloudIntegration;
     'site-settings': SiteSetting;
+    'email-settings': EmailSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
@@ -129,6 +130,7 @@ export interface Config {
     'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
     'cloud-integrations': CloudIntegrationsSelect<false> | CloudIntegrationsSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'email-settings': EmailSettingsSelect<false> | EmailSettingsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -2656,6 +2658,33 @@ export interface SiteSetting {
   createdAt?: string | null;
 }
 /**
+ * Configure email service provider settings for notifications and transactional emails
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-settings".
+ */
+export interface EmailSetting {
+  id: string;
+  /**
+   * Enable Resend as the email service provider
+   */
+  resendEnabled?: boolean | null;
+  /**
+   * API key for Resend integration. Create in the Resend dashboard.
+   */
+  resendApiKey?: string | null;
+  /**
+   * The email address that will appear as the sender (must be verified in Resend)
+   */
+  resendFromAddress?: string | null;
+  /**
+   * The name that will appear as the sender
+   */
+  resendFromName?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
@@ -2803,6 +2832,19 @@ export interface CloudIntegrationsSelect<T extends boolean = true> {
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
   siteName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-settings_select".
+ */
+export interface EmailSettingsSelect<T extends boolean = true> {
+  resendEnabled?: T;
+  resendApiKey?: T;
+  resendFromAddress?: T;
+  resendFromName?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
