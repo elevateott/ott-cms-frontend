@@ -4,7 +4,7 @@ import React from 'react'
 
 /**
  * LiveStreamStatusCell
- * 
+ *
  * A component to display the live stream status as a badge in the list view
  */
 const LiveStreamStatusCell: React.FC<{ cellData?: string }> = (props) => {
@@ -23,6 +23,9 @@ const LiveStreamStatusCell: React.FC<{ cellData?: string }> = (props) => {
       break
     case 'idle':
       backgroundColor = '#f39c12' // Yellow
+      break
+    case 'disabled':
+      backgroundColor = '#e74c3c' // Red
       break
     case 'disconnected':
     case 'completed':

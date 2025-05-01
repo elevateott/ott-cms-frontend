@@ -27,6 +27,8 @@ export const LiveEvents: CollectionConfig = {
     components: {
       // Use a string path to the component in the admin directory
       BeforeList: '@/admin/components/LiveStreamStatusLegend',
+      BeforeDuplicate: '@/components/panels/StreamActionsPanel',
+      BeforeEditForm: '@/components/panels/StreamActionsPanel',
     },
   },
   defaultPopulate: {
@@ -170,6 +172,7 @@ export const LiveEvents: CollectionConfig = {
         { label: 'Active', value: 'active' },
         { label: 'Disconnected', value: 'disconnected' },
         { label: 'Completed', value: 'completed' },
+        { label: 'Disabled', value: 'disabled' },
       ],
       admin: {
         readOnly: true,
@@ -185,6 +188,7 @@ export const LiveEvents: CollectionConfig = {
           { label: 'Idle', value: 'idle' },
           { label: 'Completed', value: 'completed' },
           { label: 'Disconnected', value: 'disconnected' },
+          { label: 'Disabled', value: 'disabled' },
         ],
       },
     },

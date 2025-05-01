@@ -1576,4 +1576,79 @@ export class MuxService implements IMuxService {
       )
     }
   }
+
+  /**
+   * Disable a live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  async disableLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info({ context: 'muxService' }, `Disabling Mux live stream ${liveStreamId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before disabling Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Disable the live stream
+      await this.video._client.put(`/video/v1/live-streams/${liveStreamId}/disable`)
+
+      logger.info(
+        { context: 'muxService' },
+        `Successfully disabled Mux live stream ${liveStreamId}`,
+      )
+      return true
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error disabling Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      return false
+    }
+  }
+
+  /**
+   * Enable a live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  async enableLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info({ context: 'muxService' }, `Enabling Mux live stream ${liveStreamId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before enabling Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Enable the live stream
+      await this.video._client.put(`/video/v1/live-streams/${liveStreamId}/enable`)
+
+      logger.info({ context: 'muxService' }, `Successfully enabled Mux live stream ${liveStreamId}`)
+      return true
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error enabling Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      return false
+    }
+  }
 }

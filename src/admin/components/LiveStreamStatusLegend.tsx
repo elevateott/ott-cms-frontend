@@ -4,7 +4,7 @@ import React from 'react'
 
 /**
  * LiveStreamStatusLegend
- * 
+ *
  * A component to display a legend for the live stream status badges in the Payload CMS admin
  */
 const LiveStreamStatusLegend: React.FC = () => {
@@ -12,6 +12,7 @@ const LiveStreamStatusLegend: React.FC = () => {
   const statuses = [
     { label: 'Active', color: '#2ecc71', description: 'Currently live and broadcasting' },
     { label: 'Idle', color: '#f39c12', description: 'Waiting to go live' },
+    { label: 'Disabled', color: '#e74c3c', description: 'Stream temporarily disabled' },
     { label: 'Completed', color: '#95a5a6', description: 'Broadcast ended' },
   ]
 

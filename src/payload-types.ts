@@ -1389,7 +1389,7 @@ export interface LiveEvent {
   /**
    * Current status of the Mux live stream (updates automatically)
    */
-  muxStatus?: ('idle' | 'active' | 'disconnected' | 'completed') | null;
+  muxStatus?: ('idle' | 'active' | 'disconnected' | 'completed' | 'disabled') | null;
   /**
    * When the Mux live stream was created
    */

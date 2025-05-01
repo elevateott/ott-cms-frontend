@@ -171,4 +171,16 @@ export interface IMuxService {
    * @param liveStreamId Mux live stream ID
    */
   resetStreamKey(liveStreamId: string): Promise<{ stream_key: string }>
+
+  /**
+   * Disable a live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  disableLiveStream(liveStreamId: string): Promise<boolean>
+
+  /**
+   * Enable a live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  enableLiveStream(liveStreamId: string): Promise<boolean>
 }

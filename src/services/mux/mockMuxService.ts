@@ -795,4 +795,78 @@ export class MockMuxService implements IMuxService {
       throw new Error('Failed to reset stream key for mock live stream')
     }
   }
+
+  /**
+   * Disable a live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  async disableLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Disabling live stream ${liveStreamId}`,
+      )
+
+      // Check if the live stream exists
+      if (!this._mockLiveStreams.has(liveStreamId)) {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+        return false
+      }
+
+      // Update the live stream status to 'disabled'
+      const liveStream = this._mockLiveStreams.get(liveStreamId)!
+      liveStream.status = 'disabled'
+      this._mockLiveStreams.set(liveStreamId, liveStream)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully disabled live stream ${liveStreamId}`,
+      )
+
+      return true
+    } catch (error) {
+      logError(error, 'MockMuxService.disableLiveStream')
+      return false
+    }
+  }
+
+  /**
+   * Enable a live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  async enableLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Enabling live stream ${liveStreamId}`,
+      )
+
+      // Check if the live stream exists
+      if (!this._mockLiveStreams.has(liveStreamId)) {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+        return false
+      }
+
+      // Update the live stream status to 'idle' (enabled but not active)
+      const liveStream = this._mockLiveStreams.get(liveStreamId)!
+      liveStream.status = 'idle'
+      this._mockLiveStreams.set(liveStreamId, liveStream)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully enabled live stream ${liveStreamId}`,
+      )
+
+      return true
+    } catch (error) {
+      logError(error, 'MockMuxService.enableLiveStream')
+      return false
+    }
+  }
 }
