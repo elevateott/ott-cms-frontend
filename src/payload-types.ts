@@ -79,6 +79,7 @@ export interface Config {
     series: Series;
     filters: Filter;
     carousels: Carousel;
+    'live-events': LiveEvent;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -102,6 +103,7 @@ export interface Config {
     series: SeriesSelect<false> | SeriesSelect<true>;
     filters: FiltersSelect<false> | FiltersSelect<true>;
     carousels: CarouselsSelect<false> | CarouselsSelect<true>;
+    'live-events': LiveEventsSelect<false> | LiveEventsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -1333,6 +1335,90 @@ export interface Carousel {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-events".
+ */
+export interface LiveEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Thumbnail image for this live event
+   */
+  thumbnail?: (string | null) | Media;
+  /**
+   * Record this live stream for on-demand playback after the event
+   */
+  isRecordingEnabled?: boolean | null;
+  /**
+   * Time allowed to reconnect after a disconnect (in seconds, max 300)
+   */
+  reconnectWindow?: number | null;
+  status: 'draft' | 'scheduled' | 'active' | 'completed' | 'cancelled';
+  /**
+   * When this live event is scheduled to start
+   */
+  scheduledStartTime?: string | null;
+  /**
+   * When this live event is scheduled to end
+   */
+  scheduledEndTime?: string | null;
+  /**
+   * Mux Live Stream ID (automatically populated)
+   */
+  muxLiveStreamId?: string | null;
+  /**
+   * Mux Stream Key (automatically populated)
+   */
+  muxStreamKey?: string | null;
+  /**
+   * Mux Playback IDs (automatically populated)
+   */
+  muxPlaybackIds?:
+    | {
+        playbackId?: string | null;
+        policy?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Current status of the Mux live stream
+   */
+  muxStatus?: ('idle' | 'active' | 'disconnected' | 'completed') | null;
+  /**
+   * When the Mux live stream was created
+   */
+  muxCreatedAt?: string | null;
+  /**
+   * Mux Asset ID for the recording (if recording is enabled)
+   */
+  recordingAssetId?: string | null;
+  /**
+   * Optional targets to simulcast this live stream to (RTMP destinations)
+   */
+  simulcastTargets?:
+    | {
+        /**
+         * Name of the simulcast target (e.g., YouTube, Facebook)
+         */
+        name: string;
+        /**
+         * RTMP URL for the simulcast target
+         */
+        url: string;
+        /**
+         * Stream key for the simulcast target
+         */
+        streamKey: string;
+        id?: string | null;
+      }[]
+    | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1550,6 +1636,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'carousels';
         value: string | Carousel;
+      } | null)
+    | ({
+        relationTo: 'live-events';
+        value: string | LiveEvent;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -2172,6 +2262,44 @@ export interface CarouselsSelect<T extends boolean = true> {
   visibleUntil?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-events_select".
+ */
+export interface LiveEventsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  thumbnail?: T;
+  isRecordingEnabled?: T;
+  reconnectWindow?: T;
+  status?: T;
+  scheduledStartTime?: T;
+  scheduledEndTime?: T;
+  muxLiveStreamId?: T;
+  muxStreamKey?: T;
+  muxPlaybackIds?:
+    | T
+    | {
+        playbackId?: T;
+        policy?: T;
+        id?: T;
+      };
+  muxStatus?: T;
+  muxCreatedAt?: T;
+  recordingAssetId?: T;
+  simulcastTargets?:
+    | T
+    | {
+        name?: T;
+        url?: T;
+        streamKey?: T;
+        id?: T;
+      };
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

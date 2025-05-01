@@ -1,4 +1,11 @@
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent, MuxTrack } from '@/types/mux'
+import {
+  MuxUploadRequest,
+  MuxAsset,
+  MuxWebhookEvent,
+  MuxTrack,
+  MuxLiveStream,
+  MuxLiveStreamRequest,
+} from '@/types/mux'
 import { SubtitleTrack } from '@/types/videoAsset'
 
 export interface IMuxService {
@@ -120,4 +127,48 @@ export interface IMuxService {
   ): Promise<{
     id: string
   }>
+
+  /**
+   * Create a Mux live stream
+   * @param options Live stream options
+   */
+  createLiveStream(options?: MuxLiveStreamRequest): Promise<MuxLiveStream>
+
+  /**
+   * Get a Mux live stream by ID
+   * @param liveStreamId Mux live stream ID
+   */
+  getLiveStream(liveStreamId: string): Promise<MuxLiveStream | null>
+
+  /**
+   * Get all Mux live streams
+   * @param limit Maximum number of live streams to return
+   */
+  getAllLiveStreams(limit?: number): Promise<MuxLiveStream[]>
+
+  /**
+   * Delete a Mux live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  deleteLiveStream(liveStreamId: string): Promise<boolean>
+
+  /**
+   * Update a Mux live stream
+   * @param liveStreamId Mux live stream ID
+   * @param data Update data
+   */
+  updateLiveStream(liveStreamId: string, data: any): Promise<any>
+
+  /**
+   * Enable or disable recording for a live stream
+   * @param liveStreamId Mux live stream ID
+   * @param enable Whether to enable or disable recording
+   */
+  setLiveStreamRecording(liveStreamId: string, enable: boolean): Promise<any>
+
+  /**
+   * Reset a live stream's stream key
+   * @param liveStreamId Mux live stream ID
+   */
+  resetStreamKey(liveStreamId: string): Promise<{ stream_key: string }>
 }

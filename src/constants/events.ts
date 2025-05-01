@@ -11,6 +11,16 @@ export const EVENTS = {
   VIDEO_STATUS_UPDATED: 'video:status:updated',
   VIDEO_LIST_REFRESH: 'video:list:refresh',
 
+  // Live Stream events
+  LIVE_STREAM_CREATED: 'live:stream:created',
+  LIVE_STREAM_UPDATED: 'live:stream:updated',
+  LIVE_STREAM_DELETED: 'live:stream:deleted',
+  LIVE_STREAM_ACTIVE: 'live:stream:active',
+  LIVE_STREAM_IDLE: 'live:stream:idle',
+  LIVE_STREAM_DISCONNECTED: 'live:stream:disconnected',
+  LIVE_STREAM_RECORDING: 'live:stream:recording',
+  LIVE_STREAM_STATUS_UPDATED: 'live:stream:status:updated',
+
   // UI events
   MODAL_OPEN: 'modal:open',
   MODAL_CLOSE: 'modal:close',

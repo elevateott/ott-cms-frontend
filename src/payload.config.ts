@@ -33,6 +33,7 @@ import { Creators } from './collections/Creators'
 import { Series } from './collections/Series'
 import { Filters } from './collections/Filters'
 import { Carousels } from './collections/Carousels'
+import { LiveEvents } from './collections/LiveEvents'
 import { csvExportEndpoints } from './endpoints/csvExport'
 
 const filename = fileURLToPath(import.meta.url)
@@ -183,6 +184,7 @@ export default buildConfig({
     Series,
     Filters,
     Carousels,
+    LiveEvents,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [

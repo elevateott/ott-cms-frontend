@@ -79,6 +79,12 @@ export type MuxWebhookEventType =
   | 'video.upload.created'
   | 'video.upload.asset_created'
   | 'video.asset.non_standard_input_detected'
+  | 'video.live_stream.created'
+  | 'video.live_stream.idle'
+  | 'video.live_stream.active'
+  | 'video.live_stream.disconnected'
+  | 'video.live_stream.recording'
+  | 'video.live_stream.connected'
 
 export interface MuxWebhookData {
   id: string
@@ -126,3 +132,33 @@ export interface ApiResponse<T> {
   error?: string
   message?: string
 }
+
+// Mux Live Stream Types
+export interface MuxLiveStreamRequest {
+  playbackPolicy?: ('public' | 'signed')[]
+  newAssetSettings?: MuxAssetSettings
+  reconnectWindow?: number
+  recording?: boolean
+  simulcastTargets?: MuxSimulcastTarget[]
+}
+
+export interface MuxSimulcastTarget {
+  url: string
+  stream_key: string
+  name?: string
+}
+
+export interface MuxLiveStream {
+  id: string
+  stream_key: string
+  status: MuxLiveStreamStatus
+  playback_ids?: MuxPlaybackId[]
+  created_at: string
+  recording?: boolean
+  reconnect_window?: number
+  simulcast_targets?: MuxSimulcastTarget[]
+  active_asset_id?: string
+  recent_asset_ids?: string[]
+}
+
+export type MuxLiveStreamStatus = 'idle' | 'active' | 'disconnected' | 'completed'

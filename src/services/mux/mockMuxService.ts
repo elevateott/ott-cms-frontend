@@ -5,7 +5,15 @@ import { logger } from '@/utils/logger'
  * A mock implementation of the Mux service for testing and development
  */
 
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent, MuxTrack } from '@/types/mux'
+import {
+  MuxUploadRequest,
+  MuxAsset,
+  MuxWebhookEvent,
+  MuxTrack,
+  MuxLiveStream,
+  MuxLiveStreamRequest,
+  MuxSimulcastTarget,
+} from '@/types/mux'
 import { SubtitleTrack } from '@/types/videoAsset'
 import { logError } from '@/utils/errorHandler'
 import { IMuxService } from '@/services/mux/IMuxService'
@@ -533,6 +541,258 @@ export class MockMuxService implements IMuxService {
     } catch (error) {
       logError(error, 'MockMuxService.deleteAllMuxAssets')
       throw new Error('Failed to delete all Mux assets')
+    }
+  }
+
+  // Store mock live streams
+  private _mockLiveStreams: Map<string, MuxLiveStream> = new Map()
+
+  /**
+   * Create a Mux live stream
+   * @param options Live stream options
+   */
+  async createLiveStream(options: MuxLiveStreamRequest = {}): Promise<MuxLiveStream> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Creating live stream with options:`,
+        options,
+      )
+
+      // Generate a mock live stream ID
+      const liveStreamId = `mock-live-stream-${Date.now()}`
+
+      // Generate a mock stream key
+      const streamKey = `mock-stream-key-${Date.now()}`
+
+      // Generate a mock playback ID
+      const playbackId = `mock-playback-${Date.now()}`
+
+      // Create a mock live stream
+      const liveStream: MuxLiveStream = {
+        id: liveStreamId,
+        stream_key: streamKey,
+        status: 'idle',
+        playback_ids: [
+          {
+            id: playbackId,
+            policy: options.playbackPolicy?.[0] || 'public',
+          },
+        ],
+        created_at: new Date().toISOString(),
+        recording: options.recording !== undefined ? options.recording : false,
+        reconnect_window: options.reconnectWindow || 60,
+        simulcast_targets: options.simulcastTargets || [],
+      }
+
+      // Store the live stream in our mock storage
+      this._mockLiveStreams.set(liveStreamId, liveStream)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully created live stream ${liveStreamId}`,
+      )
+
+      return liveStream
+    } catch (error) {
+      logError(error, 'MockMuxService.createLiveStream')
+      throw new Error('Failed to create mock live stream')
+    }
+  }
+
+  /**
+   * Get a Mux live stream by ID
+   * @param liveStreamId Mux live stream ID
+   */
+  async getLiveStream(liveStreamId: string): Promise<MuxLiveStream | null> {
+    try {
+      logger.info({ context: 'muxService' }, `[MockMuxService] Getting live stream ${liveStreamId}`)
+
+      // Return the stored live stream or null
+      const liveStream = this._mockLiveStreams.get(liveStreamId) || null
+
+      if (liveStream) {
+        logger.info({ context: 'muxService' }, `[MockMuxService] Found live stream ${liveStreamId}`)
+      } else {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+      }
+
+      return liveStream
+    } catch (error) {
+      logError(error, 'MockMuxService.getLiveStream')
+      return null
+    }
+  }
+
+  /**
+   * Get all Mux live streams
+   * @param limit Maximum number of live streams to return
+   */
+  async getAllLiveStreams(limit: number = 100): Promise<MuxLiveStream[]> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Getting all live streams (limit: ${limit})`,
+      )
+
+      // Convert the map values to an array and limit the results
+      const liveStreams = Array.from(this._mockLiveStreams.values()).slice(0, limit)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Found ${liveStreams.length} live streams`,
+      )
+
+      return liveStreams
+    } catch (error) {
+      logError(error, 'MockMuxService.getAllLiveStreams')
+      return []
+    }
+  }
+
+  /**
+   * Delete a Mux live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  async deleteLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Deleting live stream ${liveStreamId}`,
+      )
+
+      // Check if the live stream exists
+      if (!this._mockLiveStreams.has(liveStreamId)) {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+        return false
+      }
+
+      // Delete the live stream
+      this._mockLiveStreams.delete(liveStreamId)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully deleted live stream ${liveStreamId}`,
+      )
+
+      return true
+    } catch (error) {
+      logError(error, 'MockMuxService.deleteLiveStream')
+      return false
+    }
+  }
+
+  /**
+   * Update a Mux live stream
+   * @param liveStreamId Mux live stream ID
+   * @param data Update data
+   */
+  async updateLiveStream(liveStreamId: string, data: any): Promise<any> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Updating live stream ${liveStreamId}:`,
+        data,
+      )
+
+      // Check if the live stream exists
+      if (!this._mockLiveStreams.has(liveStreamId)) {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+        throw new Error(`Live stream ${liveStreamId} not found`)
+      }
+
+      // Get the current live stream
+      const liveStream = this._mockLiveStreams.get(liveStreamId)!
+
+      // Update the live stream with the new data
+      const updatedLiveStream = {
+        ...liveStream,
+        ...data,
+      }
+
+      // Store the updated live stream
+      this._mockLiveStreams.set(liveStreamId, updatedLiveStream)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully updated live stream ${liveStreamId}`,
+      )
+
+      return updatedLiveStream
+    } catch (error) {
+      logError(error, 'MockMuxService.updateLiveStream')
+      throw new Error('Failed to update mock live stream')
+    }
+  }
+
+  /**
+   * Enable or disable recording for a live stream
+   * @param liveStreamId Mux live stream ID
+   * @param enable Whether to enable or disable recording
+   */
+  async setLiveStreamRecording(liveStreamId: string, enable: boolean): Promise<any> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] ${enable ? 'Enabling' : 'Disabling'} recording for live stream ${liveStreamId}`,
+      )
+
+      // Update the live stream with the recording setting
+      return await this.updateLiveStream(liveStreamId, {
+        recording: enable,
+      })
+    } catch (error) {
+      logError(error, 'MockMuxService.setLiveStreamRecording')
+      throw new Error(`Failed to ${enable ? 'enable' : 'disable'} recording for mock live stream`)
+    }
+  }
+
+  /**
+   * Reset a live stream's stream key
+   * @param liveStreamId Mux live stream ID
+   */
+  async resetStreamKey(liveStreamId: string): Promise<{ stream_key: string }> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Resetting stream key for live stream ${liveStreamId}`,
+      )
+
+      // Check if the live stream exists
+      if (!this._mockLiveStreams.has(liveStreamId)) {
+        logger.info(
+          { context: 'muxService' },
+          `[MockMuxService] Live stream ${liveStreamId} not found`,
+        )
+        throw new Error(`Live stream ${liveStreamId} not found`)
+      }
+
+      // Generate a new mock stream key
+      const newStreamKey = `mock-stream-key-${Date.now()}`
+
+      // Update the live stream with the new stream key
+      const liveStream = this._mockLiveStreams.get(liveStreamId)!
+      liveStream.stream_key = newStreamKey
+      this._mockLiveStreams.set(liveStreamId, liveStream)
+
+      logger.info(
+        { context: 'muxService' },
+        `[MockMuxService] Successfully reset stream key for live stream ${liveStreamId}`,
+      )
+
+      return { stream_key: newStreamKey }
+    } catch (error) {
+      logError(error, 'MockMuxService.resetStreamKey')
+      throw new Error('Failed to reset stream key for mock live stream')
     }
   }
 }

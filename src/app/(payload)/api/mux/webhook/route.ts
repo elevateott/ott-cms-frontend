@@ -14,6 +14,7 @@ import VideoAssetWebhookHandler from '@/services/mux/videoAssetWebhookHandler'
 import { logError } from '@/utils/errorHandler'
 import { eventService } from '@/services/eventService'
 import { getMuxSettings } from '@/utilities/getMuxSettings'
+import { handleLiveStreamWebhook } from '@/hooks/mux/handleLiveStreamWebhook'
 
 /**
  * POST /api/mux/webhook
@@ -227,31 +228,52 @@ export async function POST(req: NextRequest) {
 
     // Handle the event
     try {
-      logger.info(
-        { context: 'webhook/route' },
-        '🔄 Calling webhookHandler.handleEvent with event type:',
-        event.type,
-      )
-
-      // Check if the handleEvent method exists
-      if (typeof webhookHandler.handleEvent !== 'function') {
-        logger.error(
+      // Check if this is a live stream event
+      if (event.type.includes('live_stream')) {
+        logger.info(
           { context: 'webhook/route' },
-          '❌ webhookHandler.handleEvent is not a function',
-          { webhookHandlerMethods: Object.keys(webhookHandler) },
+          '🔄 Detected live stream event, calling handleLiveStreamWebhook with event type:',
+          event.type,
         )
-        return createErrorResponse('Webhook handler implementation error', 500)
+
+        // Handle live stream event
+        await handleLiveStreamWebhook(event)
+
+        logger.info(
+          { context: 'webhook/route' },
+          '✅ Successfully handled live stream webhook event',
+        )
+      } else {
+        // Handle video asset event
+        logger.info(
+          { context: 'webhook/route' },
+          '🔄 Calling webhookHandler.handleEvent with event type:',
+          event.type,
+        )
+
+        // Check if the handleEvent method exists
+        if (typeof webhookHandler.handleEvent !== 'function') {
+          logger.error(
+            { context: 'webhook/route' },
+            '❌ webhookHandler.handleEvent is not a function',
+            { webhookHandlerMethods: Object.keys(webhookHandler) },
+          )
+          return createErrorResponse('Webhook handler implementation error', 500)
+        }
+
+        // Call the handleEvent method
+        logger.info(
+          { context: 'webhook/route' },
+          '🔍 DEBUG: About to call webhookHandler.handleEvent',
+        )
+
+        await webhookHandler.handleEvent(event)
+
+        logger.info(
+          { context: 'webhook/route' },
+          '✅ Successfully handled video asset webhook event',
+        )
       }
-
-      // Call the handleEvent method
-      logger.info(
-        { context: 'webhook/route' },
-        '🔍 DEBUG: About to call webhookHandler.handleEvent',
-      )
-
-      await webhookHandler.handleEvent(event)
-
-      logger.info({ context: 'webhook/route' }, '✅ Successfully handled webhook event')
     } catch (handlerError) {
       logger.error(
         { context: 'webhook/route', error: handlerError },

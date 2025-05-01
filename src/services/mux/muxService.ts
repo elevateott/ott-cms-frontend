@@ -6,7 +6,15 @@ import { logger } from '@/utils/logger'
  */
 
 import Mux from '@mux/mux-node'
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent, MuxTrack } from '@/types/mux'
+import {
+  MuxUploadRequest,
+  MuxAsset,
+  MuxWebhookEvent,
+  MuxTrack,
+  MuxLiveStream,
+  MuxLiveStreamRequest,
+  MuxSimulcastTarget,
+} from '@/types/mux'
 import { SubtitleTrack } from '@/types/videoAsset'
 import { logError } from '@/utils/errorHandler'
 import { IMuxService } from '@/services/mux/IMuxService'
@@ -1243,6 +1251,329 @@ export class MuxService implements IMuxService {
     } catch (error) {
       logger.error({ context: 'muxService' }, 'Error deleting all Mux assets:', error)
       throw new Error('Failed to delete all Mux assets')
+    }
+  }
+
+  /**
+   * Create a Mux live stream
+   * @param options Live stream options
+   */
+  async createLiveStream(options: MuxLiveStreamRequest = {}): Promise<MuxLiveStream> {
+    try {
+      logger.info({ context: 'muxService' }, 'Creating Mux live stream with options:', options)
+
+      // Prepare the request body
+      const requestBody: any = {
+        playback_policy: options.playbackPolicy || ['public'],
+        new_asset_settings: {
+          playback_policy: options.newAssetSettings?.playbackPolicy || ['public'],
+        },
+      }
+
+      // Add optional parameters if provided
+      if (options.reconnectWindow !== undefined) {
+        requestBody.reconnect_window = options.reconnectWindow
+      }
+
+      if (options.recording !== undefined) {
+        requestBody.recording = options.recording
+      }
+
+      if (options.simulcastTargets && options.simulcastTargets.length > 0) {
+        requestBody.simulcast_targets = options.simulcastTargets
+      }
+
+      // Make the API request
+      const response = await this.video._client.post('/video/v1/live-streams', requestBody)
+
+      if (!response || !response.data) {
+        throw new Error('Invalid response from Mux API')
+      }
+
+      // Transform the response into our MuxLiveStream type
+      return {
+        id: response.data.id,
+        stream_key: response.data.stream_key,
+        status: response.data.status,
+        playback_ids: response.data.playback_ids,
+        created_at: response.data.created_at,
+        recording: response.data.recording,
+        reconnect_window: response.data.reconnect_window,
+        simulcast_targets: response.data.simulcast_targets,
+        active_asset_id: response.data.active_asset_id,
+        recent_asset_ids: response.data.recent_asset_ids,
+      } as MuxLiveStream
+    } catch (error) {
+      logger.error({ context: 'muxService' }, 'Error creating Mux live stream:', error)
+      throw new Error(
+        `Failed to create Mux live stream: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  /**
+   * Get a Mux live stream by ID
+   * @param liveStreamId Mux live stream ID
+   */
+  async getLiveStream(liveStreamId: string): Promise<MuxLiveStream | null> {
+    try {
+      logger.info({ context: 'muxService' }, `Fetching Mux live stream ${liveStreamId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before fetching Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Get the live stream directly using the liveStreamId
+      const response = await this.video._client.get(`/video/v1/live-streams/${liveStreamId}`)
+
+      if (!response || !response.data) {
+        return null
+      }
+
+      // Transform the response into our MuxLiveStream type
+      return {
+        id: response.data.id,
+        stream_key: response.data.stream_key,
+        status: response.data.status,
+        playback_ids: response.data.playback_ids,
+        created_at: response.data.created_at,
+        recording: response.data.recording,
+        reconnect_window: response.data.reconnect_window,
+        simulcast_targets: response.data.simulcast_targets,
+        active_asset_id: response.data.active_asset_id,
+        recent_asset_ids: response.data.recent_asset_ids,
+      } as MuxLiveStream
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error fetching Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      return null
+    }
+  }
+
+  /**
+   * Get all Mux live streams
+   * @param limit Maximum number of live streams to return
+   */
+  async getAllLiveStreams(limit: number = 100): Promise<MuxLiveStream[]> {
+    try {
+      logger.info({ context: 'muxService' }, `Fetching up to ${limit} Mux live streams`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before fetching Mux live streams`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Get live streams directly with a single request and a reasonable limit
+      const response = await this.video._client.get('/video/v1/live-streams', {
+        params: {
+          limit,
+          page: 1, // Always start with page 1
+        },
+      })
+
+      if (!response || !response.data) {
+        logger.info({ context: 'muxService' }, 'No live streams found or invalid response format')
+        return []
+      }
+
+      if (!Array.isArray(response.data)) {
+        logger.info({ context: 'muxService' }, 'Invalid response format - expected an array')
+        return []
+      }
+
+      const liveStreams = response.data.map((stream: any) => ({
+        id: stream.id,
+        stream_key: stream.stream_key,
+        status: stream.status,
+        playback_ids: stream.playback_ids,
+        created_at: stream.created_at,
+        recording: stream.recording,
+        reconnect_window: stream.reconnect_window,
+        simulcast_targets: stream.simulcast_targets,
+        active_asset_id: stream.active_asset_id,
+        recent_asset_ids: stream.recent_asset_ids,
+      })) as MuxLiveStream[]
+
+      logger.info({ context: 'muxService' }, `Found ${liveStreams.length} Mux live streams`)
+      return liveStreams
+    } catch (error) {
+      logger.error({ context: 'muxService' }, 'Error fetching Mux live streams:', error)
+      return []
+    }
+  }
+
+  /**
+   * Delete a Mux live stream
+   * @param liveStreamId Mux live stream ID
+   */
+  async deleteLiveStream(liveStreamId: string): Promise<boolean> {
+    try {
+      logger.info({ context: 'muxService' }, `Deleting Mux live stream ${liveStreamId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before deleting Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Delete the live stream
+      await this.video._client.delete(`/video/v1/live-streams/${liveStreamId}`)
+
+      logger.info({ context: 'muxService' }, `Successfully deleted Mux live stream ${liveStreamId}`)
+      return true
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error deleting Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      return false
+    }
+  }
+
+  /**
+   * Update a Mux live stream
+   * @param liveStreamId Mux live stream ID
+   * @param data Update data
+   */
+  async updateLiveStream(liveStreamId: string, data: any): Promise<any> {
+    try {
+      logger.info({ context: 'muxService' }, `Updating Mux live stream ${liveStreamId}:`, data)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before updating Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Update the live stream
+      const response = await this.video._client.put(`/video/v1/live-streams/${liveStreamId}`, data)
+
+      logger.info({ context: 'muxService' }, `Successfully updated Mux live stream ${liveStreamId}`)
+      return response.data
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error updating Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      throw new Error(
+        `Failed to update Mux live stream: ${error instanceof Error ? error.message : String(error)}`,
+      )
+    }
+  }
+
+  /**
+   * Enable or disable recording for a live stream
+   * @param liveStreamId Mux live stream ID
+   * @param enable Whether to enable or disable recording
+   */
+  async setLiveStreamRecording(liveStreamId: string, enable: boolean): Promise<any> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `${enable ? 'Enabling' : 'Disabling'} recording for Mux live stream ${liveStreamId}`,
+      )
+
+      // Update the live stream with the recording setting
+      return await this.updateLiveStream(liveStreamId, {
+        recording: enable,
+      })
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error ${enable ? 'enabling' : 'disabling'} recording for Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      throw new Error(
+        `Failed to ${enable ? 'enable' : 'disable'} recording for Mux live stream: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
+  }
+
+  /**
+   * Reset a live stream's stream key
+   * @param liveStreamId Mux live stream ID
+   */
+  async resetStreamKey(liveStreamId: string): Promise<{ stream_key: string }> {
+    try {
+      logger.info(
+        { context: 'muxService' },
+        `Resetting stream key for Mux live stream ${liveStreamId}`,
+      )
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before resetting stream key for Mux live stream ${liveStreamId}`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Reset the stream key
+      const response = await this.video._client.post(
+        `/video/v1/live-streams/${liveStreamId}/reset-stream-key`,
+      )
+
+      logger.info(
+        { context: 'muxService' },
+        `Successfully reset stream key for Mux live stream ${liveStreamId}`,
+      )
+      return {
+        stream_key: response.data.stream_key,
+      }
+    } catch (error) {
+      logger.error(
+        { context: 'muxService' },
+        `Error resetting stream key for Mux live stream ${liveStreamId}:`,
+        error,
+      )
+      throw new Error(
+        `Failed to reset stream key for Mux live stream: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
     }
   }
 }
