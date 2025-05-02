@@ -592,6 +592,18 @@ export class MockMuxService implements IMuxService {
         audio_bitrate: 128,
         last_seen_time: new Date().toISOString(),
         errors: [],
+        // Additional health metrics
+        viewer_count: 0,
+        dropped_frames: 0,
+        recent_input_video_bitrate: 5000,
+        recent_input_video_frame_rate: 30,
+        recent_input_audio_bitrate: 128,
+        recent_input_height: 1080,
+        recent_input_width: 1920,
+        recent_input_last_seen: new Date().toISOString(),
+        active_input_connection: {
+          viewers: 0,
+        },
       }
 
       // Store the live stream in our mock storage
@@ -633,6 +645,18 @@ export class MockMuxService implements IMuxService {
           liveStream.audio_bitrate = 128
           liveStream.last_seen_time = new Date().toISOString()
           liveStream.errors = []
+          // Additional health metrics
+          liveStream.viewer_count = Math.floor(Math.random() * 100) // Random viewer count between 0-99
+          liveStream.dropped_frames = 0
+          liveStream.recent_input_video_bitrate = 5000
+          liveStream.recent_input_video_frame_rate = 30
+          liveStream.recent_input_audio_bitrate = 128
+          liveStream.recent_input_height = 1080
+          liveStream.recent_input_width = 1920
+          liveStream.recent_input_last_seen = new Date().toISOString()
+          liveStream.active_input_connection = {
+            viewers: Math.floor(Math.random() * 100), // Random viewer count between 0-99
+          }
         } else if (liveStream.status === 'disconnected') {
           liveStream.stream_health = 'degraded'
           liveStream.video_bitrate = 2000
@@ -642,6 +666,18 @@ export class MockMuxService implements IMuxService {
           liveStream.audio_bitrate = 96
           liveStream.last_seen_time = new Date(Date.now() - 60000).toISOString() // 1 minute ago
           liveStream.errors = [{ message: 'Stream connection unstable' }]
+          // Additional health metrics
+          liveStream.viewer_count = Math.floor(Math.random() * 50) // Random viewer count between 0-49
+          liveStream.dropped_frames = Math.floor(Math.random() * 1000) // Random dropped frames
+          liveStream.recent_input_video_bitrate = 2000
+          liveStream.recent_input_video_frame_rate = 15
+          liveStream.recent_input_audio_bitrate = 96
+          liveStream.recent_input_height = 720
+          liveStream.recent_input_width = 1280
+          liveStream.recent_input_last_seen = new Date(Date.now() - 60000).toISOString() // 1 minute ago
+          liveStream.active_input_connection = {
+            viewers: Math.floor(Math.random() * 50), // Random viewer count between 0-49
+          }
         } else if (liveStream.status === 'idle') {
           liveStream.stream_health = undefined
           liveStream.video_bitrate = undefined
@@ -651,6 +687,16 @@ export class MockMuxService implements IMuxService {
           liveStream.audio_bitrate = undefined
           liveStream.last_seen_time = undefined
           liveStream.errors = []
+          // Additional health metrics
+          liveStream.viewer_count = 0
+          liveStream.dropped_frames = 0
+          liveStream.recent_input_video_bitrate = undefined
+          liveStream.recent_input_video_frame_rate = undefined
+          liveStream.recent_input_audio_bitrate = undefined
+          liveStream.recent_input_height = undefined
+          liveStream.recent_input_width = undefined
+          liveStream.recent_input_last_seen = undefined
+          liveStream.active_input_connection = undefined
         }
       } else {
         logger.info(

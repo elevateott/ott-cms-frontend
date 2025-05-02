@@ -1311,6 +1311,16 @@ export class MuxService implements IMuxService {
         audio_bitrate: response.data.audio_bitrate,
         last_seen_time: response.data.last_seen_time,
         errors: response.data.errors,
+        // Additional health metrics
+        viewer_count: response.data.active_input_connection?.viewers,
+        dropped_frames: response.data.dropped_frames,
+        recent_input_video_bitrate: response.data.recent_input_video_bitrate,
+        recent_input_video_frame_rate: response.data.recent_input_video_frame_rate,
+        recent_input_audio_bitrate: response.data.recent_input_audio_bitrate,
+        recent_input_height: response.data.recent_input_height,
+        recent_input_width: response.data.recent_input_width,
+        recent_input_last_seen: response.data.recent_input_last_seen,
+        active_input_connection: response.data.active_input_connection,
       } as MuxLiveStream
     } catch (error) {
       logger.error({ context: 'muxService' }, 'Error creating Mux live stream:', error)
@@ -1369,6 +1379,16 @@ export class MuxService implements IMuxService {
         audio_bitrate: response.data.audio_bitrate,
         last_seen_time: response.data.last_seen_time,
         errors: response.data.errors,
+        // Additional health metrics
+        viewer_count: response.data.active_input_connection?.viewers,
+        dropped_frames: response.data.dropped_frames,
+        recent_input_video_bitrate: response.data.recent_input_video_bitrate,
+        recent_input_video_frame_rate: response.data.recent_input_video_frame_rate,
+        recent_input_audio_bitrate: response.data.recent_input_audio_bitrate,
+        recent_input_height: response.data.recent_input_height,
+        recent_input_width: response.data.recent_input_width,
+        recent_input_last_seen: response.data.recent_input_last_seen,
+        active_input_connection: response.data.active_input_connection,
       } as MuxLiveStream
     } catch (error) {
       logger.error(
@@ -1439,6 +1459,16 @@ export class MuxService implements IMuxService {
         audio_bitrate: stream.audio_bitrate,
         last_seen_time: stream.last_seen_time,
         errors: stream.errors,
+        // Additional health metrics
+        viewer_count: stream.active_input_connection?.viewers,
+        dropped_frames: stream.dropped_frames,
+        recent_input_video_bitrate: stream.recent_input_video_bitrate,
+        recent_input_video_frame_rate: stream.recent_input_video_frame_rate,
+        recent_input_audio_bitrate: stream.recent_input_audio_bitrate,
+        recent_input_height: stream.recent_input_height,
+        recent_input_width: stream.recent_input_width,
+        recent_input_last_seen: stream.recent_input_last_seen,
+        active_input_connection: stream.active_input_connection,
       })) as MuxLiveStream[]
 
       logger.info({ context: 'muxService' }, `Found ${liveStreams.length} Mux live streams`)

@@ -5,11 +5,11 @@ import { logger } from '@/utils/logger'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ): Promise<NextResponse> {
   try {
     const { id } = params
-    
+
     if (!id) {
       return NextResponse.json({ message: 'Live event ID is required' }, { status: 400 })
     }
@@ -30,7 +30,10 @@ export async function GET(
     }
 
     if (!liveEvent.muxLiveStreamId) {
-      return NextResponse.json({ message: 'Live event has no associated Mux live stream' }, { status: 400 })
+      return NextResponse.json(
+        { message: 'Live event has no associated Mux live stream' },
+        { status: 400 },
+      )
     }
 
     // Get Mux service
@@ -54,16 +57,30 @@ export async function GET(
       last_seen_time: liveStream.last_seen_time,
       errors: liveStream.errors || [],
       status: liveStream.status,
+      // Add viewer count if available (from Mux Data or other sources)
+      viewer_count: liveStream.viewer_count,
+      // Add dropped frames if available
+      dropped_frames: liveStream.dropped_frames,
+      // Include any additional metrics that might be available
+      recent_input_video_bitrate: liveStream.recent_input_video_bitrate,
+      recent_input_video_frame_rate: liveStream.recent_input_video_frame_rate,
+      recent_input_audio_bitrate: liveStream.recent_input_audio_bitrate,
+      recent_input_height: liveStream.recent_input_height,
+      recent_input_width: liveStream.recent_input_width,
+      recent_input_last_seen: liveStream.recent_input_last_seen,
     }
 
-    logger.info({ context: 'health-stats' }, `Successfully fetched health stats for live event ${id}`)
+    logger.info(
+      { context: 'health-stats' },
+      `Successfully fetched health stats for live event ${id}`,
+    )
 
     return NextResponse.json(healthData)
   } catch (error) {
     logger.error({ context: 'health-stats' }, 'Error fetching health stats:', error)
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'An unknown error occurred' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

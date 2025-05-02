@@ -183,6 +183,18 @@ export interface MuxLiveStream {
   audio_bitrate?: number
   last_seen_time?: string
   errors?: Array<{ message: string; code?: string }>
+  // Additional health metrics
+  viewer_count?: number
+  dropped_frames?: number
+  recent_input_video_bitrate?: number
+  recent_input_video_frame_rate?: number
+  recent_input_audio_bitrate?: number
+  recent_input_height?: number
+  recent_input_width?: number
+  recent_input_last_seen?: string
+  active_input_connection?: {
+    viewers?: number
+  }
 }
 
 export type MuxLiveStreamStatus = 'idle' | 'active' | 'disconnected' | 'completed'
