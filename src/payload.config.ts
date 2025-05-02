@@ -38,6 +38,7 @@ import { Recordings } from './collections/Recordings'
 import { LiveEventRegistrations } from './collections/LiveEventRegistrations'
 import { csvExportEndpoints } from './endpoints/csvExport'
 import { sendEventReminders } from './jobs/sendEventReminders'
+import { monitorDisconnectedStreams } from './jobs/monitorDisconnectedStreams'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -235,6 +236,13 @@ export default buildConfig({
         handler: sendEventReminders,
         cronExpression: '*/5 * * * *', // Run every 5 minutes
         description: 'Send reminder emails to registrants before live events start',
+      },
+      {
+        name: 'monitorDisconnectedStreams',
+        handler: monitorDisconnectedStreams,
+        cronExpression: '*/1 * * * *', // Run every minute
+        description:
+          'Monitor disconnected live streams and auto-disable them if they exceed the reconnect window',
       },
     ],
   },

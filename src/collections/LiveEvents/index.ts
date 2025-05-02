@@ -39,6 +39,7 @@ export const LiveEvents: CollectionConfig = {
       BeforeList: '@/admin/components/LiveStreamStatusLegend',
       BeforeDuplicate: '@/components/panels/StreamActionsPanel',
       BeforeEditForm: [
+        '@/components/StreamStatusBanner',
         '@/components/panels/StreamActionsPanel',
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
@@ -400,6 +401,17 @@ export const LiveEvents: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      name: 'disconnectedAt',
+      type: 'date',
+      label: 'Disconnected',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'When the live stream was last disconnected',
+        condition: (data) => data?.useExternalHlsUrl !== true && data?.muxStatus === 'disconnected',
+      },
     },
     {
       name: 'endedAt',

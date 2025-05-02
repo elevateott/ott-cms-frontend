@@ -15,7 +15,7 @@ export async function handleLiveStreamWebhook(event: MuxWebhookEvent): Promise<v
     const timestamp = new Date().toISOString()
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Processing live stream webhook event: ${event.type}`
+      `🔍 DEBUG [${timestamp}] Processing live stream webhook event: ${event.type}`,
     )
 
     // Get the live stream ID from the event
@@ -24,7 +24,7 @@ export async function handleLiveStreamWebhook(event: MuxWebhookEvent): Promise<v
     if (!liveStreamId) {
       logger.warn(
         { context: 'liveStreamWebhook' },
-        `🔍 DEBUG [${timestamp}] Missing live stream ID in webhook event`
+        `🔍 DEBUG [${timestamp}] Missing live stream ID in webhook event`,
       )
       return
     }
@@ -45,7 +45,7 @@ export async function handleLiveStreamWebhook(event: MuxWebhookEvent): Promise<v
     if (!liveEvents.docs || liveEvents.docs.length === 0) {
       logger.warn(
         { context: 'liveStreamWebhook' },
-        `🔍 DEBUG [${timestamp}] No live event found for Mux live stream ID: ${liveStreamId}`
+        `🔍 DEBUG [${timestamp}] No live event found for Mux live stream ID: ${liveStreamId}`,
       )
       return
     }
@@ -53,7 +53,7 @@ export async function handleLiveStreamWebhook(event: MuxWebhookEvent): Promise<v
     const liveEvent = liveEvents.docs[0]
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Found live event: ${liveEvent.id} (${liveEvent.title})`
+      `🔍 DEBUG [${timestamp}] Found live event: ${liveEvent.id} (${liveEvent.title})`,
     )
 
     // Handle different event types
@@ -76,13 +76,13 @@ export async function handleLiveStreamWebhook(event: MuxWebhookEvent): Promise<v
       default:
         logger.info(
           { context: 'liveStreamWebhook' },
-          `🔍 DEBUG [${timestamp}] Unhandled live stream event type: ${event.type}`
+          `🔍 DEBUG [${timestamp}] Unhandled live stream event type: ${event.type}`,
         )
     }
   } catch (error) {
     logger.error(
       { context: 'liveStreamWebhook', error },
-      'Error handling live stream webhook event'
+      'Error handling live stream webhook event',
     )
   }
 }
@@ -90,12 +90,16 @@ export async function handleLiveStreamWebhook(event: MuxWebhookEvent): Promise<v
 /**
  * Handle live stream idle event
  */
-async function handleLiveStreamIdle(payload: any, liveEvent: any, event: MuxWebhookEvent): Promise<void> {
+async function handleLiveStreamIdle(
+  payload: any,
+  liveEvent: any,
+  event: MuxWebhookEvent,
+): Promise<void> {
   try {
     const timestamp = new Date().toISOString()
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Handling live stream idle event for ${liveEvent.id}`
+      `🔍 DEBUG [${timestamp}] Handling live stream idle event for ${liveEvent.id}`,
     )
 
     // Update the live event with the idle status
@@ -117,34 +121,36 @@ async function handleLiveStreamIdle(payload: any, liveEvent: any, event: MuxWebh
 
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to idle status`
+      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to idle status`,
     )
   } catch (error) {
-    logger.error(
-      { context: 'liveStreamWebhook', error },
-      'Error handling live stream idle event'
-    )
+    logger.error({ context: 'liveStreamWebhook', error }, 'Error handling live stream idle event')
   }
 }
 
 /**
  * Handle live stream active event
  */
-async function handleLiveStreamActive(payload: any, liveEvent: any, event: MuxWebhookEvent): Promise<void> {
+async function handleLiveStreamActive(
+  payload: any,
+  liveEvent: any,
+  event: MuxWebhookEvent,
+): Promise<void> {
   try {
     const timestamp = new Date().toISOString()
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Handling live stream active event for ${liveEvent.id}`
+      `🔍 DEBUG [${timestamp}] Handling live stream active event for ${liveEvent.id}`,
     )
 
-    // Update the live event with the active status
+    // Update the live event with the active status and clear disconnectedAt
     await payload.update({
       collection: 'live-events',
       id: liveEvent.id,
       data: {
         muxStatus: 'active',
         status: 'active', // Also update the document status
+        disconnectedAt: null, // Clear the disconnection timestamp when stream recovers
       },
     })
 
@@ -158,33 +164,35 @@ async function handleLiveStreamActive(payload: any, liveEvent: any, event: MuxWe
 
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to active status`
+      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to active status`,
     )
   } catch (error) {
-    logger.error(
-      { context: 'liveStreamWebhook', error },
-      'Error handling live stream active event'
-    )
+    logger.error({ context: 'liveStreamWebhook', error }, 'Error handling live stream active event')
   }
 }
 
 /**
  * Handle live stream disconnected event
  */
-async function handleLiveStreamDisconnected(payload: any, liveEvent: any, event: MuxWebhookEvent): Promise<void> {
+async function handleLiveStreamDisconnected(
+  payload: any,
+  liveEvent: any,
+  event: MuxWebhookEvent,
+): Promise<void> {
   try {
     const timestamp = new Date().toISOString()
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Handling live stream disconnected event for ${liveEvent.id}`
+      `🔍 DEBUG [${timestamp}] Handling live stream disconnected event for ${liveEvent.id}`,
     )
 
-    // Update the live event with the disconnected status
+    // Update the live event with the disconnected status and timestamp
     await payload.update({
       collection: 'live-events',
       id: liveEvent.id,
       data: {
         muxStatus: 'disconnected',
+        disconnectedAt: new Date().toISOString(),
       },
     })
 
@@ -198,12 +206,12 @@ async function handleLiveStreamDisconnected(payload: any, liveEvent: any, event:
 
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to disconnected status`
+      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to disconnected status`,
     )
   } catch (error) {
     logger.error(
       { context: 'liveStreamWebhook', error },
-      'Error handling live stream disconnected event'
+      'Error handling live stream disconnected event',
     )
   }
 }
@@ -211,12 +219,16 @@ async function handleLiveStreamDisconnected(payload: any, liveEvent: any, event:
 /**
  * Handle live stream recording event
  */
-async function handleLiveStreamRecording(payload: any, liveEvent: any, event: MuxWebhookEvent): Promise<void> {
+async function handleLiveStreamRecording(
+  payload: any,
+  liveEvent: any,
+  event: MuxWebhookEvent,
+): Promise<void> {
   try {
     const timestamp = new Date().toISOString()
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Handling live stream recording event for ${liveEvent.id}`
+      `🔍 DEBUG [${timestamp}] Handling live stream recording event for ${liveEvent.id}`,
     )
 
     // Get the recording asset ID from the event
@@ -225,7 +237,7 @@ async function handleLiveStreamRecording(payload: any, liveEvent: any, event: Mu
     if (!recordingAssetId) {
       logger.warn(
         { context: 'liveStreamWebhook' },
-        `🔍 DEBUG [${timestamp}] Missing recording asset ID in recording event`
+        `🔍 DEBUG [${timestamp}] Missing recording asset ID in recording event`,
       )
       return
     }
@@ -249,12 +261,12 @@ async function handleLiveStreamRecording(payload: any, liveEvent: any, event: Mu
 
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} with recording asset ID: ${recordingAssetId}`
+      `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} with recording asset ID: ${recordingAssetId}`,
     )
   } catch (error) {
     logger.error(
       { context: 'liveStreamWebhook', error },
-      'Error handling live stream recording event'
+      'Error handling live stream recording event',
     )
   }
 }
@@ -262,12 +274,16 @@ async function handleLiveStreamRecording(payload: any, liveEvent: any, event: Mu
 /**
  * Handle live stream connected event
  */
-async function handleLiveStreamConnected(payload: any, liveEvent: any, event: MuxWebhookEvent): Promise<void> {
+async function handleLiveStreamConnected(
+  payload: any,
+  liveEvent: any,
+  event: MuxWebhookEvent,
+): Promise<void> {
   try {
     const timestamp = new Date().toISOString()
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Handling live stream connected event for ${liveEvent.id}`
+      `🔍 DEBUG [${timestamp}] Handling live stream connected event for ${liveEvent.id}`,
     )
 
     // Emit event to notify clients
@@ -280,12 +296,12 @@ async function handleLiveStreamConnected(payload: any, liveEvent: any, event: Mu
 
     logger.info(
       { context: 'liveStreamWebhook' },
-      `🔍 DEBUG [${timestamp}] Successfully processed connected event for live event ${liveEvent.id}`
+      `🔍 DEBUG [${timestamp}] Successfully processed connected event for live event ${liveEvent.id}`,
     )
   } catch (error) {
     logger.error(
       { context: 'liveStreamWebhook', error },
-      'Error handling live stream connected event'
+      'Error handling live stream connected event',
     )
   }
 }
