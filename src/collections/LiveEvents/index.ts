@@ -46,6 +46,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
         '@/components/panels/StreamSetupPanel',
+        '@/components/panels/OBSConfigPanel',
         '@/components/panels/PlaybackIntegrationPanel',
         '@/components/panels/PlaybackURLPanel',
         '@/components/panels/RecordingsPanel',
