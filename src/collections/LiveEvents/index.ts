@@ -34,6 +34,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
         '@/components/panels/StreamSetupPanel',
+        '@/components/panels/PlaybackIntegrationPanel',
         '@/components/panels/PlaybackURLPanel',
         '@/components/panels/ExternalHlsPreviewPlayer',
       ],
@@ -351,8 +352,20 @@ export const LiveEvents: CollectionConfig = {
     ...createCollectionLoggingHooks('live-events'),
     // Add hooks to create and update Mux live stream
     beforeChange: [handleExternalHlsUrl, createLiveStream, updateLiveStream],
-    // Add hook to fetch the latest status from Mux
-    afterRead: [fetchLiveStreamStatus],
+    // Add hook to fetch the latest status from Mux and compute effectiveHlsUrl
+    afterRead: [
+      fetchLiveStreamStatus,
+      async ({ doc }) => {
+        // Import the getPlaybackUrl function
+        const { getPlaybackUrl } = await import('@/utils/getPlaybackUrl')
+
+        // Add the effectiveHlsUrl field to the document
+        return {
+          ...doc,
+          effectiveHlsUrl: getPlaybackUrl(doc),
+        }
+      },
+    ],
   },
 }
 
