@@ -89,6 +89,48 @@ const EmailSettings: GlobalConfig = {
           ],
         },
         {
+          label: 'Notifications',
+          description: 'Configure system notification settings',
+          fields: [
+            {
+              name: 'adminNotificationEmails',
+              label: 'Admin Notification Emails',
+              type: 'text',
+              admin: {
+                description:
+                  'Comma-separated list of email addresses to receive system notifications',
+              },
+            },
+            {
+              name: 'notifyOnStreamActive',
+              label: 'Notify When Stream Goes Live',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: {
+                description: 'Send email notifications when a stream becomes active',
+              },
+            },
+            {
+              name: 'notifyOnStreamDisconnected',
+              label: 'Notify When Stream Disconnects',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: {
+                description: 'Send email notifications when a stream disconnects',
+              },
+            },
+            {
+              name: 'notifyOnRecordingReady',
+              label: 'Notify When Recording is Ready',
+              type: 'checkbox',
+              defaultValue: true,
+              admin: {
+                description: 'Send email notifications when a recording is ready',
+              },
+            },
+          ],
+        },
+        {
           label: 'Test',
           description: 'Test email configuration',
           fields: [

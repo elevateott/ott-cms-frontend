@@ -5,6 +5,8 @@ import { EVENTS } from '@/constants/events'
 import { eventService } from '@/services/eventService'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
+import { createNotification } from '@/utilities/createNotification'
+import { sendNotificationEmail } from '@/utilities/sendNotificationEmail'
 
 /**
  * Handle Mux live stream webhook events
@@ -162,6 +164,35 @@ async function handleLiveStreamActive(
       timestamp: Date.now(),
     })
 
+    // Create notification
+    await createNotification({
+      title: 'Stream is Live!',
+      message: `Live event "${liveEvent.title}" is now active and broadcasting.`,
+      type: 'success',
+      relatedLiveEventId: liveEvent.id,
+    })
+
+    // Get email settings to check if we should send email notifications
+    const emailSettings = await payload.findGlobal({
+      slug: 'email-settings',
+    })
+
+    // Send email notification if enabled
+    if (emailSettings?.notifyOnStreamActive) {
+      await sendNotificationEmail({
+        subject: `🔴 LIVE: ${liveEvent.title}`,
+        message: `
+          <p>Your live event <strong>${liveEvent.title}</strong> is now active and broadcasting.</p>
+          <p>Stream started at: ${new Date().toLocaleString()}</p>
+          <p>
+            <a href="${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/live-events/${liveEvent.id}" style="display: inline-block; padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 4px;">
+              View in Admin Dashboard
+            </a>
+          </p>
+        `,
+      })
+    }
+
     logger.info(
       { context: 'liveStreamWebhook' },
       `🔍 DEBUG [${timestamp}] Successfully updated live event ${liveEvent.id} to active status`,
@@ -203,6 +234,40 @@ async function handleLiveStreamDisconnected(
       status: 'disconnected',
       timestamp: Date.now(),
     })
+
+    // Create notification
+    await createNotification({
+      title: 'Stream Disconnected',
+      message: `Live event "${liveEvent.title}" has disconnected. Attempting to reconnect...`,
+      type: 'warning',
+      relatedLiveEventId: liveEvent.id,
+    })
+
+    // Get email settings to check if we should send email notifications
+    const emailSettings = await payload.findGlobal({
+      slug: 'email-settings',
+    })
+
+    // Send email notification if enabled
+    if (emailSettings?.notifyOnStreamDisconnected) {
+      // Get the reconnect window from the live event (default to 60 seconds)
+      const reconnectWindow = liveEvent.reconnectWindow || 60
+
+      await sendNotificationEmail({
+        subject: `⚠️ Stream Disconnected: ${liveEvent.title}`,
+        message: `
+          <p>Your live event <strong>${liveEvent.title}</strong> has disconnected.</p>
+          <p>The system will attempt to reconnect for the next ${reconnectWindow} seconds.</p>
+          <p>Disconnected at: ${new Date().toLocaleString()}</p>
+          <p>
+            <a href="${process.env.NEXT_PUBLIC_SERVER_URL}/admin/collections/live-events/${liveEvent.id}" style="display: inline-block; padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 4px;">
+              View in Admin Dashboard
+            </a>
+          </p>
+          <p>If the stream doesn't reconnect within the reconnect window, it will be automatically disabled.</p>
+        `,
+      })
+    }
 
     logger.info(
       { context: 'liveStreamWebhook' },

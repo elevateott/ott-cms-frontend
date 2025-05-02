@@ -36,6 +36,7 @@ import { Carousels } from './collections/Carousels'
 import { LiveEvents } from './collections/LiveEvents'
 import { Recordings } from './collections/Recordings'
 import { LiveEventRegistrations } from './collections/LiveEventRegistrations'
+import { Notifications } from './collections/Notifications'
 import { csvExportEndpoints } from './endpoints/csvExport'
 import { sendEventReminders } from './jobs/sendEventReminders'
 import { monitorDisconnectedStreams } from './jobs/monitorDisconnectedStreams'
@@ -139,6 +140,8 @@ export default buildConfig({
       beforeDashboard: ['@/components/BeforeDashboard'],
       // Add our custom event provider to the admin panel
       providers: ['@/components/AdminEventProvider'],
+      // Add notifications panel to the admin UI
+      afterNavLinks: ['@/components/admin/NotificationsPanel'],
       // No custom views at the global level
       // Custom components are configured at the collection level
     },
@@ -191,6 +194,7 @@ export default buildConfig({
     LiveEvents,
     Recordings,
     LiveEventRegistrations,
+    Notifications,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [

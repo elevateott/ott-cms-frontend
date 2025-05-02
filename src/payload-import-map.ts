@@ -3,4 +3,5 @@
 
 export default {
   '@/components/StreamStatusBanner': () => import('./components/StreamStatusBanner'),
+  '@/components/admin/NotificationsPanel': () => import('./components/admin/NotificationsPanel'),
 }
