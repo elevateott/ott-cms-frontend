@@ -33,6 +33,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/StreamActionsPanel',
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
+        '@/components/panels/StreamSetupPanel',
         '@/components/panels/PlaybackURLPanel',
         '@/components/panels/ExternalHlsPreviewPlayer',
       ],
