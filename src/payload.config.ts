@@ -35,7 +35,9 @@ import { Filters } from './collections/Filters'
 import { Carousels } from './collections/Carousels'
 import { LiveEvents } from './collections/LiveEvents'
 import { Recordings } from './collections/Recordings'
+import { LiveEventRegistrations } from './collections/LiveEventRegistrations'
 import { csvExportEndpoints } from './endpoints/csvExport'
+import { sendEventReminders } from './jobs/sendEventReminders'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -187,6 +189,7 @@ export default buildConfig({
     Carousels,
     LiveEvents,
     Recordings,
+    LiveEventRegistrations,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [
@@ -226,7 +229,14 @@ export default buildConfig({
         return authHeader === `Bearer ${process.env.CRON_SECRET}`
       },
     },
-    tasks: [],
+    tasks: [
+      {
+        name: 'sendEventReminders',
+        handler: sendEventReminders,
+        cronExpression: '*/5 * * * *', // Run every 5 minutes
+        description: 'Send reminder emails to registrants before live events start',
+      },
+    ],
   },
   onInit: async (payload) => {
     // Update the email adapter with the actual configuration

@@ -7,6 +7,7 @@ import { updateLiveStream } from '@/hooks/mux/updateLiveStream'
 import { fetchLiveStreamStatus } from '@/hooks/mux/fetchLiveStreamStatus'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
+import { enforceAccessControl } from '@/hooks/liveEvents/enforceAccessControl'
 
 export const LiveEvents: CollectionConfig = {
   slug: 'live-events',
@@ -23,7 +24,15 @@ export const LiveEvents: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'muxStatus', 'isRecordingEnabled', 'status', 'createdAt'],
+    defaultColumns: [
+      'title',
+      'scheduledStartTime',
+      'accessType',
+      'preregistrationEnabled',
+      'muxStatus',
+      'status',
+      'createdAt',
+    ],
     group: 'Media',
     components: {
       // Use a string path to the component in the admin directory
@@ -38,6 +47,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/PlaybackURLPanel',
         '@/components/panels/RecordingsPanel',
         '@/components/panels/ExternalHlsPreviewPlayer',
+        '@/components/panels/RegistrationsPanel',
       ],
     },
   },
@@ -178,6 +188,64 @@ export const LiveEvents: CollectionConfig = {
           pickerAppearance: 'dayAndTime',
         },
         description: 'When this live event is scheduled to end',
+      },
+    },
+    // Preregistration and Access Control Fields
+    {
+      name: 'preregistrationEnabled',
+      type: 'checkbox',
+      label: 'Enable Preregistration',
+      defaultValue: false,
+      admin: {
+        description: 'Allow users to register for this event before it starts',
+      },
+    },
+    {
+      name: 'registrations',
+      type: 'relationship',
+      relationTo: 'live-event-registrations',
+      hasMany: true,
+      admin: {
+        description: 'Users who have registered for this event',
+        position: 'sidebar',
+        condition: (data) => data?.preregistrationEnabled === true,
+      },
+    },
+    {
+      name: 'accessType',
+      type: 'select',
+      label: 'Access Control',
+      options: [
+        { label: 'Free (Public)', value: 'free' },
+        { label: 'Subscriber Only', value: 'subscription' },
+        { label: 'Paid Ticket', value: 'paid_ticket' },
+      ],
+      defaultValue: 'free',
+      required: true,
+      admin: {
+        description: 'Control who can access this live event',
+      },
+    },
+    {
+      name: 'ticketPrice',
+      type: 'number',
+      label: 'Ticket Price (in cents)',
+      min: 0,
+      admin: {
+        description: 'Price for a one-time ticket to this event (in cents, e.g. 1000 = $10.00)',
+        condition: (data) => data?.accessType === 'paid_ticket',
+      },
+    },
+    {
+      name: 'reminderMinutesBefore',
+      type: 'number',
+      label: 'Send Reminder (minutes before)',
+      defaultValue: 30,
+      min: 5,
+      max: 1440, // 24 hours
+      admin: {
+        description: 'How many minutes before the event to send reminder emails',
+        condition: (data) => data?.preregistrationEnabled === true,
       },
     },
     // Mux Live Stream Fields (populated by the hook)
@@ -366,6 +434,7 @@ export const LiveEvents: CollectionConfig = {
     // Add hook to fetch the latest status from Mux and compute effectiveHlsUrl
     afterRead: [
       fetchLiveStreamStatus,
+      enforceAccessControl,
       async ({ doc }) => {
         // Import the getPlaybackUrl function
         const { getPlaybackUrl } = await import('@/utils/getPlaybackUrl')

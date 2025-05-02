@@ -81,6 +81,7 @@ export interface Config {
     carousels: Carousel;
     'live-events': LiveEvent;
     recordings: Recording;
+    'live-event-registrations': LiveEventRegistration;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -106,6 +107,7 @@ export interface Config {
     carousels: CarouselsSelect<false> | CarouselsSelect<true>;
     'live-events': LiveEventsSelect<false> | LiveEventsSelect<true>;
     recordings: RecordingsSelect<false> | RecordingsSelect<true>;
+    'live-event-registrations': LiveEventRegistrationsSelect<false> | LiveEventRegistrationsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -1383,6 +1385,26 @@ export interface LiveEvent {
    */
   scheduledEndTime?: string | null;
   /**
+   * Allow users to register for this event before it starts
+   */
+  preregistrationEnabled?: boolean | null;
+  /**
+   * Users who have registered for this event
+   */
+  registrations?: (string | LiveEventRegistration)[] | null;
+  /**
+   * Control who can access this live event
+   */
+  accessType: 'free' | 'subscription' | 'paid_ticket';
+  /**
+   * Price for a one-time ticket to this event (in cents, e.g. 1000 = $10.00)
+   */
+  ticketPrice?: number | null;
+  /**
+   * How many minutes before the event to send reminder emails
+   */
+  reminderMinutesBefore?: number | null;
+  /**
    * Mux Live Stream ID (automatically populated)
    */
   muxLiveStreamId?: string | null;
@@ -1489,6 +1511,34 @@ export interface Recording {
    * URL to download the recording (if available)
    */
   downloadUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-event-registrations".
+ */
+export interface LiveEventRegistration {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  /**
+   * The live event this registration is for
+   */
+  liveEvent: string | LiveEvent;
+  /**
+   * Whether the registration has been confirmed via email
+   */
+  confirmed?: boolean | null;
+  /**
+   * Token used for email confirmation
+   */
+  confirmationToken?: string | null;
+  /**
+   * Whether a reminder email has been sent
+   */
+  reminderSent?: boolean | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1719,6 +1769,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'recordings';
         value: string | Recording;
+      } | null)
+    | ({
+        relationTo: 'live-event-registrations';
+        value: string | LiveEventRegistration;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -2361,6 +2415,11 @@ export interface LiveEventsSelect<T extends boolean = true> {
   status?: T;
   scheduledStartTime?: T;
   scheduledEndTime?: T;
+  preregistrationEnabled?: T;
+  registrations?: T;
+  accessType?: T;
+  ticketPrice?: T;
+  reminderMinutesBefore?: T;
   muxLiveStreamId?: T;
   muxStreamKey?: T;
   muxPlaybackIds?:
@@ -2404,6 +2463,21 @@ export interface RecordingsSelect<T extends boolean = true> {
   playbackPolicy?: T;
   price?: T;
   downloadUrl?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-event-registrations_select".
+ */
+export interface LiveEventRegistrationsSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  email?: T;
+  liveEvent?: T;
+  confirmed?: T;
+  confirmationToken?: T;
+  reminderSent?: T;
   createdAt?: T;
   updatedAt?: T;
 }
