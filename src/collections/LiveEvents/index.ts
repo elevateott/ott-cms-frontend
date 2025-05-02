@@ -36,6 +36,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/panels/StreamSetupPanel',
         '@/components/panels/PlaybackIntegrationPanel',
         '@/components/panels/PlaybackURLPanel',
+        '@/components/panels/RecordingsPanel',
         '@/components/panels/ExternalHlsPreviewPlayer',
       ],
     },
@@ -104,6 +105,16 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         description: 'Record this live stream for on-demand playback after the event',
         condition: (data) => data?.useExternalHlsUrl !== true,
+      },
+    },
+    {
+      name: 'recordings',
+      type: 'relationship',
+      relationTo: 'recordings',
+      hasMany: true,
+      admin: {
+        description: 'Recordings of this live event',
+        position: 'sidebar',
       },
     },
     {

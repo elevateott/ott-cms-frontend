@@ -80,6 +80,7 @@ export interface Config {
     filters: Filter;
     carousels: Carousel;
     'live-events': LiveEvent;
+    recordings: Recording;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -104,6 +105,7 @@ export interface Config {
     filters: FiltersSelect<false> | FiltersSelect<true>;
     carousels: CarouselsSelect<false> | CarouselsSelect<true>;
     'live-events': LiveEventsSelect<false> | LiveEventsSelect<true>;
+    recordings: RecordingsSelect<false> | RecordingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -1360,6 +1362,10 @@ export interface LiveEvent {
    */
   isRecordingEnabled?: boolean | null;
   /**
+   * Recordings of this live event
+   */
+  recordings?: (string | Recording)[] | null;
+  /**
    * Time allowed to reconnect after a disconnect (in seconds, max 300)
    */
   reconnectWindow?: number | null;
@@ -1434,6 +1440,55 @@ export interface LiveEvent {
    * When the live stream was completed
    */
   endedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordings".
+ */
+export interface Recording {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * The live event this recording is from
+   */
+  liveEvent: string | LiveEvent;
+  /**
+   * HLS playback URL for this recording
+   */
+  playbackUrl?: string | null;
+  /**
+   * URL to the thumbnail image for this recording
+   */
+  thumbnailUrl?: string | null;
+  /**
+   * Duration of the recording in seconds
+   */
+  duration?: number | null;
+  /**
+   * Mux Asset ID for this recording
+   */
+  muxAssetId?: string | null;
+  /**
+   * Mux Playback ID for this recording
+   */
+  muxPlaybackId?: string | null;
+  /**
+   * Controls how the recording can be accessed
+   */
+  playbackPolicy?: ('public' | 'signed') | null;
+  /**
+   * Optional price in cents for this recording
+   */
+  price?: number | null;
+  /**
+   * URL to download the recording (if available)
+   */
+  downloadUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -1660,6 +1715,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'live-events';
         value: string | LiveEvent;
+      } | null)
+    | ({
+        relationTo: 'recordings';
+        value: string | Recording;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -2296,6 +2355,7 @@ export interface LiveEventsSelect<T extends boolean = true> {
   useExternalHlsUrl?: T;
   externalHlsUrl?: T;
   isRecordingEnabled?: T;
+  recordings?: T;
   reconnectWindow?: T;
   playbackPolicy?: T;
   status?: T;
@@ -2323,6 +2383,27 @@ export interface LiveEventsSelect<T extends boolean = true> {
         status?: T;
       };
   endedAt?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordings_select".
+ */
+export interface RecordingsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  liveEvent?: T;
+  playbackUrl?: T;
+  thumbnailUrl?: T;
+  duration?: T;
+  muxAssetId?: T;
+  muxPlaybackId?: T;
+  playbackPolicy?: T;
+  price?: T;
+  downloadUrl?: T;
   createdAt?: T;
   updatedAt?: T;
 }

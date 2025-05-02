@@ -16,6 +16,7 @@ import { eventService } from '@/services/eventService'
 import { getMuxSettings } from '@/utilities/getMuxSettings'
 import { handleLiveStreamWebhook } from '@/hooks/mux/handleLiveStreamWebhook'
 import { handleSimulcastWebhook } from '@/hooks/mux/handleSimulcastWebhook'
+import { handleRecordingWebhook } from '@/hooks/mux/handleRecordingWebhook'
 
 /**
  * POST /api/mux/webhook
@@ -260,6 +261,22 @@ export async function POST(req: NextRequest) {
           { context: 'webhook/route' },
           '✅ Successfully handled live stream webhook event',
         )
+      }
+      // Check if this is a recording event (asset with live_stream_id)
+      else if (
+        (event.type === 'video.asset.created' || event.type === 'video.asset.ready') &&
+        event.data?.live_stream_id
+      ) {
+        logger.info(
+          { context: 'webhook/route' },
+          '🔄 Detected recording event, calling handleRecordingWebhook with event type:',
+          event.type,
+        )
+
+        // Handle recording event
+        await handleRecordingWebhook(event)
+
+        logger.info({ context: 'webhook/route' }, '✅ Successfully handled recording webhook event')
       } else {
         // Handle video asset event
         logger.info(
