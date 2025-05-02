@@ -85,6 +85,9 @@ export type MuxWebhookEventType =
   | 'video.live_stream.disconnected'
   | 'video.live_stream.recording'
   | 'video.live_stream.connected'
+  | 'video.live_stream.simulcast_target.connected'
+  | 'video.live_stream.simulcast_target.disconnected'
+  | 'video.live_stream.simulcast_target.error'
 
 export interface MuxWebhookData {
   id: string

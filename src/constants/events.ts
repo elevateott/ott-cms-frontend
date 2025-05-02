@@ -21,6 +21,12 @@ export const EVENTS = {
   LIVE_STREAM_RECORDING: 'live:stream:recording',
   LIVE_STREAM_STATUS_UPDATED: 'live:stream:status:updated',
 
+  // Simulcast events
+  LIVE_STREAM_SIMULCAST_UPDATED: 'live:stream:simulcast:updated',
+  LIVE_STREAM_SIMULCAST_CONNECTED: 'live:stream:simulcast:connected',
+  LIVE_STREAM_SIMULCAST_DISCONNECTED: 'live:stream:simulcast:disconnected',
+  LIVE_STREAM_SIMULCAST_ERROR: 'live:stream:simulcast:error',
+
   // UI events
   MODAL_OPEN: 'modal:open',
   MODAL_CLOSE: 'modal:close',

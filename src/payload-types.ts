@@ -1411,6 +1411,7 @@ export interface LiveEvent {
    */
   simulcastTargets?:
     | {
+        id?: string | null;
         /**
          * Name of the simulcast target (e.g., YouTube, Facebook)
          */
@@ -1423,7 +1424,10 @@ export interface LiveEvent {
          * Stream key for the simulcast target
          */
         streamKey: string;
-        id?: string | null;
+        /**
+         * Current status of the simulcast target
+         */
+        status?: ('connected' | 'disconnected' | 'error') | null;
       }[]
     | null;
   /**
@@ -2312,10 +2316,11 @@ export interface LiveEventsSelect<T extends boolean = true> {
   simulcastTargets?:
     | T
     | {
+        id?: T;
         name?: T;
         url?: T;
         streamKey?: T;
-        id?: T;
+        status?: T;
       };
   endedAt?: T;
   createdAt?: T;

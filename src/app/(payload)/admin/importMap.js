@@ -43,7 +43,7 @@ import { default as default_3aa121b78bf6e47d097fe98bd49c4d16 } from '@/collectio
 import { default as default_cdff2a7adda7ae40093bbe7e73b5c039 } from '@/components/fields/SecureTextField'
 import { default as default_c788ea32f4a2ab4f86cf9865ce2714cf } from '@/admin/components/LiveStreamStatusCell'
 import { default as default_f910b583dded789953b5ef06b51d760c } from '@/admin/components/LiveStreamStatusBadge'
-import { default as default_97c910c8fe01209cd060214b69fbd904 } from '@/components/fields/SimulcastTargetsField'
+import { default as default_198bfadeeeb4bfedcb77a890e87dac96 } from '@/components/panels/SimulcastTargetsPanel'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -104,7 +104,7 @@ export const importMap = {
   "@/components/fields/SecureTextField#default": default_cdff2a7adda7ae40093bbe7e73b5c039,
   "@/admin/components/LiveStreamStatusCell#default": default_c788ea32f4a2ab4f86cf9865ce2714cf,
   "@/admin/components/LiveStreamStatusBadge#default": default_f910b583dded789953b5ef06b51d760c,
-  "@/components/fields/SimulcastTargetsField#default": default_97c910c8fe01209cd060214b69fbd904,
+  "@/components/panels/SimulcastTargetsPanel#default": default_198bfadeeeb4bfedcb77a890e87dac96,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,

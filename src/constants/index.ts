@@ -1,13 +1,13 @@
-export * from './api';
-export * from './events';
-export * from './video';
+export * from './api'
+export * from './events'
+export * from './video'
 
 // Other constants that don't fit in specific categories
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_LIMIT: 10,
   MAX_LIMIT: 100,
-} as const;
+} as const
 
 export const IMAGE_DIMENSIONS = {
   THUMBNAIL: {
@@ -18,20 +18,20 @@ export const IMAGE_DIMENSIONS = {
     WIDTH: 1280,
     HEIGHT: 720,
   },
-} as const;
+} as const
 
 export const TIME = {
   SECOND: 1000,
   MINUTE: 60 * 1000,
   HOUR: 60 * 60 * 1000,
   DAY: 24 * 60 * 60 * 1000,
-} as const;
+} as const
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
   USER: 'user',
   THEME: 'theme',
-} as const;
+} as const
 
 export const MUX_WEBHOOK_EVENT_TYPES = {
   ASSET_CREATED: 'video.asset.created',
@@ -39,6 +39,10 @@ export const MUX_WEBHOOK_EVENT_TYPES = {
   ASSET_DELETED: 'video.asset.deleted',
   UPLOAD_ASSET_CREATED: 'video.upload.asset.created',
   NON_STANDARD_INPUT_DETECTED: 'video.input.quality.low',
-  VIDEO_UPLOAD_CREATED: 'video.upload.created'
-} as const
+  VIDEO_UPLOAD_CREATED: 'video.upload.created',
 
+  // Simulcast events
+  SIMULCAST_TARGET_CONNECTED: 'video.live_stream.simulcast_target.connected',
+  SIMULCAST_TARGET_DISCONNECTED: 'video.live_stream.simulcast_target.disconnected',
+  SIMULCAST_TARGET_ERROR: 'video.live_stream.simulcast_target.error',
+} as const

@@ -15,6 +15,7 @@ import { logError } from '@/utils/errorHandler'
 import { eventService } from '@/services/eventService'
 import { getMuxSettings } from '@/utilities/getMuxSettings'
 import { handleLiveStreamWebhook } from '@/hooks/mux/handleLiveStreamWebhook'
+import { handleSimulcastWebhook } from '@/hooks/mux/handleSimulcastWebhook'
 
 /**
  * POST /api/mux/webhook
@@ -228,8 +229,24 @@ export async function POST(req: NextRequest) {
 
     // Handle the event
     try {
+      // Check if this is a simulcast target event
+      if (event.type.includes('simulcast_target')) {
+        logger.info(
+          { context: 'webhook/route' },
+          '🔄 Detected simulcast target event, calling handleSimulcastWebhook with event type:',
+          event.type,
+        )
+
+        // Handle simulcast target event
+        await handleSimulcastWebhook(event)
+
+        logger.info(
+          { context: 'webhook/route' },
+          '✅ Successfully handled simulcast target webhook event',
+        )
+      }
       // Check if this is a live stream event
-      if (event.type.includes('live_stream')) {
+      else if (event.type.includes('live_stream')) {
         logger.info(
           { context: 'webhook/route' },
           '🔄 Detected live stream event, calling handleLiveStreamWebhook with event type:',

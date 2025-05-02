@@ -265,11 +265,19 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         description: 'Optional targets to simulcast this live stream to (RTMP destinations)',
         components: {
-          Field: '@/components/fields/SimulcastTargetsField',
+          Field: '@/components/panels/SimulcastTargetsPanel',
         },
         condition: (data) => data?.useExternalHlsUrl !== true,
       },
       fields: [
+        {
+          name: 'id',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Mux Target ID (automatically populated)',
+          },
+        },
         {
           name: 'name',
           type: 'text',
@@ -295,6 +303,20 @@ export const LiveEvents: CollectionConfig = {
             components: {
               Field: '@/components/fields/SecureTextField',
             },
+          },
+        },
+        {
+          name: 'status',
+          type: 'select',
+          options: [
+            { label: 'Connected', value: 'connected' },
+            { label: 'Disconnected', value: 'disconnected' },
+            { label: 'Error', value: 'error' },
+          ],
+          defaultValue: 'disconnected',
+          admin: {
+            readOnly: true,
+            description: 'Current status of the simulcast target',
           },
         },
       ],
