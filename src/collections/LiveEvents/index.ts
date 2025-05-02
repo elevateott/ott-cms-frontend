@@ -9,6 +9,11 @@ import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHook
 import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
 import { enforceAccessControl } from '@/hooks/liveEvents/enforceAccessControl'
 import { handleSimulatedLive } from '@/hooks/mux/handleSimulatedLive'
+import {
+  lexicalEditor,
+  FixedToolbarFeature,
+  InlineToolbarFeature,
+} from '@payloadcms/richtext-lexical'
 
 export const LiveEvents: CollectionConfig = {
   slug: 'live-events',
@@ -30,6 +35,7 @@ export const LiveEvents: CollectionConfig = {
       'scheduledStartTime',
       'accessType',
       'preregistrationEnabled',
+      'multiCamBadge',
       'muxStatus',
       'status',
       'createdAt',
@@ -47,6 +53,7 @@ export const LiveEvents: CollectionConfig = {
         '@/components/stream-key/StreamKeyManager',
         '@/components/panels/StreamSetupPanel',
         '@/components/panels/OBSConfigPanel',
+        '@/components/panels/MultiCamPanel',
         '@/components/panels/PlaybackIntegrationPanel',
         '@/components/panels/PlaybackURLPanel',
         '@/components/panels/RecordingsPanel',
@@ -150,6 +157,40 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         description: 'Record this live stream for on-demand playback after the event',
         condition: (data) => data?.useExternalHlsUrl !== true,
+      },
+    },
+    {
+      name: 'multiCamEnabled',
+      type: 'checkbox',
+      label: 'Multi-Camera Event',
+      defaultValue: false,
+      admin: {
+        description: 'Enable advanced multi-camera setup guidance and templates',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'multiCamBadge',
+      type: 'ui',
+      admin: {
+        components: {
+          Cell: '@/admin/components/MultiCamBadgeCell',
+        },
+        condition: (data) => data?.multiCamEnabled === true,
+      },
+    },
+    {
+      name: 'multiCamInstructions',
+      type: 'richText',
+      label: 'Custom Multi-Camera Instructions',
+      editor: lexicalEditor({
+        features: ({ rootFeatures }) => {
+          return [...rootFeatures, FixedToolbarFeature(), InlineToolbarFeature()]
+        },
+      }),
+      admin: {
+        description: 'Optional custom instructions for this multi-camera event',
+        condition: (data) => data?.multiCamEnabled === true,
       },
     },
     {
