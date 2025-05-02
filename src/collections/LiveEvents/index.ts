@@ -8,6 +8,7 @@ import { fetchLiveStreamStatus } from '@/hooks/mux/fetchLiveStreamStatus'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
 import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
 import { enforceAccessControl } from '@/hooks/liveEvents/enforceAccessControl'
+import { handleSimulatedLive } from '@/hooks/mux/handleSimulatedLive'
 
 export const LiveEvents: CollectionConfig = {
   slug: 'live-events',
@@ -41,6 +42,7 @@ export const LiveEvents: CollectionConfig = {
       BeforeEditForm: [
         '@/components/StreamStatusBanner',
         '@/components/panels/StreamActionsPanel',
+        '@/components/panels/SimulatedLivePanel',
         '@/components/panels/HealthStatsPanel',
         '@/components/stream-key/StreamKeyManager',
         '@/components/panels/StreamSetupPanel',
@@ -84,6 +86,37 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         description: 'Enable this to use an external HLS stream URL instead of Mux',
         position: 'sidebar',
+      },
+    },
+    {
+      name: 'isSimulatedLive',
+      type: 'checkbox',
+      label: 'Simulated Live Event',
+      defaultValue: false,
+      admin: {
+        description: 'Schedule a pre-recorded video to stream as if it were live',
+        position: 'sidebar',
+        condition: (data) => data?.useExternalHlsUrl !== true,
+      },
+    },
+    {
+      name: 'simulatedLiveAssetId',
+      type: 'relationship',
+      relationTo: 'recordings',
+      admin: {
+        description: 'Select a recording to use for this simulated live event',
+        condition: (data) => data?.isSimulatedLive === true && data?.useExternalHlsUrl !== true,
+      },
+    },
+    {
+      name: 'simulatedLiveStartTime',
+      type: 'date',
+      admin: {
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+        description: 'When this simulated live event should start streaming',
+        condition: (data) => data?.isSimulatedLive === true && data?.useExternalHlsUrl !== true,
       },
     },
     {
@@ -341,6 +374,26 @@ export const LiveEvents: CollectionConfig = {
       },
     },
     {
+      name: 'simulatedLiveStreamId',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        description: 'Mux Simulated Live Stream ID (automatically populated)',
+        position: 'sidebar',
+        condition: (data) => data?.isSimulatedLive === true,
+      },
+    },
+    {
+      name: 'simulatedLivePlaybackId',
+      type: 'text',
+      admin: {
+        readOnly: true,
+        description: 'Mux Simulated Live Playback ID (automatically populated)',
+        position: 'sidebar',
+        condition: (data) => data?.isSimulatedLive === true,
+      },
+    },
+    {
       name: 'simulcastTargets',
       type: 'array',
       admin: {
@@ -442,7 +495,7 @@ export const LiveEvents: CollectionConfig = {
     // Add logging hooks
     ...createCollectionLoggingHooks('live-events'),
     // Add hooks to create and update Mux live stream
-    beforeChange: [handleExternalHlsUrl, createLiveStream, updateLiveStream],
+    beforeChange: [handleExternalHlsUrl, handleSimulatedLive, createLiveStream, updateLiveStream],
     // Add hook to fetch the latest status from Mux and compute effectiveHlsUrl
     afterRead: [
       fetchLiveStreamStatus,

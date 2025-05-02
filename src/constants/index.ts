@@ -45,4 +45,9 @@ export const MUX_WEBHOOK_EVENT_TYPES = {
   SIMULCAST_TARGET_CONNECTED: 'video.live_stream.simulcast_target.connected',
   SIMULCAST_TARGET_DISCONNECTED: 'video.live_stream.simulcast_target.disconnected',
   SIMULCAST_TARGET_ERROR: 'video.live_stream.simulcast_target.error',
+
+  // Simulated Live events
+  SIMULCAST_STARTED: 'video.simulcast.started',
+  SIMULCAST_COMPLETED: 'video.simulcast.completed',
+  SIMULCAST_IDLE: 'video.simulcast.idle',
 } as const

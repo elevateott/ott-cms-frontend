@@ -32,6 +32,11 @@ export const EVENTS = {
   RECORDING_READY: 'recording:ready',
   RECORDING_UPDATED: 'recording:updated',
 
+  // Simulated Live events
+  SIMULATED_LIVE_CREATED: 'simulated:live:created',
+  SIMULATED_LIVE_STARTED: 'simulated:live:started',
+  SIMULATED_LIVE_ENDED: 'simulated:live:ended',
+
   // UI events
   MODAL_OPEN: 'modal:open',
   MODAL_CLOSE: 'modal:close',
