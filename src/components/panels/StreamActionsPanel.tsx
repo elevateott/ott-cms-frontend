@@ -8,6 +8,7 @@ import DisableStreamButton from '@/components/buttons/DisableStreamButton'
 import EnableStreamButton from '@/components/buttons/EnableStreamButton'
 import DeleteStreamButton from '@/components/buttons/DeleteStreamButton'
 import EndStreamButton from '@/components/buttons/EndStreamButton'
+import GoLiveButton from '@/components/buttons/GoLiveButton'
 
 export const StreamActionsPanel: React.FC = () => {
   const { document } = useDocumentInfo()
@@ -50,8 +51,9 @@ export const StreamActionsPanel: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
-          {document?.muxStatus === 'disabled' ? <EnableStreamButton /> : <DisableStreamButton />}
+          {['idle', 'disconnected'].includes(document?.muxStatus) && <GoLiveButton />}
           {['active', 'disconnected'].includes(document?.muxStatus) && <EndStreamButton />}
+          {document?.muxStatus === 'disabled' ? <EnableStreamButton /> : <DisableStreamButton />}
           <DeleteStreamButton />
         </div>
         {document?.endedAt && (
