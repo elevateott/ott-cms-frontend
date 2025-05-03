@@ -31,6 +31,7 @@ export const SubscriptionPlans: CollectionConfig = {
       beforeFields: [
         '@/collections/SubscriptionPlans/components/PlanDetails',
         '@/collections/SubscriptionPlans/components/PlanTrialInfo',
+        '@/collections/SubscriptionPlans/components/PlanEditingInfo',
       ],
     },
   },
@@ -181,6 +182,16 @@ export const SubscriptionPlans: CollectionConfig = {
         components: {
           Cell: '@/collections/SubscriptionPlans/components/PlanStatusCell',
         },
+      },
+    },
+    {
+      name: 'version',
+      type: 'number',
+      defaultValue: 1,
+      admin: {
+        description: 'Plan version number',
+        readOnly: true,
+        position: 'sidebar',
       },
     },
     {
