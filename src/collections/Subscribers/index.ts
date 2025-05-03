@@ -18,15 +18,83 @@ export const Subscribers: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'email',
-    defaultColumns: ['fullName', 'email', 'paymentProvider', 'subscriptionStatus', 'createdAt'],
-    group: 'Users',
-    description: 'Subscribers who have registered or made purchases on the platform',
+    defaultColumns: [
+      'fullName',
+      'email',
+      'paymentProvider',
+      'subscriptionStatus',
+      'activePlansCount',
+      'purchasedRentalsCount',
+      'purchasedPPVCount',
+      'createdAt',
+    ],
+    group: 'Monetization',
+    description: 'Manage customer subscriptions, rentals, and purchases',
+    components: {
+      // Add custom components to the edit view
+      beforeFields: ['@/collections/Subscribers/components/SubscriberDetails'],
+      views: {
+        List: '@/collections/Subscribers/components/SubscribersList',
+      },
+    },
+    // Add custom filters
+    filters: [
+      {
+        field: 'subscriptionStatus',
+        label: 'Subscription Status',
+        type: 'select',
+        options: ['active', 'trialing', 'past_due', 'canceled', 'none'],
+      },
+      {
+        field: 'paymentProvider',
+        label: 'Payment Provider',
+        type: 'select',
+        options: ['stripe', 'paypal', 'unknown'],
+      },
+    ],
+    // Enable search by name and email
+    listSearchableFields: ['fullName', 'email', 'paymentProviderCustomerId'],
   },
   fields: [
+    // Virtual fields for list view counts
+    {
+      name: 'activePlansCount',
+      type: 'text',
+      admin: {
+        hidden: true, // Hide in the edit form
+        components: {
+          Cell: '@/collections/Subscribers/components/ActivePlansCountCell',
+        },
+      },
+    },
+    {
+      name: 'purchasedRentalsCount',
+      type: 'text',
+      admin: {
+        hidden: true, // Hide in the edit form
+        components: {
+          Cell: '@/collections/Subscribers/components/PurchasedRentalsCountCell',
+        },
+      },
+    },
+    {
+      name: 'purchasedPPVCount',
+      type: 'text',
+      admin: {
+        hidden: true, // Hide in the edit form
+        components: {
+          Cell: '@/collections/Subscribers/components/PurchasedPPVCountCell',
+        },
+      },
+    },
+    // Basic information
     {
       name: 'fullName',
       type: 'text',
       required: true,
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'email',
@@ -34,6 +102,7 @@ export const Subscribers: CollectionConfig = {
       required: true,
       unique: true,
     },
+    // Payment information
     {
       name: 'paymentProvider',
       type: 'select',
@@ -45,6 +114,9 @@ export const Subscribers: CollectionConfig = {
       defaultValue: 'unknown',
       admin: {
         description: 'The payment provider used by this subscriber',
+        components: {
+          Cell: '@/collections/Subscribers/components/PaymentProviderCell',
+        },
       },
     },
     {
@@ -53,8 +125,10 @@ export const Subscribers: CollectionConfig = {
       label: 'Payment Provider Customer ID',
       admin: {
         description: 'Stripe Customer ID or PayPal Payer ID',
+        position: 'sidebar',
       },
     },
+    // Subscription information
     {
       name: 'subscriptionStatus',
       type: 'select',
@@ -68,6 +142,9 @@ export const Subscribers: CollectionConfig = {
       defaultValue: 'none',
       admin: {
         description: 'Current subscription status',
+        components: {
+          Cell: '@/collections/Subscribers/components/StatusCell',
+        },
       },
     },
     {
@@ -78,8 +155,12 @@ export const Subscribers: CollectionConfig = {
         date: {
           pickerAppearance: 'dayAndTime',
         },
+        components: {
+          Cell: '@/collections/Subscribers/components/DateCell',
+        },
       },
     },
+    // Relationships
     {
       name: 'activePlans',
       type: 'relationship',
@@ -103,6 +184,7 @@ export const Subscribers: CollectionConfig = {
       type: 'array',
       admin: {
         description: 'Expiration dates for rented content',
+        condition: (data) => (data?.purchasedRentals?.length || 0) > 0,
       },
       fields: [
         {
@@ -132,12 +214,14 @@ export const Subscribers: CollectionConfig = {
         description: 'Pay-per-view live events purchased by this subscriber',
       },
     },
+    // Additional information
     {
       name: 'user',
       type: 'relationship',
       relationTo: 'users',
       admin: {
         description: 'Associated user account (if authenticated)',
+        position: 'sidebar',
       },
     },
     {
@@ -145,6 +229,7 @@ export const Subscribers: CollectionConfig = {
       type: 'textarea',
       admin: {
         description: 'Administrative notes about this subscriber',
+        position: 'sidebar',
       },
     },
     {
@@ -167,6 +252,18 @@ export const Subscribers: CollectionConfig = {
             return value
           },
         ],
+      },
+    },
+    // Timestamps
+    {
+      name: 'createdAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        components: {
+          Cell: '@/collections/Subscribers/components/DateCell',
+        },
       },
     },
   ],

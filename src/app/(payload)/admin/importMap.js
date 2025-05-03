@@ -46,6 +46,12 @@ import { default as default_cdff2a7adda7ae40093bbe7e73b5c039 } from '@/component
 import { default as default_c788ea32f4a2ab4f86cf9865ce2714cf } from '@/admin/components/LiveStreamStatusCell'
 import { default as default_f910b583dded789953b5ef06b51d760c } from '@/admin/components/LiveStreamStatusBadge'
 import { default as default_198bfadeeeb4bfedcb77a890e87dac96 } from '@/components/panels/SimulcastTargetsPanel'
+import { default as default_69e41b1e6980eb02c92f06a00b422b33 } from '@/collections/Subscribers/components/ActivePlansCountCell'
+import { default as default_da2bac2466b69e5b9e625b676226b898 } from '@/collections/Subscribers/components/PurchasedRentalsCountCell'
+import { default as default_67e13336b0bef54fd8aa025aa618832b } from '@/collections/Subscribers/components/PurchasedPPVCountCell'
+import { default as default_c4af1c1effa7405e266af9d6cf668218 } from '@/collections/Subscribers/components/PaymentProviderCell'
+import { default as default_68574fcb8a6204d51f9af85523f81467 } from '@/collections/Subscribers/components/StatusCell'
+import { default as default_90ef7556ca285abafcf615d2a76391d8 } from '@/collections/Subscribers/components/DateCell'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -110,6 +116,12 @@ export const importMap = {
   "@/admin/components/LiveStreamStatusCell#default": default_c788ea32f4a2ab4f86cf9865ce2714cf,
   "@/admin/components/LiveStreamStatusBadge#default": default_f910b583dded789953b5ef06b51d760c,
   "@/components/panels/SimulcastTargetsPanel#default": default_198bfadeeeb4bfedcb77a890e87dac96,
+  "@/collections/Subscribers/components/ActivePlansCountCell#default": default_69e41b1e6980eb02c92f06a00b422b33,
+  "@/collections/Subscribers/components/PurchasedRentalsCountCell#default": default_da2bac2466b69e5b9e625b676226b898,
+  "@/collections/Subscribers/components/PurchasedPPVCountCell#default": default_67e13336b0bef54fd8aa025aa618832b,
+  "@/collections/Subscribers/components/PaymentProviderCell#default": default_c4af1c1effa7405e266af9d6cf668218,
+  "@/collections/Subscribers/components/StatusCell#default": default_68574fcb8a6204d51f9af85523f81467,
+  "@/collections/Subscribers/components/DateCell#default": default_90ef7556ca285abafcf615d2a76391d8,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,
