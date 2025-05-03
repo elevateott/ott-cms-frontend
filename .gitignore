@@ -55,4 +55,3 @@ coverage/
 .vscode/settings.json
 .qodo
 logs/app.log
-logs/app.log
