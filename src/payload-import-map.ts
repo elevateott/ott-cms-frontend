@@ -4,4 +4,8 @@
 export default {
   '@/components/StreamStatusBanner': () => import('./components/StreamStatusBanner'),
   '@/components/admin/NotificationsPanel': () => import('./components/admin/NotificationsPanel'),
+  '@/components/admin/PaymentInstructions': () => import('./components/admin/PaymentInstructions'),
+  '@/components/admin/StripeConnectButton': () => import('./components/admin/StripeConnectButton'),
+  '@/components/admin/PayPalVerifyButton': () => import('./components/admin/PayPalVerifyButton'),
+  '@/components/fields/SecureTextField': () => import('./components/fields/SecureTextField'),
 }

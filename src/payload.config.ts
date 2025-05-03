@@ -6,6 +6,7 @@ import OTTSettings from './globals/OTTSettings'
 import CloudIntegrations from './globals/CloudIntegrations'
 import SiteSettings from './globals/SiteSettings'
 import EmailSettings from './globals/EmailSettings.tsx'
+import PaymentSettings from './globals/PaymentSettings'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 
 import sharp from 'sharp' // sharp-import
@@ -205,6 +206,7 @@ export default buildConfig({
     CloudIntegrations,
     SiteSettings,
     EmailSettings,
+    PaymentSettings,
   ],
   plugins: [
     ...plugins,
