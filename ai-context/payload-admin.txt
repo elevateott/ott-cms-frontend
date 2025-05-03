@@ -1,0 +1,1914 @@
+The Admin Panel
+Payload dynamically generates a beautiful, fully type-safe Admin Panel to manage your users and data. It is highly performant, even with 100+ fields, and is translated in over 30 languages. Within the Admin Panel you can manage content, render your site, preview drafts, diff versions, and so much more.
+
+The Admin Panel is designed to white-label your brand. You can endlessly customize and extend the Admin UI by swapping in your own Custom Components—everything from simple field labels to entire views can be modified or replaced to perfectly tailor the interface for your editors.
+
+The Admin Panel is written in TypeScript and built with React using the Next.js App Router. It supports React Server Components, enabling the use of the Local API on the front-end. You can install Payload into any existing Next.js app in just one line and deploy it anywhere.
+
+The Payload Admin Panel is designed to be as minimal and straightforward as possible to allow easy customization and control. Learn more.
+
+Admin Panel with collapsible sidebar
+Redesigned Admin Panel with a collapsible sidebar that's open by default, providing greater extensibility and enhanced horizontal real estate.
+Project Structure
+The Admin Panel serves as the entire HTTP layer for Payload, providing a full CRUD interface for your app. This means that both the REST and GraphQL APIs are simply Next.js Routes that exist directly alongside your front-end application.
+
+Once you install Payload, the following files and directories will be created in your app:
+
+app/
+├─ (payload)/
+├── admin/
+├─── [[...segments]]/
+├──── page.tsx
+├──── not-found.tsx
+├── api/
+├─── [...slug]/
+├──── route.ts
+├── graphql/
+├──── route.ts
+├── graphql-playground/
+├──── route.ts
+├── custom.scss
+├── layout.tsx
+If you are not familiar with Next.js project structure, you can learn more about it here.
+
+As shown above, all Payload routes are nested within the (payload) route group. This creates a boundary between the Admin Panel and the rest of your application by scoping all layouts and styles. The layout.tsx file within this directory, for example, is where Payload manages the html tag of the document to set proper lang and dir attributes, etc.
+
+The admin directory contains all the pages related to the interface itself, whereas the api and graphql directories contains all the routes related to the REST API and GraphQL API. All admin routes are easily configurable to meet your application's exact requirements.
+
+Note: If you don't intend to use the Admin Panel, REST API, or GraphQL API, you can opt-out by simply deleting their corresponding directories within your Next.js app. The overhead, however, is completely constrained to these routes, and will not slow down or affect Payload outside when not in use.
+
+Finally, the custom.scss file is where you can add or override globally-oriented styles in the Admin Panel, such as modify the color palette. Customizing the look and feel through CSS alone is a powerful feature of the Admin Panel, more on that here.
+
+All auto-generated files will contain the following comments at the top of each file:
+
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY PAYLOAD. */,
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+Admin Options
+All options for the Admin Panel are defined in your Payload Config under the admin property:
+
+import { buildConfig } from 'payload'
+
+const config = buildConfig({
+  // ...
+  admin: {
+    
+    // ...
+  },
+})
+The following options are available:
+
+Option
+
+Description
+
+avatar
+
+Set account profile picture. Options: gravatar, default or a custom React component.
+
+autoLogin
+
+Used to automate log-in for dev and demonstration convenience. More details.
+
+buildPath
+
+Specify an absolute path for where to store the built Admin bundle used in production. Defaults to path.resolve(process.cwd(), 'build').
+
+components
+
+Component overrides that affect the entirety of the Admin Panel. More details.
+
+custom
+
+Any custom properties you wish to pass to the Admin Panel.
+
+dateFormat
+
+The date format that will be used for all dates within the Admin Panel. Any valid date-fns format pattern can be used.
+
+livePreview
+
+Enable real-time editing for instant visual feedback of your front-end application. More details.
+
+meta
+
+Base metadata to use for the Admin Panel. More details.
+
+routes
+
+Replace built-in Admin Panel routes with your own custom routes. More details.
+
+suppressHydrationWarning
+
+If set to true, suppresses React hydration mismatch warnings during the hydration of the root <html> tag. Defaults to false.
+
+theme
+
+Restrict the Admin Panel theme to use only one of your choice. Default is all.
+
+timezones
+
+Configure the timezone settings for the admin panel. More details
+
+user
+
+The slug of the Collection that you want to allow to login to the Admin Panel. More details.
+
+Reminder: These are the root-level options for the Admin Panel. You can also customize Collection Admin Options and Global Admin Options through their respective admin keys.
+
+The Admin User Collection
+To specify which Collection to allow to login to the Admin Panel, pass the admin.user key equal to the slug of any auth-enabled Collection:
+
+import { buildConfig } from 'payload'
+
+const config = buildConfig({
+  // ...
+  admin: {
+    user: 'admins', 
+  },
+})
+Important:
+
+The Admin Panel can only be used by a single auth-enabled Collection. To enable authentication for a Collection, simply set auth: true in the Collection's configuration. See Authentication for more information.
+
+By default, if you have not specified a Collection, Payload will automatically provide a User Collection with access to the Admin Panel. You can customize or override the fields and settings of the default User Collection by adding your own Collection with slug: 'users'. Doing this will force Payload to use your provided User Collection instead of its default version.
+
+You can use whatever Collection you'd like to access the Admin Panel as long as the Collection supports Authentication. It doesn't need to be called users. For example, you may wish to have two Collections that both support authentication:
+
+admins - meant to have a higher level of permissions to manage your data and access the Admin Panel
+customers - meant for end users of your app that should not be allowed to log into the Admin Panel
+To do this, specify admin: { user: 'admins' } in your config. This will provide access to the Admin Panel to only admins. Any users authenticated as customers will be prevented from accessing the Admin Panel. See Access Control for full details.
+
+Role-based Access Control
+It is also possible to allow multiple user types into the Admin Panel with limited permissions, known as role-based access control (RBAC). For example, you may wish to have two roles within the admins Collection:
+
+super-admin - full access to the Admin Panel to perform any action
+editor - limited access to the Admin Panel to only manage content
+To do this, add a roles or similar field to your auth-enabled Collection, then use the access.admin property to grant or deny access based on the value of that field. See Access Control for full details. For a complete, working example of role-based access control, check out the official Auth Example.
+
+Customizing Routes
+You have full control over the routes that Payload binds itself to. This includes both Root-level Routes such as the REST API, and Admin-level Routes such as the user's account page. You can customize these routes to meet the needs of your application simply by specifying the desired paths in your config.
+
+Root-level Routes
+Root-level routes are those that are not behind the /admin path, such as the REST API and GraphQL API, or the root path of the Admin Panel itself.
+
+To customize root-level routes, use the routes property in your Payload Config:
+
+import { buildConfig } from 'payload'
+
+const config = buildConfig({
+  // ...
+  routes: {
+    admin: '/custom-admin-route', 
+  },
+})
+The following options are available:
+
+Option
+
+Default route
+
+Description
+
+admin
+
+/admin
+
+The Admin Panel itself.
+
+api
+
+/api
+
+The REST API base path.
+
+graphQL
+
+/graphql
+
+The GraphQL API base path.
+
+graphQLPlayground
+
+/graphql-playground
+
+The GraphQL Playground.
+
+Tip: You can easily add new routes to the Admin Panel through Custom Endpoints and Custom Views.
+
+Customizing Root-level Routes
+You can change the Root-level Routes as needed, such as to mount the Admin Panel at the root of your application.
+
+Changing Root-level Routes also requires a change to Project Structure to match the new route. For example, if you set routes.admin to /, you would need to completely remove the admin directory from the project structure:
+
+app/
+├─ (payload)/
+├── [[...segments]]/
+├──── ...
+Note: If you set Root-level Routes before auto-generating the Admin Panel via create-payload-app, your Project Structure will already be set up correctly.
+
+Admin-level Routes
+Admin-level routes are those behind the /admin path. These are the routes that are part of the Admin Panel itself, such as the user's account page, the login page, etc.
+
+To customize admin-level routes, use the admin.routes property in your Payload Config:
+
+import { buildConfig } from 'payload'
+
+const config = buildConfig({
+  // ...
+  admin: {
+    routes: {
+      account: '/my-account', 
+    },
+  },
+})
+The following options are available:
+
+Option
+
+Default route
+
+Description
+
+account
+
+/account
+
+The user's account page.
+
+createFirstUser
+
+/create-first-user
+
+The page to create the first user.
+
+forgot
+
+/forgot
+
+The password reset page.
+
+inactivity
+
+/logout-inactivity
+
+The page to redirect to after inactivity.
+
+login
+
+/login
+
+The login page.
+
+logout
+
+/logout
+
+The logout page.
+
+reset
+
+/reset
+
+The password reset page.
+
+unauthorized
+
+/unauthorized
+
+The unauthorized page.
+
+Note: You can also swap out entire views out for your own, using the admin.views property of the Payload Config. See Custom Views for more information.
+
+I18n
+The Payload Admin Panel is translated in over 30 languages and counting. Languages are automatically detected based on the user's browser and used by the Admin Panel to display all text in that language. If no language was detected, or if the user's language is not yet supported, English will be chosen. Users can easily specify their language by selecting one from their account page. See I18n for more information.
+
+Light and Dark Modes
+Users in the Admin Panel have the ability to choose between light mode and dark mode for their editing experience. Users can select their preferred theme from their account page. Once selected, it is saved to their user's preferences and persisted across sessions and devices. If no theme was selected, the Admin Panel will automatically detect the operation system's theme and use that as the default.
+
+Timezones
+The admin.timezones configuration allows you to configure timezone settings for the Admin Panel. You can customise the available list of timezones and in the future configure the default timezone for the Admin Panel and for all users.
+
+The following options are available:
+
+Option
+
+Description
+
+supportedTimezones
+
+An array of label/value options for selectable timezones where the value is the IANA name eg. America/Detroit
+
+defaultTimezone
+
+The value of the default selected timezone. eg. America/Los_Angeles
+
+We validate the supported timezones array by checking the value against the list of IANA timezones supported via the Intl API, specifically Intl.supportedValuesOf('timeZone').
+
+Important You must enable timezones on each individual date field via timezone: true. See Date Fields for more information.
+
+
+
+Preview
+Preview is a feature that allows you to generate a direct link to your front-end application. When enabled, a "preview" button will appear on the Edit View within the Admin Panel with an href pointing to the URL you provide. This will provide your editors with a quick way of navigating to the front-end application where that Document's data is represented. Otherwise, they'd have to determine that URL themselves which is not always straightforward especially in complex apps.
+
+The Preview feature can also be used to achieve something known as "Draft Preview". With Draft Preview, you can navigate to your front-end application and enter "draft mode", where your queries are modified to fetch draft content instead of published content. This is useful for seeing how your content will look before being published. More details.
+
+Note: Preview is different than Live Preview. Live Preview loads your app within an iframe and renders it in the Admin Panel allowing you to see changes in real-time. Preview, on the other hand, allows you to generate a direct link to your front-end application.
+
+To add Preview, pass a function to the admin.preview property in any Collection Config or Global Config:
+
+import type { CollectionConfig } from 'payload'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  admin: {
+    preview: ({ slug }) => `http://localhost:3000/${slug}`,
+  },
+  fields: [
+    {
+      name: 'slug',
+      type: 'text',
+    },
+  ],
+}
+Options
+The preview function resolves to a string that points to your front-end application with additional URL parameters. This can be an absolute URL or a relative path, and can run async if needed.
+
+The following arguments are provided to the preview function:
+
+Path
+
+Description
+
+doc
+
+The data of the Document being edited. This includes changes that have not yet been saved.
+
+options
+
+An object with additional properties.
+
+The options object contains the following properties:
+
+Path
+
+Description
+
+locale
+
+The current locale of the Document being edited.
+
+req
+
+The Payload Request object.
+
+token
+
+The JWT token of the currently authenticated in user.
+
+If your application requires a fully qualified URL, such as within deploying to Vercel Preview Deployments, you can use the req property to build this URL:
+
+preview: (doc, { req }) => `${req.protocol}//${req.host}/${doc.slug}` 
+Draft Preview
+The Preview feature can be used to achieve "Draft Preview". After clicking the preview button from the Admin Panel, you can enter into "draft mode" within your front-end application. This will allow you to adjust your page queries to include the draft: true param. When this param is present on the request, Payload will send back a draft document as opposed to a published one based on the document's _status field.
+
+To enter draft mode, the URL provided to the preview function can point to a custom endpoint in your front-end application that sets a cookie or session variable to indicate that draft mode is enabled. This is framework specific, so the mechanisms here very from framework to framework although the underlying concept is the same.
+
+Next.js
+If you're using Next.js, you can do the following code to enter Draft Mode.
+
+Step 1: Format the Preview URL
+First, format your admin.preview function to point to a custom endpoint that you'll open on your front-end. This URL should include a few key query search params:
+
+import type { CollectionConfig } from 'payload'
+
+export const Pages: CollectionConfig = {
+  slug: 'pages',
+  admin: {
+    preview: ({ slug, collection }) => {
+      const encodedParams = new URLSearchParams({
+        slug,
+        collection,
+        path: `/${slug}`,
+        previewSecret: process.env.PREVIEW_SECRET || '',
+      })
+
+      return `/preview?${encodedParams.toString()}` 
+    },
+  },
+  fields: [
+    {
+      name: 'slug',
+      type: 'text',
+    },
+  ],
+}
+Step 2: Create the Preview Route
+Then, create an API route that verifies the preview secret, authenticates the user, and enters draft mode:
+
+/app/preview/route.ts
+
+import type { CollectionSlug, PayloadRequest } from 'payload'
+import { getPayload } from 'payload'
+
+import { draftMode } from 'next/headers'
+import { redirect } from 'next/navigation'
+
+import configPromise from '@payload-config'
+
+export async function GET(
+  req: {
+    cookies: {
+      get: (name: string) => {
+        value: string
+      }
+    }
+  } & Request,
+): Promise<Response> {
+  const payload = await getPayload({ config: configPromise })
+
+  const { searchParams } = new URL(req.url)
+
+  const path = searchParams.get('path')
+  const collection = searchParams.get('collection') as CollectionSlug
+  const slug = searchParams.get('slug')
+  const previewSecret = searchParams.get('previewSecret')
+
+  if (previewSecret !== process.env.PREVIEW_SECRET) {
+    return new Response('You are not allowed to preview this page', {
+      status: 403,
+    })
+  }
+
+  if (!path || !collection || !slug) {
+    return new Response('Insufficient search params', { status: 404 })
+  }
+
+  if (!path.startsWith('/')) {
+    return new Response(
+      'This endpoint can only be used for relative previews',
+      { status: 500 },
+    )
+  }
+
+  let user
+
+  try {
+    user = await payload.auth({
+      req: req as unknown as PayloadRequest,
+      headers: req.headers,
+    })
+  } catch (error) {
+    payload.logger.error(
+      { err: error },
+      'Error verifying token for live preview',
+    )
+    return new Response('You are not allowed to preview this page', {
+      status: 403,
+    })
+  }
+
+  const draft = await draftMode()
+
+  if (!user) {
+    draft.disable()
+    return new Response('You are not allowed to preview this page', {
+      status: 403,
+    })
+  }
+
+  // You can add additional checks here to see if the user is allowed to preview this page
+
+  draft.enable()
+
+  redirect(path)
+}
+Step 3: Query Draft Content
+Finally, in your front-end application, you can detect draft mode and adjust your queries to include drafts:
+
+/app/[slug]/page.tsx
+
+export default async function Page({ params: paramsPromise }) {
+  const { slug = 'home' } = await paramsPromise
+
+  const { isEnabled: isDraftMode } = await draftMode()
+
+  const payload = await getPayload({ config })
+
+  const page = await payload.find({
+    collection: 'pages',
+    depth: 0,
+    draft: isDraftMode, 
+    limit: 1,
+    overrideAccess: isDraftMode,
+    where: {
+      slug: {
+        equals: slug,
+      },
+    },
+  })?.then(({ docs }) => docs?.[0])
+
+  if (page === null) {
+    return notFound()
+  }
+
+  return (
+    <main>
+      <h1>{page?.title}</h1>
+    </main>
+  )
+}
+
+
+
+Document Locking
+Document locking in Payload ensures that only one user at a time can edit a document, preventing data conflicts and accidental overwrites. When a document is locked, other users are prevented from making changes until the lock is released, ensuring data integrity in collaborative environments.
+
+The lock is automatically triggered when a user begins editing a document within the Admin Panel and remains in place until the user exits the editing view or the lock expires due to inactivity.
+
+How it works
+When a user starts editing a document, Payload locks it for that user. If another user attempts to access the same document, they will be notified that it is currently being edited. They can then choose one of the following options:
+
+View in Read-Only: View the document without the ability to make any changes.
+Take Over: Take over editing from the current user, which locks the document for the new editor and notifies the original user.
+Return to Dashboard: Navigate away from the locked document and continue with other tasks.
+The lock will automatically expire after a set period of inactivity, configurable using the duration property in the lockDocuments configuration, after which others can resume editing.
+
+Note: If your application does not require document locking, you can disable this feature for any collection or global by setting the lockDocuments property to false.
+
+Config Options
+The lockDocuments property exists on both the Collection Config and the Global Config. Document locking is enabled by default, but you can customize the lock duration or turn off the feature for any collection or global.
+
+Here's an example configuration for document locking:
+
+import type { CollectionConfig } from 'payload'
+
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+    },
+    // other fields...
+  ],
+  lockDocuments: {
+    duration: 600, // Duration in seconds
+  },
+}
+Locking Options
+Option
+
+Description
+
+lockDocuments
+
+Enables or disables document locking for the collection or global. By default, document locking is enabled. Set to an object to configure, or set to false to disable locking.
+
+duration
+
+Specifies the duration (in seconds) for how long a document remains locked without user interaction. The default is 300 seconds (5 minutes).
+
+Impact on APIs
+Document locking affects both the Local and REST APIs, ensuring that if a document is locked, concurrent users will not be able to perform updates or deletes on that document (including globals). If a user attempts to update or delete a locked document, they will receive an error.
+
+Once the document is unlocked or the lock duration has expired, other users can proceed with updates or deletes as normal.
+
+Overriding Locks
+For operations like update and delete, Payload includes an overrideLock option. This boolean flag, when set to false, enforces document locks, ensuring that the operation will not proceed if another user currently holds the lock.
+
+By default, overrideLock is set to true, which means that document locks are ignored, and the operation will proceed even if the document is locked. To enforce locks and prevent updates or deletes on locked documents, set overrideLock: false.
+
+const result = await payload.update({
+  collection: 'posts',
+  id: '123',
+  data: {
+    title: 'New title',
+  },
+  overrideLock: false, // Enforces the document lock, preventing updates if the document is locked
+})
+This option is particularly useful in scenarios where administrative privileges or specific workflows require you to override the lock and ensure the operation is completed.
+
+
+
+React Hooks
+Payload provides a variety of powerful React Hooks that can be used within your own Custom Components, such as Custom Fields. With them, you can interface with Payload itself to build just about any type of complex customization you can think of.
+
+Reminder: All Custom Components are React Server Components by default. Hooks, on the other hand, are only available in client-side environments. To use hooks, ensure your component is a client component.
+
+useField
+The useField hook is used internally within all field components. It manages sending and receiving a field's state from its parent form. When you build a Custom Field Component, you will be responsible for sending and receiving the field's value to and from the form yourself.
+
+To do so, import the useField hook as follows:
+
+'use client'
+import type { TextFieldClientComponent } from 'payload'
+import { useField } from '@payloadcms/ui'
+
+export const CustomTextField: TextFieldClientComponent = ({ path }) => {
+  const { value, setValue } = useField({ path }) 
+
+  return (
+    <div>
+      <p>{path}</p>
+      <input
+        onChange={(e) => {
+          setValue(e.target.value)
+        }}
+        value={value}
+      />
+    </div>
+  )
+}
+The useField hook accepts the following arguments:
+
+Property
+
+Description
+
+path
+
+If you do not provide a path, name will be used instead. This is the path to the field in the form data.
+
+validate
+
+A validation function executed client-side before submitting the form to the server. Different than Field-level Validation which runs strictly on the server.
+
+disableFormData
+
+If true, the field will not be included in the form data when the form is submitted.
+
+hasRows
+
+If true, the field will be treated as a field with rows. This is useful for fields like array and blocks.
+
+The useField hook returns the following object:
+
+type FieldType<T> = {
+  errorMessage?: string
+  errorPaths?: string[]
+  filterOptions?: FilterOptionsResult
+  formInitializing: boolean
+  formProcessing: boolean
+  formSubmitted: boolean
+  initialValue?: T
+  path: string
+  permissions: FieldPermissions
+  readOnly?: boolean
+  rows?: Row[]
+  schemaPath: string
+  setValue: (val: unknown, disableModifyingForm?: boolean) => void
+  showError: boolean
+  valid?: boolean
+  value: T
+}
+useFormFields
+There are times when a custom field component needs to have access to data from other fields, and you have a few options to do so. The useFormFields hook is a powerful and highly performant way to retrieve a form's field state, as well as to retrieve the dispatchFields method, which can be helpful for setting other fields' form states from anywhere within a form.
+
+This hook is great for retrieving only certain fields from form state because it ensures that it will only cause a rerender when the items that you ask for change.
+
+Thanks to the awesome package use-context-selector, you can retrieve a specific field's state easily. This is ideal because you can ensure you have an up-to-date field state, and your component will only re-render when that field's state changes.
+
+You can pass a Redux-like selector into the hook, which will ensure that you retrieve only the field that you want. The selector takes an argument with type of [fields: Fields, dispatch: React.Dispatch<Action>]].
+
+'use client'
+import { useFormFields } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  // Get only the `amount` field state, and only cause a rerender when that field changes
+  const amount = useFormFields(([fields, dispatch]) => fields.amount)
+
+  // Do the same thing as above, but to the `feePercentage` field
+  const feePercentage = useFormFields(
+    ([fields, dispatch]) => fields.feePercentage,
+  )
+
+  if (
+    typeof amount?.value !== 'undefined' &&
+    typeof feePercentage?.value !== 'undefined'
+  ) {
+    return <span>The fee is ${(amount.value * feePercentage.value) / 100}</span>
+  }
+}
+useAllFormFields
+To retrieve more than one field, you can use the useAllFormFields hook. Your component will re-render when any field changes, so use this hook only if you absolutely need to. Unlike the useFormFields hook, this hook does not accept a "selector", and it always returns an array with type of [fields: Fields, dispatch: React.Dispatch<Action>]].
+
+You can do lots of powerful stuff by retrieving the full form state, like using built-in helper functions to reduce field state to values only, or to retrieve sibling data by path.
+
+'use client'
+import { useAllFormFields } from '@payloadcms/ui'
+import { reduceFieldsToValues, getSiblingData } from 'payload/shared'
+
+const ExampleComponent: React.FC = () => {
+  // the `fields` const will be equal to all fields' state,
+  // and the `dispatchFields` method is usable to send field state up to the form
+  const [fields, dispatchFields] = useAllFormFields();
+
+  // Pass in fields, and indicate if you'd like to "unflatten" field data.
+  // The result below will reflect the data stored in the form at the given time
+  const formData = reduceFieldsToValues(fields, true);
+
+  // Pass in field state and a path,
+  // and you will be sent all sibling data of the path that you've specified
+  const siblingData = getSiblingData(fields, 'someFieldName');
+
+  return (
+    // return some JSX here if necessary
+  )
+};
+Updating other fields' values
+If you are building a Custom Component, then you should use setValue which is returned from the useField hook to programmatically set your field's value. But if you're looking to update another field's value, you can use dispatchFields returned from useAllFormFields.
+
+You can send the following actions to the dispatchFields function.
+
+Action
+
+Description
+
+ADD_ROW
+
+Adds a row of data (useful in array / block field data)
+
+DUPLICATE_ROW
+
+Duplicates a row of data (useful in array / block field data)
+
+MODIFY_CONDITION
+
+Updates a field's conditional logic result (true / false)
+
+MOVE_ROW
+
+Moves a row of data (useful in array / block field data)
+
+REMOVE
+
+Removes a field from form state
+
+REMOVE_ROW
+
+Removes a row of data from form state (useful in array / block field data)
+
+REPLACE_STATE
+
+Completely replaces form state
+
+UPDATE
+
+Update any property of a specific field's state
+
+To see types for each action supported within the dispatchFields hook, check out the Form types here.
+
+useForm
+The useForm hook can be used to interact with the form itself, and sends back many methods that can be used to reactively fetch form state without causing rerenders within your components each time a field is changed. This is useful if you have action-based callbacks that your components fire, and need to interact with form state based on a user action.
+
+Warning:
+
+This hook is optimized to avoid causing rerenders when fields change, and as such, its fields property will be out of date. You should only leverage this hook if you need to perform actions against the form in response to your users' actions. Do not rely on its returned "fields" as being up-to-date. They will be removed from this hook's response in an upcoming version.
+
+The useForm hook returns an object with the following properties:
+
+Action	Description	Example
+fields
+
+Deprecated. This property cannot be relied on as up-to-date.
+
+submit
+
+Method to trigger the form to submit
+
+dispatchFields
+
+Dispatch actions to the form field state
+
+validateForm
+
+Trigger a validation of the form state
+
+createFormData
+
+Create a multipart/form-data object from the current form's state
+
+disabled
+
+Boolean denoting whether or not the form is disabled
+
+getFields
+
+Gets all fields from state
+
+getField
+
+Gets a single field from state by path
+
+getData
+
+Returns the data stored in the form
+
+getSiblingData
+
+Returns form sibling data for the given field path
+
+setModified
+
+Set the form's modified state
+
+setProcessing
+
+Set the form's processing state
+
+setSubmitted
+
+Set the form's submitted state
+
+formRef
+
+The ref from the form HTML element
+
+reset
+
+Method to reset the form to its initial state
+
+addFieldRow
+
+Method to add a row on an array or block field
+
+
+removeFieldRow
+
+Method to remove a row from an array or block field
+
+
+replaceFieldRow
+
+Method to replace a row from an array or block field
+
+
+useDocumentForm
+The useDocumentForm hook works the same way as the useForm hook, but it always gives you access to the top-level Form of a document. This is useful if you need to access the document's Form context from within a child Form.
+
+An example where this could happen would be custom components within lexical blocks, as lexical blocks initialize their own child Form.
+
+'use client'
+
+import { useDocumentForm } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { fields: parentDocumentFields } = useDocumentForm()
+
+  return (
+    <p>
+      The document's Form has ${Object.keys(parentDocumentFields).length} fields
+    </p>
+  )
+}
+useCollapsible
+The useCollapsible hook allows you to control parent collapsibles:
+
+Property
+
+Description
+
+isCollapsed
+
+State of the collapsible. true if open, false if collapsed.
+
+isVisible
+
+If nested, determine if the nearest collapsible is visible. true if no parent is closed, false otherwise.
+
+toggle
+
+Toggles the state of the nearest collapsible.
+
+isWithinCollapsible
+
+Determine when you are within another collapsible.
+
+Example:
+
+'use client'
+import React from 'react'
+
+import { useCollapsible } from '@payloadcms/ui'
+
+const CustomComponent: React.FC = () => {
+  const { isCollapsed, toggle } = useCollapsible()
+
+  return (
+    <div>
+      <p className="field-type">I am {isCollapsed ? 'closed' : 'open'}</p>
+      <button onClick={toggle} type="button">
+        Toggle
+      </button>
+    </div>
+  )
+}
+useDocumentInfo
+The useDocumentInfo hook provides information about the current document being edited, including the following:
+
+Property
+
+Description
+
+action
+
+The URL attached to the action attribute on the underlying form element, which specifies where to send the form data when the form is submitted.
+
+apiURL
+
+The API URL for the current document.
+
+collectionSlug
+
+The slug of the collection if editing a collection document.
+
+currentEditor
+
+The user currently editing the document.
+
+docConfig
+
+Either the Collection or Global config of the document, depending on what is being edited.
+
+docPermissions
+
+The current document's permissions. Fallback to collection permissions when no id is present.
+
+documentIsLocked
+
+Whether the document is currently locked by another user. More details.
+
+getDocPermissions
+
+Method to retrieve document-level permissions.
+
+getDocPreferences
+
+Method to retrieve document-level user preferences. More details.
+
+globalSlug
+
+The slug of the global if editing a global document.
+
+hasPublishedDoc
+
+Whether the document has a published version.
+
+hasPublishPermission
+
+Whether the current user has permission to publish the document.
+
+hasSavePermission
+
+Whether the current user has permission to save the document.
+
+id
+
+If the doc is a collection, its ID will be returned.
+
+incrementVersionCount
+
+Method to increment the version count of the document.
+
+initialData
+
+The initial data of the document.
+
+isEditing
+
+Whether the document is being edited (as opposed to created).
+
+isInitializing
+
+Whether the document info is still initializing.
+
+isLocked
+
+Whether the document is locked. More details.
+
+lastUpdateTime
+
+Timestamp of the last update to the document.
+
+mostRecentVersionIsAutosaved
+
+Whether the most recent version is an autosaved version.
+
+preferencesKey
+
+The preferences key to use when interacting with document-level user preferences. More details.
+
+savedDocumentData
+
+The saved data of the document.
+
+setDocFieldPreferences
+
+Method to set preferences for a specific field. More details.
+
+setDocumentTitle
+
+Method to set the document title.
+
+setHasPublishedDoc
+
+Method to update whether the document has been published.
+
+title
+
+The title of the document.
+
+unlockDocument
+
+Method to unlock a document. More details.
+
+unpublishedVersionCount
+
+The number of unpublished versions of the document.
+
+updateDocumentEditor
+
+Method to update who is currently editing the document. More details.
+
+updateSavedDocumentData
+
+Method to update the saved document data.
+
+uploadStatus
+
+Status of any uploads in progress ('idle', 'uploading', or 'failed').
+
+versionCount
+
+The current version count of the document.
+
+Example:
+
+'use client'
+import { useDocumentInfo } from '@payloadcms/ui'
+
+const LinkFromCategoryToPosts: React.FC = () => {
+  const { id } = useDocumentInfo()
+
+  // id will be undefined on the create form
+  if (!id) {
+    return null
+  }
+
+  return (
+    <a
+      href={`/admin/collections/posts?where[or][0][and][0][category][in][0]=[${id}]`}
+    >
+      View posts
+    </a>
+  )
+}
+useListQuery
+The useListQuery hook is used to subscribe to the data, current query, and other properties used within the List View. You can use this hook within any Custom Component rendered within the List View.
+
+'use client'
+import { useListQuery } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { data, query } = useListQuery()
+
+  // ...
+}
+The useListQuery hook returns an object with the following properties:
+
+Property
+
+Description
+
+data
+
+The data that is being displayed in the List View.
+
+defaultLimit
+
+The default limit of items to display in the List View.
+
+defaultSort
+
+The default sort order of items in the List View.
+
+handlePageChange
+
+A method to handle page changes in the List View.
+
+handlePerPageChange
+
+A method to handle per page changes in the List View.
+
+handleSearchChange
+
+A method to handle search changes in the List View.
+
+handleSortChange
+
+A method to handle sort changes in the List View.
+
+handleWhereChange
+
+A method to handle where changes in the List View.
+
+modified
+
+Whether the query has been changed from its Query Preset.
+
+query
+
+The current query that is being used to fetch the data in the List View.
+
+useSelection
+The useSelection hook provides information on the selected rows in the List view as well as helper methods to simplify selection. The useSelection hook returns an object with the following properties:
+
+Property
+
+Description
+
+count
+
+The number of currently selected rows.
+
+getQueryParams
+
+A function that generates a query string based on the current selection state and optional additional filtering parameters.
+
+selectAll
+
+An enum value representing the selection range: 'allAvailable', 'allInPage', 'none', and 'some'. The enum, SelectAllStatus, is exported for easier comparisons.
+
+selected
+
+A map of document id keys and boolean values representing their selection status.
+
+setSelection
+
+A function that toggles the selection status of a document row.
+
+toggleAll
+
+A function that toggles selection for all documents on the current page or selects all available documents when passed true.
+
+totalDocs
+
+The number of total documents in the collection.
+
+Example:
+
+'use client'
+import { useSelection } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { count, toggleAll, totalDocs } = useSelection()
+
+  return (
+    <>
+      <span>
+        Selected {count} out of {totalDocs} docs!
+      </span>
+      <button type="button" onClick={() => toggleAll(true)}>
+        Toggle All Selections
+      </button>
+    </>
+  )
+}
+useLocale
+In any Custom Component you can get the selected locale object with the useLocale hook. useLocale gives you the full locale object, consisting of a label, rtl(right-to-left) property, and then code. Here is a simple example:
+
+'use client'
+import { useLocale } from '@payloadcms/ui'
+
+const Greeting: React.FC = () => {
+  const locale = useLocale()
+
+  const trans = {
+    en: 'Hello',
+    es: 'Hola',
+  }
+
+  return <span> {trans[locale.code]} </span>
+}
+useAuth
+Useful to retrieve info about the currently logged in user as well as methods for interacting with it. It sends back an object with the following properties:
+
+Property
+
+Description
+
+user
+
+The currently logged in user
+
+logOut
+
+A method to log out the currently logged in user
+
+refreshCookie
+
+A method to trigger the silent refreshing of a user's auth token
+
+setToken
+
+Set the token of the user, to be decoded and used to reset the user and token in memory
+
+token
+
+The logged in user's token (useful for creating preview links, etc.)
+
+refreshPermissions
+
+Load new permissions (useful when content that effects permissions has been changed)
+
+permissions
+
+The permissions of the current user
+
+'use client'
+import { useAuth } from '@payloadcms/ui'
+import type { User } from '../payload-types.ts'
+
+const Greeting: React.FC = () => {
+  const { user } = useAuth<User>()
+
+  return <span>Hi, {user.email}!</span>
+}
+useConfig
+Used to retrieve the Payload Client Config.
+
+'use client'
+import { useConfig } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { config } = useConfig()
+
+  return <span>{config.serverURL}</span>
+}
+If you need to retrieve a specific collection or global config by its slug, getEntityConfig is the most efficient way to do so:
+
+'use client'
+import { useConfig } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { getEntityConfig } = useConfig()
+  const mediaConfig = getEntityConfig({ collectionSlug: 'media' })
+
+  return (
+    <span>The media collection has {mediaConfig.fields.length} fields.</span>
+  )
+}
+useEditDepth
+Sends back how many editing levels "deep" the current component is. Edit depth is relevant while adding new documents / editing documents in modal windows and other cases.
+
+'use client'
+import { useEditDepth } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const editDepth = useEditDepth()
+
+  return <span>My component is {editDepth} levels deep</span>
+}
+usePreferences
+Returns methods to set and get user preferences. More info can be found here.
+
+useTheme
+Returns the currently selected theme (light, dark or auto), a set function to update it and a boolean autoMode, used to determine if the theme value should be set automatically based on the user's device preferences.
+
+'use client'
+import { useTheme } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { autoMode, setTheme, theme } = useTheme()
+
+  return (
+    <>
+      <span>
+        The current theme is {theme} and autoMode is {autoMode}
+      </span>
+      <button
+        type="button"
+        onClick={() =>
+          setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+        }
+      >
+        Toggle theme
+      </button>
+    </>
+  )
+}
+useTableColumns
+Returns methods to manipulate table columns
+
+'use client'
+import { useTableColumns } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  const { setActiveColumns } = useTableColumns()
+
+  const resetColumns = () => {
+    setActiveColumns(['id', 'createdAt', 'updatedAt'])
+  }
+
+  return (
+    <button type="button" onClick={resetColumns}>
+      Reset columns
+    </button>
+  )
+}
+useDocumentEvents
+The useDocumentEvents hook provides a way of subscribing to cross-document events, such as updates made to nested documents within a drawer. This hook will report document events that are outside the scope of the document currently being edited. This hook provides the following:
+
+Property
+
+Description
+
+mostRecentUpdate
+
+An object containing the most recently updated document. It contains the entitySlug, id (if collection), and updatedAt properties
+
+reportUpdate
+
+A method used to report updates to documents. It accepts the same arguments as the mostRecentUpdate property.
+
+Example:
+
+'use client'
+import { useDocumentEvents } from '@payloadcms/ui'
+
+const ListenForUpdates: React.FC = () => {
+  const { mostRecentUpdate } = useDocumentEvents()
+
+  return <span>{JSON.stringify(mostRecentUpdate)}</span>
+}
+Right now the useDocumentEvents hook only tracks recently updated documents, but in the future it will track more document-related events as needed, such as document creation, deletion, etc.
+
+useStepNav
+The useStepNav hook provides a way to change the step-nav breadcrumb links in the app header.
+
+Property
+
+Description
+
+setStepNav
+
+A state setter function which sets the stepNav array.
+
+stepNav
+
+A StepNavItem array where each StepNavItem has a label and optionally a url.
+
+Example:
+
+'use client'
+import { type StepNavItem, useStepNav } from '@payloadcms/ui'
+import { useEffect } from 'react'
+
+export const MySetStepNavComponent: React.FC<{
+  nav: StepNavItem[]
+}> = ({ nav }) => {
+  const { setStepNav } = useStepNav()
+
+  useEffect(() => {
+    setStepNav(nav)
+  }, [setStepNav, nav])
+
+  return null
+}
+usePayloadAPI
+The usePayloadAPI hook is a useful tool for making REST API requests to your Payload instance and handling responses reactively. It allows you to fetch and interact with data while automatically updating when parameters change.
+
+This hook returns an array with two elements:
+
+An object containing the API response.
+A set of methods to modify request parameters.
+Example:
+
+'use client'
+import { usePayloadAPI } from '@payloadcms/ui'
+
+const MyComponent: React.FC = () => {
+  // Fetch data from a collection item using its ID
+  const [{ data, isError, isLoading }, { setParams }] = usePayloadAPI(
+    '/api/posts/123',
+    {
+      initialParams: { depth: 1 },
+    },
+  )
+
+  if (isLoading) return <p>Loading...</p>
+  if (isError) return <p>Error occurred while fetching data.</p>
+
+  return (
+    <div>
+      <h1>{data?.title}</h1>
+      <button onClick={() => setParams({ cacheBust: Date.now() })}>
+        Refresh Data
+      </button>
+    </div>
+  )
+}
+Arguments:
+
+Property
+
+Description
+
+url
+
+The API endpoint to fetch data from. Relative URLs will be prefixed with the Payload API route.
+
+options
+
+An object containing initial request parameters and initial state configuration.
+
+The options argument accepts the following properties:
+
+Property
+
+Description
+
+initialData
+
+Uses this data instead of making an initial request. If not provided, the request runs immediately.
+
+initialParams
+
+Defines the initial parameters to use in the request. Defaults to an empty object {}.
+
+Returned Value:
+
+The first item in the returned array is an object containing the following properties:
+
+Property
+
+Description
+
+data
+
+The API response data.
+
+isError
+
+A boolean indicating whether the request failed.
+
+isLoading
+
+A boolean indicating whether the request is in progress.
+
+The second item is an object with the following methods:
+
+Property
+
+Description
+
+setParams
+
+Updates request parameters, triggering a refetch if needed.
+
+Updating Data
+The setParams function can be used to update the request and trigger a refetch:
+
+setParams({ depth: 2 })
+This is useful for scenarios where you need to trigger another fetch regardless of the url argument changing.
+
+useRouteTransition
+Route transitions are useful in showing immediate visual feedback to the user when navigating between pages. This is especially useful on slow networks when navigating to data heavy or process intensive pages.
+
+By default, any instances of Link from @payloadcms/ui will trigger route transitions dy default.
+
+import { Link } from '@payloadcms/ui'
+
+const MyComponent = () => {
+  return <Link href="/somewhere">Go Somewhere</Link>
+}
+You can also trigger route transitions programmatically, such as when using router.push from next/router. To do this, wrap your function calls with the startRouteTransition method provided by the useRouteTransition hook.
+
+'use client'
+import React, { useCallback } from 'react'
+import { useTransition } from '@payloadcms/ui'
+import { useRouter } from 'next/navigation'
+
+const MyComponent: React.FC = () => {
+  const router = useRouter()
+  const { startRouteTransition } = useRouteTransition()
+
+  const redirectSomewhere = useCallback(() => {
+    startRouteTransition(() => router.push('/somewhere'))
+  }, [startRouteTransition, router])
+
+  // ...
+}
+
+
+Customizing CSS & SCSS
+Customizing the Payload Admin Panel through CSS alone is one of the easiest and most powerful ways to customize the look and feel of the dashboard. To allow for this level of customization, Payload:
+
+Exposes a root-level stylesheet for you to inject custom selectors
+Provides a CSS library that can be easily overridden or extended
+Uses BEM naming conventions so that class names are globally accessible
+To customize the CSS within the Admin UI, determine scope and change you'd like to make, and then add your own CSS or SCSS to the configuration as needed.
+
+Global CSS
+Global CSS refers to the CSS that is applied to the entire Admin Panel. This is where you can have a significant impact to the look and feel of the Admin UI through just a few lines of code.
+
+You can add your own global CSS through the root custom.scss file of your app. This file is loaded into the root of the Admin Panel and can be used to inject custom selectors or styles however needed.
+
+Here is an example of how you might target the Dashboard View and change the background color:
+
+.dashboard {
+  background-color: red; 
+}
+Note: If you are building Custom Components, it is best to import your own stylesheets directly into your components, rather than using the global stylesheet. You can continue to use the CSS library as needed.
+
+Specificity rules
+All Payload CSS is encapsulated inside CSS layers under @layer payload-default. Any custom css will now have the highest possible specificity.
+
+We have also provided a layer @layer payload if you want to use layers and ensure that your styles are applied after payload.
+
+To override existing styles in a way that the previous rules of specificity would be respected you can use the default layer like so
+
+@layer payload-default {
+  // my styles within the Payload specificity
+}
+Re-using Payload SCSS variables and utilities
+You can re-use Payload's SCSS variables and utilities in your own stylesheets by importing it from the UI package.
+
+@import '~@payloadcms/ui/scss';
+CSS Library
+To make it as easy as possible for you to override default styles, Payload uses BEM naming conventions for all CSS within the Admin UI. If you provide your own CSS, you can override any built-in styles easily, including targeting nested components and their various component states.
+
+You can also override Payload's built-in CSS Variables. These variables are widely consumed by the Admin Panel, so modifying them has a significant impact on the look and feel of the Admin UI.
+
+The following variables are defined and can be overridden:
+
+Breakpoints
+Colors
+Base color shades (white to black by default)
+Success / warning / error color shades
+Theme-specific colors (background, input background, text color, etc.)
+Elevation colors (used to determine how "bright" something should be when compared to the background)
+Sizing
+Horizontal gutter
+Transition speeds
+Font sizes
+Etc.
+For an up-to-date, comprehensive list of all available variables, please refer to the Source Code.
+
+Warning: If you're overriding colors or theme elevations, make sure to consider how your changes will affect dark mode.
+
+Dark Mode
+Colors are designed to automatically adapt to theme of the Admin Panel. By default, Payload automatically overrides all --theme-elevation colors and inverts all success / warning / error shades to suit dark mode. We also update some base theme variables like --theme-bg, --theme-text, etc.
+
+Next
+Managing User Preferences
+Related Guides
+How to theme the Payload admin panel with Tailwind CSS 4
+How to setup Tailwind CSS and shadcn/ui in Payload
+
+Managing User Preferences
+As your users interact with the Admin Panel, you might want to store their preferences in a persistent manner, so that when they revisit the Admin Panel in a different session or from a different device, they can pick right back up where they left off.
+
+Out of the box, Payload handles the persistence of your users' preferences in a handful of ways, including:
+
+Columns in the Collection List View: their active state and order
+The user's last active Locale
+The "collapsed" state of blocks, array, and collapsible fields
+The last-known state of the Nav component, etc.
+Important:
+
+All preferences are stored on an individual user basis. Payload automatically recognizes the user that is reading or setting a preference via all provided authentication methods.
+
+Use Cases
+This API is used significantly for internal operations of the Admin Panel, as mentioned above. But, if you're building your own React components for use in the Admin Panel, you can allow users to set their own preferences in correspondence to their usage of your components. For example:
+
+If you have built a "color picker", you could "remember" the last used colors that the user has set for easy access next time
+If you've built a custom Nav component, and you've built in an "accordion-style" UI, you might want to store the collapsed state of each Nav collapsible item. This way, if an editor returns to the panel, their Nav state is persisted automatically
+You might want to store recentlyAccessed documents to give admin editors an easy shortcut back to their recently accessed documents on the Dashboard or similar
+Many other use cases exist. Invent your own! Give your editors an intelligent and persistent editing experience.
+Database
+Payload automatically creates an internally used payload-preferences Collection that stores user preferences. Each document in the payload-preferences Collection contains the following shape:
+
+Key
+
+Value
+
+id
+
+A unique ID for each preference stored.
+
+key
+
+A unique key that corresponds to the preference.
+
+user.value
+
+The ID of the user that is storing its preference.
+
+user.relationTo
+
+The slug of the Collection that the user is logged in as.
+
+value
+
+The value of the preference. Can be any data shape that you need.
+
+createdAt
+
+A timestamp of when the preference was created.
+
+updatedAt
+
+A timestamp set to the last time the preference was updated.
+
+APIs
+Preferences are available to both GraphQL and REST APIs.
+
+Adding or reading Preferences in your own components
+The Payload Admin Panel offers a usePreferences hook. The hook is only meant for use within the Admin Panel itself. It provides you with two methods:
+
+getPreference
+This async method provides an easy way to retrieve a user's preferences by key. It will return a promise containing the resulting preference value.
+
+Arguments
+
+key: the key of your preference to retrieve.
+setPreference
+Also async, this method provides you with an easy way to set a user preference. It returns void.
+
+Arguments:
+
+key: the key of your preference to set.
+value: the value of your preference that you're looking to set.
+Example
+Here is an example for how you can utilize usePreferences within your custom Admin Panel components. Note - this example is not fully useful and is more just a reference for how to utilize the Preferences API. In this case, we are demonstrating how to set and retrieve a user's last used colors history within a ColorPicker or similar type component.
+
+'use client'
+import React, { Fragment, useState, useEffect, useCallback } from 'react'
+import { usePreferences } from '@payloadcms/ui'
+
+const lastUsedColorsPreferenceKey = 'last-used-colors'
+
+export function CustomComponent() {
+  const { getPreference, setPreference } = usePreferences()
+
+  // Store the last used colors in local state
+  const [lastUsedColors, setLastUsedColors] = useState([])
+
+  // Callback to add a color to the last used colors
+  const updateLastUsedColors = useCallback(
+    (color) => {
+      // First, check if color already exists in last used colors.
+      // If it already exists, there is no need to update preferences
+      const colorAlreadyExists = lastUsedColors.indexOf(color) > -1
+
+      if (!colorAlreadyExists) {
+        const newLastUsedColors = [...lastUsedColors, color]
+
+        setLastUsedColors(newLastUsedColors)
+        setPreference(lastUsedColorsPreferenceKey, newLastUsedColors)
+      }
+    },
+    [lastUsedColors, setPreference],
+  )
+
+  // Retrieve preferences on component mount
+  // This will only be run one time, because the `getPreference` method never changes
+  useEffect(() => {
+    const asyncGetPreference = async () => {
+      const lastUsedColorsFromPreferences = await getPreference(
+        lastUsedColorsPreferenceKey,
+      )
+      setLastUsedColors(lastUsedColorsFromPreferences)
+    }
+
+    asyncGetPreference()
+  }, [getPreference])
+
+  return (
+    <div>
+      <button type="button" onClick={() => updateLastUsedColors('red')}>
+        Use red
+      </button>
+      <button type="button" onClick={() => updateLastUsedColors('blue')}>
+        Use blue
+      </button>
+      <button type="button" onClick={() => updateLastUsedColors('purple')}>
+        Use purple
+      </button>
+      <button type="button" onClick={() => updateLastUsedColors('yellow')}>
+        Use yellow
+      </button>
+      {lastUsedColors && (
+        <Fragment>
+          <h5>Last used colors:</h5>
+          <ul>
+            {lastUsedColors?.map((color) => <li key={color}>{color}</li>)}
+          </ul>
+        </Fragment>
+      )}
+    </div>
+  )
+}
+
+
+Page Metadata
+Every page within the Admin Panel automatically receives dynamic, auto-generated metadata derived from live document data, the user's current locale, and more. This includes the page title, description, og:image, etc. and requires no additional configuration.
+
+Metadata is fully configurable at the root level and cascades down to individual collections, documents, and custom views. This allows for the ability to control metadata on any page with high precision, while also providing sensible defaults.
+
+All metadata is injected into Next.js' generateMetadata function. This used to generate the <head> of pages within the Admin Panel. All metadata options that are available in Next.js are exposed by Payload.
+
+Within the Admin Panel, metadata can be customized at the following levels:
+
+Root Metadata
+Collection Metadata
+Global Metadata
+View Metadata
+All of these types of metadata share a similar structure, with a few key differences on the Root level. To customize metadata, consult the list of available scopes. Determine the scope that corresponds to what you are trying to accomplish, then author your metadata within the Payload Config accordingly.
+
+Root Metadata
+Root Metadata is the metadata that is applied to all pages within the Admin Panel. This is where you can control things like the suffix appended onto each page's title, the favicon displayed in the browser's tab, and the Open Graph data that is used when sharing the Admin Panel on social media.
+
+To customize Root Metadata, use the admin.meta key in your Payload Config:
+
+{
+  // ...
+  admin: {
+    meta: {
+      title: 'My Admin Panel',
+      description: 'The best admin panel in the world',
+      icons: [
+        {
+          rel: 'icon',
+          type: 'image/png',
+          url: '/favicon.png',
+        },
+      ],
+    },
+  },
+}
+The following options are available for Root Metadata:
+
+Key
+
+Type
+
+Description
+
+defaultOGImageType
+
+dynamic (default), static, or off
+
+The type of default OG image to use. If set to dynamic, Payload will use Next.js image generation to create an image with the title of the page. If set to static, Payload will use the defaultOGImage URL. If set to off, Payload will not generate an OG image.
+
+titleSuffix
+
+string
+
+A suffix to append to the end of the title of every page. Defaults to "- Payload".
+
+[keyof Metadata]
+
+unknown
+
+Any other properties that Next.js supports within the generateMetadata function. More details.
+
+Reminder: These are the root-level options for the Admin Panel. You can also customize metadata on the Collection, Global, and Document levels through their respective configs.
+
+Icons
+The Icons Config corresponds to the <link> tags that are used to specify icons for the Admin Panel. The icons key is an array of objects, each of which represents an individual icon. Icons are differentiated from one another by their rel attribute, which specifies the relationship between the document and the icon.
+
+The most common icon type is the favicon, which is displayed in the browser tab. This is specified by the rel attribute icon. Other common icon types include apple-touch-icon, which is used by Apple devices when the Admin Panel is saved to the home screen, and mask-icon, which is used by Safari to mask the Admin Panel icon.
+
+To customize icons, use the admin.meta.icons property in your Payload Config:
+
+{
+  // ...
+  admin: {
+    meta: {
+      icons: [
+        {
+          rel: 'icon',
+          type: 'image/png',
+          url: '/favicon.png',
+        },
+        {
+          rel: 'apple-touch-icon',
+          type: 'image/png',
+          url: '/apple-touch-icon.png',
+        },
+      ],
+    },
+  },
+}
+For a full list of all available Icon options, see the Next.js documentation.
+
+Open Graph
+Open Graph metadata is a set of tags that are used to control how URLs are displayed when shared on social media platforms. Open Graph metadata is automatically generated by Payload, but can be customized at the Root level.
+
+To customize Open Graph metadata, use the admin.meta.openGraph property in your Payload Config:
+
+{
+  // ...
+  admin: {
+    meta: {
+      openGraph: {
+        description: 'The best admin panel in the world',
+        images: [
+          {
+            url: 'https://example.com/image.jpg',
+            width: 800,
+            height: 600,
+          },
+        ],
+        siteName: 'Payload',
+        title: 'My Admin Panel',
+      },
+    },
+  },
+}
+For a full list of all available Open Graph options, see the Next.js documentation.
+
+Robots
+Setting the robots property will allow you to control the robots meta tag that is rendered within the <head> of the Admin Panel. This can be used to control how search engines index pages and displays them in search results.
+
+By default, the Admin Panel is set to prevent search engines from indexing pages within the Admin Panel.
+
+To customize the Robots Config, use the admin.meta.robots property in your Payload Config:
+
+{
+  // ...
+  admin: {
+    meta: {
+      robots: 'noindex, nofollow',
+    },
+  },
+}
+For a full list of all available Robots options, see the Next.js documentation.
+
+Prevent Crawling
+While setting meta tags via admin.meta.robots can prevent search engines from indexing web pages, it does not prevent them from being crawled.
+
+To prevent your pages from being crawled altogether, add a robots.txt file to your root directory.
+
+User-agent: *
+Disallow: /admin/
+Note: If you've customized the path to your Admin Panel via config.routes, be sure to update the Disallow directive to match your custom path.
+
+Collection Metadata
+Collection Metadata is the metadata that is applied to all pages within any given Collection within the Admin Panel. This metadata is used to customize the title and description of all views within any given Collection, unless overridden by the view itself.
+
+To customize Collection Metadata, use the admin.meta key within your Collection Config:
+
+import type { CollectionConfig } from 'payload'
+
+export const MyCollection: CollectionConfig = {
+  // ...
+  admin: {
+    meta: {
+      title: 'My Collection',
+      description: 'The best collection in the world',
+    },
+  },
+}
+The Collection Meta config has the same options as the Root Metadata config.
+
+Global Metadata
+Global Metadata is the metadata that is applied to all pages within any given Global within the Admin Panel. This metadata is used to customize the title and description of all views within any given Global, unless overridden by the view itself.
+
+To customize Global Metadata, use the admin.meta key within your Global Config:
+
+import { GlobalConfig } from 'payload'
+
+export const MyGlobal: GlobalConfig = {
+  // ...
+  admin: {
+    meta: {
+      title: 'My Global',
+      description: 'The best admin panel in the world',
+    },
+  },
+}
+The Global Meta config has the same options as the Root Metadata config.
+
+View Metadata
+View Metadata is the metadata that is applied to specific Views within the Admin Panel. This metadata is used to customize the title and description of a specific view, overriding any metadata set at the Root, Collection, or Global level.
+
+To customize View Metadata, use the meta key within your View Config:
+
+{
+  // ...
+  admin: {
+    views: {
+      dashboard: {
+        meta: {
+          title: 'My Dashboard',
+          description: 'The best dashboard in the world',
+        }
+      },
+    },
+  },
+}
+

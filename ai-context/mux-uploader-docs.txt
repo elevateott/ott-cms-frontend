@@ -1,0 +1,350 @@
+URL: https://www.mux.com/docs/guides/mux-uploader?utm_source=github-mux-uploader
+
+Mux Uploader is a drop in component for uploading videos to Mux from your web application
+Mux Uploader is a drop-in web component that makes it easy to upload video files to Mux.
+This component allows you to build a fully-functional, customizable video upload UI in your application using a single line of code. Mux Uploader supports:
+Mux Uploader can be used as either a web component (<mux-uploader> from @mux/mux-uploader), or a React component (<MuxUploader /> from @mux/mux-uploader-react).
+Here are some examples of Mux Uploader in action.
+Install with either npm, yarn or load Mux Uploader from the hosted script.
+You will need to select one of the package options below. Both examples will automatically update the uploader. You can always anchor the package to a specific version if needed.
+Mux Uploader allows you to use upload URLs provided by Mux's Direct UploadsAPI in your web application.
+It takes care of rendering a file selector, uploading your video file, displaying progress updates to the user, handling retries, and more.
+This does mean that you'll need to provide a new upload URL whenever a user will be uploading a new video file in your application. You provide that URL value via the endpoint attribute or property. It looks like this:
+The endpoint indicates the direct upload URL that will receive the video file you're uploading.
+You can generate a signed direct upload URL by making a server-side API call to Mux's Create Direct UploadAPI endpoint,
+or you can use curl based on the example from the link if you just want to test it out.
+In a successful API response, you will receive a unique signed upload URL that can then be passed along to your client application and set as the endpoint property on a mux-uploader element. The URL for a Direct Upload looks like "https://storage.googleapis.com/video...".
+In the following examples, you will replace the value of the endpoint property with your unique direct upload URL.
+Video uploads and processing take time. Processing time can vary depending on the file size and type of video that you upload.
+Mux uses webhooks to keep your application informed about what's happening with your uploaded video — from when the upload completes to when the video is ready to be played.
+To minimize processing time, consider following Mux's guide for handling standard video input.
+The overall flow generally looks like this:
+Listen for specific webhook events, particularly:
+The video.upload.asset_created event contains the asset_id in the event payload.
+The video.asset.ready event contains the playback_id in the event payload.
+Save the asset_id and playback_id to your database, associating them with the user or relevant entity in your application.
+Here's an example of how you might structure your database table schema:
+While Mux generates several IDs during the upload and processing flow, there are two key IDs you'll primarily work with:
+Note that this process happens asynchronously, so your application should be designed to handle the delay between the initial upload and when the video becomes available for playback.
+For more detailed implementations, you can refer to the examples provided in the Mux documentation for various frameworks:
+At the time you render the <mux-uploader>, you may not have the direct upload URL yet. Instead, you might want to retrieve it async from your server after a user selects a file. You can do that by setting the endpoint property value to a custom function instead of a URL.
+This is even easier using React props:
+As you can see in the examples above, Mux Uploader provides a fairly feature rich and reasonably styled (albeit basic) UI by default.
+It will automatically update based on different stages or states of uploading, like showing a UI for file selection before a video has been picked,
+showing progress as the file is uploaded, showing when the file upload has completed, and showing error state with the option to retry if something
+goes wrong with the upload.
+In addition, Mux Uploader provides many ways to customize this look and feel, including:
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/uploader-web-core-functionality
+
+In this guide, see the features and functionality that Mux Uploader gives you out of the box.
+Mux Uploader is built for working with Mux's Direct Uploads API and workflow. Add your upload
+URL as Mux Uploader's endpoint to use it.
+Mux Uploader uses UpChunk under the hood to handle large files by splitting them into small chunks before uploading them.
+Mux Uploader provides a feature-rich, dynamic UI that changes based on the current state of your media upload.
+These can be broken down into:
+The initial state by default will show both a drag and drop region and a file select button to select your file for upload.
+By default, it looks like this:
+Under normal conditions, the in progress state will indicate the ongoing uploading progress as both a numeric percentage and
+a progress bar. It will look something like this:
+In addition, you can opt into pausing, in which case the UI
+will look like one of these, depending on if you are unpaused, pausing (after the current chunk finishes uploading), or paused.
+Finally, if you unfortunately end up loosing internet connection while uploading is in progress, you'll see this:
+Once uploading has completed, Mux Uploader will present the following status:
+And in the unfortunate case where you encounter an error, by default you'll see the error message and a retry button:
+If you want to explore different ways to customize the UI for these different states,
+check out our documentation on customizing Mux Uploader's look and feel.
+Mux Uploader will monitor for unrecoverable errors and surface them via the UI, giving the
+user the opportunity to retry the upload. Mux Uploader monitors both HTTP-status based errors
+(e.g. 4xx, 5xx statuses) and file processing errors like exceeding maximum file size limits. See our optional configuration options below for more ways to work around some of these errors.
+In addition, before surfacing an HTTP-based error, Mux Uploader will automatically retry the request 5 times.
+You may also listen for these errors via the uploaderror event, discussed in the section below.
+All of Mux Uploader's core UI behaviors and functionality are driven by specific events. These fall into two
+categories:
+For example, you can listen for the progress event to receive details on how far along your file upload is.
+When the upload is complete, you'll see 100% on the progress bar and the success event will fire.
+If an error occurs during the upload, an uploaderror event will fire.
+In addition to various UI customization and behaviors, Mux Uploader exposes the following attributes / properties for configuring details
+about the file upload itself:
+Any features or settings not mentioned above can be found in our full API reference
+covering all of the available events, attributes, properties, slots, CSS parts, and CSS variables available on Mux Uploader and all of its subcomponents.
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/uploader-web-integrate-in-your-webapp
+
+In this guide, you will learn about Mux Uploader and how to use it in your web application.
+Mux Uploader has 2 packages:
+Both are built with TypeScript and can be installed either via npm, yarn or the hosted option on jsdelivr.
+The only required value to use Mux uploader is endpoint.
+Using in HTML just requires adding the hosted <script> tag to your page and then adding the <mux-uploader> element where you need it.
+For our React implementation, you can use it just like you would any other React component.
+Because Svelte supports web components, it doesn't need a separate wrapper component like React. View the SveltKit example in the
+Mux Elements repo for a fully functioning example.
+Because Vue supports web components, it doesn't need a separate wrapper component like React. View the Vue example in the Mux Elements repo for a fully functioning example.
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/uploader-web-customize-look-and-feel
+
+Learn how to customize the look and feel of Mux Uploader to fit your brand and use case.
+The basic use case of Mux Uploader includes many UI features which may be enabled or disabled by default.
+You can toggle many of these via attributes/properties.
+For larger video files, you may want to allow your users to pause and resume an upload. You can enable this in the UI using
+the pausable attribute, property, or React prop.
+Because Mux Uploader uploads the file in chunks, it will wait to complete uploading the current chunk before pausing. To indicate this,
+the pause button will actually have 3 states:
+Below are examples of what this looks like in the UI.
+If for some reason your video upload fails, Mux Uploader will allow a user to retry via the UI. You can disable this using the
+no-retry attribute or noRetry property in the web component, or just noRetry prop in React.
+Below are examples of what this looks like in the UI.
+Mux Uploader makes drag and drop available for your video files by default. You can disable this using the
+no-drop attribute or noDrop property in the web component, or just noDrop prop in React.
+Below are examples of what this looks like in the UI.
+Note: There are two likely cases where you may want to disable drag and drop on Mux Uploader:
+Mux Uploader also provides attributes and properties to disable:
+Since removing these UI elements might result in a poor user experience, you may want to use Mux Uploader's subcomponents directly for a more bespoke design when doing so.
+Because Mux Uploader is a web component, it lets you provide your
+own file select element simply by adding it as a child and using the named slot
+slot="file-select" attribute or property.
+This is really handy if, for example, you already have a .btn class or similar that styles buttons in your application. For example:
+The same applies to the React version of the component, <MuxUploader/>, as it's just a wrapper around the web component:
+The Mux Uploader element, <mux-uploader>, can be styled and positioned with CSS just like you would any other HTML element. For example:
+Because Mux Uploader React is a wrapper around the HTML element, the same applies to it as well:
+A couple of notes here:
+In addition to styling with standard CSS, Mux Uploader exposes some additional styles via CSS variables.
+This allows you to tweak some of the "under the hood" subcomponents' styles simply. These include:
+Building off of the prior examples, you can use these just like you would other CSS variables:
+And for React:
+Mux Uploader uses read-only properties and attributes to manage and advertise different state changes during the upload process.
+These are:
+These allow you to use attribute selectors
+if you want state-driven, dynamic styling via CSS.
+Here's a basic example of these in action that builds off of the prior examples:
+NOTE: Because Mux Uploader React is a thin wrapper around the Mux Uploader web component, you can use these exact same CSS selectors
+in your React application. Alternatively, some frameworks, like Tailwind CSS, have built-in support for arbitrary
+attribute selectors. For an example of this in use, see the section below.
+If you're using React to build your application, there are some common patterns used in React that are less likely to be relevant for
+the web component version. Below are a couple of these.
+One common pattern for styling in React is to use CSS-in-JS, for example, using CSS modules:
+Another common approach to styling React applications is using Tailwind CSS. Here's an example for Mux Uploader
+approximating the previous examples, including CSS variables via
+arbitrary properties and attribute selectors via
+arbitrary variants:
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/uploader-web-use-subcomponents-directly
+
+Learn how to use Mux Uploader's various subcomponents to compose even more bespoke user experiences and designs.
+Although Mux Uploader is a single component that's easy to drop into your web application, it's actually built using several subcomponents
+"under the hood." If your application design or desired user experience requires more customization, you can use the individual web components that come packaged with Mux Uploader to build out a custom upload UI that meets your needs.
+To use this approach, add an id attribute to your <mux-uploader> element with a unique value.
+You can then associate the <mux-uploader> element with any of the packaged components by adding a mux-uploader="" attribute to each component and setting it to the id that you gave to the <mux-uploader> element.
+Here's a simple example for the web component:
+Here's one for React:
+Because all of these are web components, you can use CSS to style them or
+any of their slotted children (discussed below).
+The file select subcomponent is what tells Mux Uploader to open the file selection browser. The web component is
+<mux-uploader-file-select>, and the React component is <MuxUploaderFileSelect>.
+You can further customize it by slotting in your own <button> or other component in the file-select slot.
+Here's an example:
+The drop subcomponent is what implements the drag and drop API
+and tells Mux Uploader the relevant details about the file.
+The web component is <mux-uploader-drop>, and the React component is <MuxUploaderDrop>.
+Mux Uploader Drop provides a few slots for customization.
+Here's an example that puts all of these together, including CSS:
+In addition, Mux Uploader Drop has attributes/properties for optionally showing an overlay whenever a file is
+dragged over it. These are on by default in Mux Uploader, and are:
+If you'd like to further customize the overlay with a different background color, you can use the
+--overlay-background-color CSS variable (which is also available when using Mux Uploader directly)
+Here's an example of these in action:
+You can even implement your own drag and drop completely separate from <mux-uploader> and as long as you dispatch a custom file-ready with the file in the detail property then <mux-uploader> will handle the upload upon receiving the event.
+The progress subcomponent is what visualizes progress of your upload. In fact, it is used twice "under the hood" by the default <mux-uploader>:
+once for showing the %, and once for showing the progress bar.
+The web component is <mux-uploader-progress>, and the React component is <MuxUploaderProgress>.
+In addition, Mux Uploader Progress exposes the type attribute / property / React prop for choosing the particular kind of visualization you'd prefer. The
+available type values are:
+Each of these types also has CSS variables available for further customization:
+percentage:
+bar:
+radial:
+Here's an example of these in action:
+The status subcomponent is what indicates when the upload is completed, or an error has occurred, or when you're offline.
+The web component is <mux-uploader-status>, and the React component is <MuxUploaderStatus>.
+Here's an example with a bit of CSS customization, using Mux Uploader's state attributes
+on the status component for additional state-driven styling:
+The retry subcomponent that is displayed when an error has occurred to retry uploading and will notify Mux Uploader to retry when clicked.
+The web component is <mux-uploader-retry>, and the React component is <MuxUploaderRetry>.
+Here's a simple example:
+The pause subcomponent that is displayed while an upload is in progress and will notify Mux Uploader to either pause or resume uploading
+when clicked, depending on the current uploading state.
+The web component is <mux-uploader-pause>, and the React component is <MuxUploaderPause>.
+Here's a simple example:
+Here are some more examples of working with the subcomponents directly, using multiple subcomponents together to demonstrate the versatility
+and composability of using the various subcomponents together in either React or vanilla HTML.
+Just like you can do with the "batteries" usage of Mux Uploader, you can use CSS-in-JS
+to handle styling of your subcomponents in React. Here's an example of how you can style Mux Uploader using CSS modules:
+Also like Mux Uploader, you can use Tailwind CSS for your subcomponent styling. Here's an example in React:
+In this example, we use the Mux Uploader Drop component as the parent for a full page upload experience, with the various subcomponents as descendants
+with their own customization for a more bespoke look and feel:
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/use-video-quality-levels
+
+Learn how to pick an appropriate video quality and control the video quality of assets.
+Encoding tiers have been renamed to video quality levels
+We recently renamed encoding tiers to video quality levels. Read the blog for more details.
+Mux Video supports encoding content with three different video quality levels. The video quality level informs the quality, cost, and available platform features for the asset.
+The basic video quality level uses a reduced encoding ladder, with a lower target video quality, suitable for simpler video use cases.
+There is no charge for video encoding when using basic quality.
+The plus video quality level encodes your video at a consistent high-quality level. Assets encoded with the plus quality use an AI-powered per-title encoding technology that boosts bitrates for high-complexity content, ensuring high-quality video, while reducing bitrates for lower-complexity content to save bandwidth without sacrificing on quality.
+The plus quality level incurs a cost per video minute of encoding.
+The premium video quality level uses the same AI-powered per-title encoding technology as plus, but is tuned to optimize for the presentation of premium media content, where the highest video quality is required, including use cases like live sports, or studio movies.
+The premium quality level incurs a higher cost per video minute of encoding, storage, and delivery.
+The video quality of an asset is controlled by setting the video_quality attribute on your create-asset API callAPI, so to create an asset with the basic quality level, you should set "video_quality": "basic" as shown below.
+And of course you can also select the video_quality within Direct Uploads, too; you just need to set the same "video_quality": "basic" field in the new_asset_settings of your create-direct-upload API callAPI.
+To set the video_quality for a live stream, you just need to set the "video_quality" field within the new_asset_settings configuration of your create-live-stream API callAPI to "plus" or "premium", as shown below.
+All on-demand assets created from the live stream will also inherit the given quality level. Live streams can currently only use the plus or premium video quality levels.
+Assets using different video quality levels have different features or limits available to them. Refer to the below table for more details:
+* MP4 pricing depends on the video quality level of your asset. Learn more.
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/stream-videos-in-4k
+
+Learn how to ingest, store, and deliver your videos in 4K resolutions
+Mux Video supports ingesting, storing, and delivering on-demand video assets in high resolutions up to and including 4K (2160p). At this time, 2K and 4K output is not supported for Mux Live Streaming. Live Streams will accept 2K and 4K input, but the output will be capped to 1080p (and will be billed as 1080p).
+Much premium video content is created in 4K, but more recently user-generated content is often in 4k as well, as mobile devices are increasingly capable of producing 4K video.
+Mux Video also supports 2K and 2.5K video on-demand video assets.
+To ingest, store, and deliver an asset in 4K, you'll need to set the new max_resolution_tier attribute on your create-asset API callAPI.
+This field controls the maximum resolution that we'll encode, store, and deliver your media in. We do not to automatically ingest content at 4K so that you can avoid unexpectedly high ingest bills. If you send us 4K content today and don't set max_resolution_tier, nothing changes in your bill.
+This also allows you to build applications where some of your content creators are able to upload 4K content while others remain capped at 1080p.
+And of course you can use 4K with Direct Uploads, too; you just need to set the same "max_resolution_tier": "2160p" field in the new_asset_settings of your create-direct-upload API callAPI.
+For assets with 4K enabled at ingest, we'll automatically add 2K and 4K renditions to your HLS Playback URLs. Mux uses high-bitrate H.264 for delivering 4K content, which is supported on a wide range of devices, like Mux Player shown below.
+While we've tested playback and built device detection rules that should protect you against unexpected playback failures, you should always test playback on your own device footprint before enabling 4K widely on your platform.
+Of course, you might not want all of your viewers to be able to view your content in 4K. Lots of streaming platforms choose to only offer 4K playback to their high subscription tiers. You can implement this by controlling playback resolution with the max_resolution query parameter on your playback URLs, as shown below.
+Mux uses just-in-time (JIT) encoding to make sure your assets are available as soon as possible after you create them, and this includes 4K assets.
+Most of the usual restrictions for standard inputs still apply when you're using 4K, but there are a few different restrictions you should be aware of:
+You can find full details of the standard input specification for 1080p and 4K content in our documentation.
+Mux Video also supports 2K and 2.5K (1440p) content. If you want your asset processed as 2/2.5K, you just need to set "max_resolution_tier": "1440p" in your create asset (or create direct upload) calls instead.
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/upload-files-directly
+
+Allow your users to upload content directly to Mux.
+Direct Uploads allow you to provide an authenticated upload URL to your client applications so content can be uploaded directly to Mux without needing any intermediary steps. You still get to control who gets an authenticated URL, how long it's viable, and, of course, the Asset settings used when the upload is complete.
+The most common use-case for Direct Uploads is in client applications, such as native mobile apps and the browser, but you could also use them to upload directly from your server or in a command line tool. Any time you don't feel the need to store the original on your own, just generate a signed URL and push the content directly.
+Let's start by walking through the simplest use case of getting a file directly into Mux.
+The first step is creating a new Direct Upload with the Mux Asset settings you want. The Mux API will return an authenticated URL that you can use directly in your client apps, as well as an ID specific to that Direct Upload so you can check the status later via the API.
+Once you've got an upload object, you'll use the authenticated URL it includes to make a PUT request that includes the file in the body. The URL is resumable, which means if it's a really large file you can send your file in pieces and pause/resume at will.
+If you were following along with these examples, you should find new Assets in the Mux Dashboard with the settings you specified in the original upload create request, but the video you uploaded in the second step!
+If the upload doesn't work via cURL, be sure that you've put quotes around the upload URL.
+The examples above are a great way to upload a one-off file into Mux, but let's talk about how this workflow looks in your actual application. Typically you're going to want to do a few things:
+Just like Assets, Direct Uploads have their own events, and then the Asset created off the upload has the usual events as well. When you receive the video.upload.asset_created event you'll find an asset_id key that you could use in your application to tie the Asset back to the upload, but that gets tricky if your application misses events or they come out of order. To keep things simple, we like to use the passthrough key when creating an Asset. Let's look at how the passthrough workflow would work in a real application.
+Upload reliably with our Upload SDKs
+We provide SDKs for Android, iOS, iPadOS, and web frontend that handle difficult parts of the upload process, such has handling large files and preprocessing video for size and cost. Once your backend has created an authenticated URL for the upload, you you can give it to one of our Upload SDKs to reliably process and upload the the video.
+For more information, check out our upload SDK guides:
+Next.js React example
+with-mux-video is a full open-source example application that uses direct uploads
+npx create-next-app --example with-mux-video with-mux-video-app
+Another open-source example application is stream.new. GitHub repo link: muxinc/stream.new
+git clone git@github.com:muxinc/stream.new.git
+Both of these example applications use Next.js, UpChunk, Mux Direct Uploads and Mux playback.
+In the route we build to create and return a new Direct Upload, we'll first create a new object in our application that includes a generated ID and all the additional information we want about that Asset. Then we'll create the Direct Upload and include that generated ID in the passthrough field.
+Excellent! Now we've got a working endpoint to create new Mux uploads that we can use in our Node app or deploy as a serverless function. Next we need to make sure we have an endpoint that handles the Mux webhooks when they come back.
+Great! Now we've got our application listening for events from Mux, then updating our DB to reflect the relevant changes. You could also do cool things in the webhook handler like send your customers events via Server-Sent Events or WebSockets.
+In general, just making a PUT request with the file in the body is going to work fine for most client applications and content. When the files start getting a little bigger, you can stretch that by making sure to stream the file from the disk into the request. With a reliable connection, that can take you to gigabytes worth of video, but if that request fails, you or your customer are going to have to start the whole thing over again.
+In those scenarios where you have really big files and potentially need to pause/restart a transfer, you can chunk up the file and use the resumable features of the upload endpoint! If you're doing it in a browser we wrote UpChunk to help, but the process isn't nearly as scary as it sounds.
+With NPM
+With yarn
+With CDN
+When dealing with streaming data where the total file size is unknown until the end—such as live recordings or streaming AI generated data—you can upload the data to Mux in chunks as it becomes available.
+This approach has several benefits:
+When recording media directly from a user's device using the MediaRecorder API, the total file size is unknown until the recording is complete. To handle this, you can upload the media data to Mux in chunks as it becomes available, without needing to know the total size up front.
+Let's look at an example of how to do this with a web app. First, we'll set up the MediaRecorder to capture media data in chunks. Each chunk will be passed to the uploadChunk function, which will upload it to Mux.
+Open source example repository
+You can find a complete example repository demonstrating this approach in our examples repo.
+Start by declaring some global variables to track recording state and upload progress.
+Next, configure the MediaRecorder to capture media data in chunks.
+Uploaded chunks need to be delivered in multiples of 256KB (256 * 1024 bytes). Since the chunks provided by the MediaRecorder API can be smaller than that, you'll need to collect them in a buffer until you have an aggregate chunk that is at least 256KB in size. 8MB is a good size for a chunk, so we'll use that as our chunk size in this example.
+When the recording is complete, call the stopRecording function to upload the final chunk and clean up the MediaRecorder.
+Within the uploadChunk function, perform a PUT request to the authenticated Mux upload URL. Use the Content-Range header to indicate the byte range of the chunk being uploaded. Since the total file size is unknown, use * as the total size until the final chunk is uploaded.
+Maintain sequential uploads with the Web Locks API
+In the provided example, the navigator.locks.request method is used to enforce sequential chunk uploads. This is necessary because if the MediaRecorder is stopped, the ondataavailable event can trigger multiple times simultaneously, which would cause multiple concurrent uploads if not properly synchronized. If you attempt to upload the final chunk before the previous uploads have completed, the upload will fail.
+The final chunk is indicated by the isFinalChunk parameter, which is passed to the uploadChunk function. When isFinalChunk is true, the function will upload the remaining data in the buffer as the final chunk and modify the totalSize to reflect the total amount of data that was uploaded.
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/minimize-processing-time
+
+Learn how to optimize your video files for the fastest processing time.
+Mux Video accepts most modern video formats and CODECs. However, certain types of inputs need to be standardized in order for Mux to do further operations on them, and this can add time before the video is ready to be streamed. If you want to standardize your content before sending it to Mux, and potentially improve performance, this guide will show what you need to do.
+Standard input has the following attributes.
+Additionally, content ingested in 4K is subject to the following standard input requirements.
+As a starting point, here is a sample ffmpeg command for creating video that complies with Mux standard input. Feel free to modify this by using things like 2-pass encoding, different presets, or different bitrates (as long as the total bitrate ends up below than 8Mbps).
+If you are creating a 4K video, the resolution and bitrate limits are higher. Here is a sample ffmpeg command for creating video that complies with Mux standard input for 4K.
+Most mobile devices capture H.264 8-bit 4:2:0 video by default. Here are the main things to watch out for:
+Mux Video works fine with video outside of the standard input specs. But because other videos cannot be easily streamed to many modern devices, Mux Video must perform an initial encoding operation on non-standard input to create a mezzanine file. This means that non-standard input will be slower to ingest.
+Mux Video adds all the reasons why the input file is considered non-standard. The reasons are added to the video.asset.ready webhook event and the asset object when retrieved using the Asset GET API API. As an example, a UHD/4K input file encoded with HEVC/H.265 video CODEC and a frame rate of 60 fps is non-standard for two reasons:
+The max duration for any single asset is 12 hours.
+Was this page helpful?
+
+================================================================================
+
+URL: https://www.mux.com/docs/guides/control-recording-resolution
+
+If the video being captured in your app doesn't need to be played back in full resolution, specify a lower resolution when recording to take advantage of Mux's resolution dependent pricing.
+The way you control the resolution of a recorded video depends on the API used to record or encode it. All of Google's major camera and recording APIs have a method for setting either the exact or maximum resolution of the videos they create.
+With the CameraX library provide a QualitySelector that doesn't allow for resolutions beyond 720p (1280x720).
+If you are encoding video yourself via the MediaCodec API, you can set the encoder's output resolution by setting it in the input MediaFormat. For more information on how to configure and use MediaCodec, try the docs
+Camera2 doesn't have an API to set the video resolution directly, but it infers it from the input surface. You have to call SurfaceHolder.setFixedSize() on your capture requests' targets. This can only be done on Lollipop/API 21 or higher. Please refer to the camera2 docs for more information
+MediaRecord's output size can be configured by calling MediaRecord.setVideoSize() before calling prepare().
+This guide covers setting maximum video resolution when recording video on iOS and iPadOS. The directions and code examples on this page assume you are using AVFoundation to setup and configure your camera. If you’ve never used AVFoundation before we recommend you brush up on the basics before proceeding further, see the official Apple documentation for a quick introduction and sample code.
+Video recording on iOS is managed using AVCaptureSession. The resolution for video output from AVCaptureSession can be configured using a settings preset and this example shows how to configure VCaptureSession to output video at a resolution of 720p (1280 x 720 pixels).
+Don’t forget to call beginConfiguration() before applying any configuration changes. When all the configuration changes have been applied, make sure your implementation calls commitConfiguration().
+It is best for any work that is done in-between calls to beginConfiguration() and commitConfiguration() to be synchronous. If you need to perform any asynchronous tasks, such as fetching the preferred resolution from your backend, make sure those are complete before you begin to configure AVCaptureSession.
+Streams initiated via OBS can be configured in Settings > Video > Output (Scaled) Resolution.
+Was this page helpful?
+
+================================================================================
+
+URL: https://github.com/muxinc/elements/tree/main/packages/mux-uploader-react
+
+We read every piece of feedback, and take your input very seriously.
+
+            To see all available qualifiers, see our documentation.
+          
+<MuxUploader /> is a Mux-flavored React uploader component, built on top of our mux-uploader web component.
+or
+Docs and guides live on docs.mux.com.
+API reference lives on Github.
+
+================================================================================
+
+URL: https://github.com/muxinc/elements/tree/main/packages/mux-uploader
+
+We read every piece of feedback, and take your input very seriously.
+
+            To see all available qualifiers, see our documentation.
+          
+<mux-uploader> is the official Mux-flavored media uploader web component.
+The uploading functionality is built using UpChunk.
+or
+Docs and guides live on docs.mux.com.
+API reference lives on Github.
+
+================================================================================
+

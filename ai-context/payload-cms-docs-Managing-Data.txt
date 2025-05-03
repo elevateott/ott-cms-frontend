@@ -1,0 +1,484 @@
+URL: https://payloadcms.com/docs/local-api/overview
+
+The Payload Local API gives you the ability to execute the same operations that are available through REST and GraphQL within Node, directly on your server. Here, you don't need to deal with server latency or network speed whatsoever and can interact directly with your database.
+ Tip:
+The Local API is incredibly powerful when used in React Server Components and other similar server-side contexts. With other headless CMS, you need to request your data from third-party servers via an HTTP layer, which can add significant loading time to your server-rendered pages. With Payload, you don't have to leave your server to gather the data you need. It can be incredibly fast and is definitely a game changer.
+Here are some common examples of how you can use the Local API:
+You can gain access to the currently running payload object via two ways:
+In most places within Payload itself, you can access payload directly from the arguments of Hooks, Access Control, Validation functions, and similar. This is the simplest way to access Payload in most cases. Most config functions take the req (Request) object, which has Payload bound to it (req.payload).
+Example:
+If you want to import Payload in places where you don't have the option to access it from function arguments or req, you can import it and initialize it.
+If you're working in Next.js' development mode, Payload will work with Hot Module Replacement (HMR), and as you make changes to your Payload Config, your usage of Payload will always be in sync with your changes. In production, getPayload simply disables all HMR functionality so you don't need to write your code any differently. We handle optimization for you in production mode.
+If you are accessing Payload via function arguments or req.payload, HMR is automatically supported if you are using it within Next.js.
+For more information about using Payload outside of Next.js, click here.
+You can specify more options within the Local API vs. REST or GraphQL due to the server-only context that they are executed in.
+ Local Option         
+ Description                                                                                                                                                                                                                                                                                                                                                           
+ collection 
+ Required for Collection operations. Specifies the Collection slug to operate against.                                                                                                                                                                                                                                                                                 
+ data 
+ The data to use within the operation. Required for create, update.                                                                                                                                                                                                                                                                                                
+ depth 
+ Control auto-population of nested relationship and upload fields.                                                                                                                                                                                                                                                                                 
+ locale 
+ Specify locale for any returned documents.                                                                                                                                                                                                                                                                                        
+ select 
+ Specify select to control which fields to include to the result.                                                                                                                                                                                                                                                                                 
+ populate 
+ Specify populate to control which fields to include to the result from populated documents.                                                                                                                                                                                                                                             
+ fallbackLocale 
+ Specify a fallback locale to use for any returned documents.                                                                                                                                                                                                                                                                      
+ overrideAccess 
+ Skip access control. By default, this property is set to true within all Local API operations.                                                                                                                                                                                                                                                                        
+ overrideLock 
+ By default, document locks are ignored (true). Set to false to enforce locks and prevent operations when a document is locked by another user. More details.                                                                                                                                                                         
+ user 
+ If you set overrideAccess to false, you can pass a user to use against the access control checks.                                                                                                                                                                                                                                                                 
+ showHiddenFields 
+ Opt-in to receiving hidden fields. By default, they are hidden from returned documents in accordance to your config.                                                                                                                                                                                                                                                  
+ pagination 
+ Set to false to return all documents and avoid querying for document counts.                                                                                                                                                                                                                                                                                          
+ context 
+ Context, which will then be passed to context and req.context, which can be read by hooks. Useful if you want to pass additional information to the hooks which shouldn't be necessarily part of the document, for example a triggerBeforeChange option which can be read by the BeforeChange hook to determine if it should run or not. 
+ disableErrors 
+ When set to true, errors will not be thrown. Instead, the findByID operation will return null, and the find operation will return an empty documents array.                                                                                                                                                                                                   
+ disableTransaction 
+ When set to true, a database transactions will not be initialized.                                                                                                                                                                                                                                                                      
+There are more options available on an operation by operation basis outlined below.
+When your database uses transactions you need to thread req through to all local operations. Postgres uses transactions and MongoDB uses transactions when you are using replica sets. Passing req without transactions is still recommended.
+ Note:
+By default, all access control checks are disabled in the Local API, but you can re-enable them if you'd like, as well as pass a specific user to run the operation with.
+The following Collection operations are available through the Local API:
+If a collection has Authentication enabled, additional Local API operations will be available:
+The following Global operations are available through the Local API:
+Local API calls will automatically infer your generated types.
+Here is an example of usage:
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/local-api/outside-nextjs
+
+Payload can be used completely outside of Next.js which is helpful in cases like running scripts, using Payload in a separate backend service, or using Payload's Local API to fetch your data directly from your database in other frontend frameworks like SvelteKit, Remix, Nuxt, and similar.
+Note: Payload and all of its official packages are fully ESM. If you want to use Payload within your own projects, make sure you are writing your scripts in ESM format or dynamically importing the Payload Config.
+Payload provides a convenient way to run standalone scripts, which can be useful for tasks like seeding your database or performing one-off operations.
+In standalone scripts, you can simply import the Payload Config and use it right away. If you need an initialized copy of Payload, you can then use the getPayload function. This can be useful for tasks like seeding your database or performing other one-off operations.
+You can then execute the script using payload run. Example: if you placed this standalone script in src/seed.ts, you would execute it like this:
+The payload run command does two things for you:
+If you encounter import-related errors, you have 2 options:
+Example:
+Note: Install @swc-node/register in your project first. While swc mode is faster than the default tsx mode, it might break for some imports.
+While we do not guarantee support for alternative runtimes, you are free to use them and disable Payload's own transpilation by appending the --disable-transpile flag to the payload command:
+You will need to have bun installed on your system for this to work.
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/rest-api/overview
+
+A fully functional REST API is automatically generated from your Collection and Global configs.
+The REST API is a fully functional HTTP client that allows you to interact with your Documents in a RESTful manner. It supports all CRUD operations and is equipped with automatic pagination, depth, and sorting. All Payload API routes are mounted and prefixed to your config's routes.api URL segment (default: /api).
+REST query parameters:
+Each collection is mounted using its slug value. For example, if a collection's slug is users, all corresponding routes will be mounted on /api/users.
+Note: Collection slugs must be formatted in kebab-case
+All CRUD operations are exposed as follows:
+Auth enabled collections are also given the following endpoints:
+Globals cannot be created or deleted, so there are only two REST endpoints opened:
+In addition to the dynamically generated endpoints above Payload also has REST endpoints to manage the admin user preferences for data specific to the authenticated user.
+Additional REST API endpoints can be added to your application by providing an array of endpoints in various places within a Payload Config. Custom endpoints are useful for adding additional middleware on existing routes or for building custom functionality into Payload apps and plugins. Endpoints can be added at the top of the Payload Config, collections, and globals and accessed respective of the api and slugs you have configured.
+Custom endpoints are not authenticated by default. You are responsible for securing your own endpoints.
+Each endpoint object needs to have:
+ Property      
+ Description                                                                                                                                                                                                                                                
+ path 
+ A string for the endpoint route after the collection or globals slug                                                                                                                                                                                       
+ method 
+ The lowercase HTTP verb to use: 'get', 'head', 'post', 'put', 'delete', 'connect' or 'options'                                                                                                                                                             
+ handler 
+ A function that accepts req - PayloadRequest object which contains Web Request properties, currently authenticated user and the Local API instance payload.                          
+ root 
+ When true, defines the endpoint on the root Next.js app, bypassing Payload handlers and the routes.api subpath. Note: this only applies to top-level endpoints of your Payload Config, endpoints defined on collections or globals cannot be root. 
+ custom 
+ Extension point for adding custom data (e.g. for plugins)                                                                                                                                                                                                  
+Example:
+Note: req will have the payload object and can be used inside your endpoint handlers for making calls like req.payload.find() that will make use of Access Control and Hooks.
+req.data
+Data is not automatically appended to the request. You can read the body data by calling await req.json().
+Or you could use our helper function that mutates the request and appends data and file if found.
+req.locale & req.fallbackLocale
+The locale and the fallback locale are not automatically appended to custom endpoint requests. If you would like to add them you can use this helper function.
+headersWithCors
+By default, custom endpoints don't handle CORS headers in responses. The headersWithCors function checks the Payload config and sets the appropriate CORS headers in the response accordingly.
+Payload supports a method override feature that allows you to send GET requests using the HTTP POST method. This can be particularly useful in scenarios when the query string in a regular GET request is too long.
+To use this feature, include the X-HTTP-Method-Override header set to GET in your POST request. The parameters should be sent in the body of the request with the Content-Type set to application/x-www-form-urlencoded.
+Here is an example of how to use the method override to perform a GET request:
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/graphql/overview
+
+In addition to its REST and Local APIs, Payload ships with a fully featured and extensible GraphQL API.
+By default, the GraphQL API is exposed via /api/graphql, but you can customize this URL via specifying your routes within the main Payload Config.
+The labels you provide for your Collections and Globals are used to name the GraphQL types that are created to correspond to your config. Special characters and spaces are removed.
+At the top of your Payload Config you can define all the options to manage GraphQL.
+ Option                          
+ Description                                                                                                                     
+ mutations 
+ Any custom Mutations to be added in addition to what Payload provides. More 
+ queries 
+ Any custom Queries to be added in addition to what Payload provides. More 
+ maxComplexity 
+ A number used to set the maximum allowed complexity allowed by requests More 
+ disablePlaygroundInProduction 
+ A boolean that if false will enable the GraphQL playground, defaults to true. More 
+ disable 
+ A boolean that if true will disable the GraphQL entirely, defaults to false.                                                    
+ validationRules 
+ A function that takes the ExecutionArgs and returns an array of ValidationRules.                                                
+Everything that can be done to a Collection via the REST or Local API can be done with GraphQL (outside of uploading files, which is REST-only). If you have a collection as follows:
+Payload will automatically open up the following queries:
+ Query Name         
+ Operation           
+ PublicUser 
+ findByID 
+ PublicUsers 
+ find 
+ countPublicUsers 
+ count 
+ mePublicUser 
+ me auth operation 
+And the following mutations:
+ Query Name                 
+ Operation                       
+ createPublicUser 
+ create 
+ updatePublicUser 
+ update 
+ deletePublicUser 
+ delete 
+ forgotPasswordPublicUser 
+ forgotPassword auth operation 
+ resetPasswordPublicUser 
+ resetPassword auth operation  
+ unlockPublicUser 
+ unlock auth operation         
+ verifyPublicUser 
+ verify auth operation         
+ loginPublicUser 
+ login auth operation          
+ logoutPublicUser 
+ logout auth operation         
+ refreshTokenPublicUser 
+ refresh auth operation        
+Globals are also fully supported. For example:
+Payload will open the following query:
+ Query Name 
+ Operation 
+ Header 
+ findOne 
+And the following mutation:
+ Query Name     
+ Operation 
+ updateHeader 
+ update 
+User preferences for the Admin Panel are also available to GraphQL the same way as other collection schemas are generated. To query preferences you must supply an authorization token in the header and only the preferences of that user will be accessible.
+Payload will open the following query:
+ Query Name   
+ Operation 
+ Preference 
+ findOne 
+And the following mutations:
+ Query Name         
+ Operation 
+ updatePreference 
+ update 
+ deletePreference 
+ delete 
+GraphQL Playground is enabled by default for development purposes, but disabled in production. You can enable it in production by passing graphQL.disablePlaygroundInProduction a false setting in the main Payload Config.
+You can even log in using the login[collection-singular-label-here] mutation to use the Playground as an authenticated user.
+ Tip:
+To see more regarding how the above queries and mutations are used, visit your GraphQL playground (by default at ${SERVER_URL}/api/graphql-playground) while your server is running. There, you can use the "Schema" and "Docs" buttons on the right to see a ton of detail about how GraphQL operates within Payload.
+You can add custom validation rules to your GraphQL API by defining a validationRules function in your Payload Config. This function should return an array of Validation Rules that will be applied to all incoming queries and mutations.
+Payload comes with a built-in query complexity limiter to prevent bad people from trying to slow down your server by running massive queries. To learn more, click here.
+You can define custom complexity for relationship, upload and join type fields. This is useful if you want to assign a higher complexity to a field that is more expensive to resolve. This can help prevent users from running queries that are too complex.
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/graphql/extending
+
+You can add your own GraphQL queries and mutations to Payload, making use of all the types that Payload has defined for you.
+To do so, add your queries and mutations to the main Payload Config as follows:
+ Config Path         
+ Description                                                                 
+ graphQL.queries 
+ Function that returns an object containing keys to custom GraphQL queries   
+ graphQL.mutations 
+ Function that returns an object containing keys to custom GraphQL mutations 
+The above properties each receive a function that is defined with the following arguments:
+GraphQL
+This is Payload's GraphQL dependency. You should not install your own copy of GraphQL as a dependency due to underlying restrictions based on how GraphQL works. Instead, you can use the Payload-provided copy via this argument.
+payload
+This is a copy of the currently running Payload instance, which provides you with existing GraphQL types for all of your Collections and Globals - among other things.
+Both graphQL.queries and graphQL.mutations functions should return an object with properties equal to your newly written GraphQL queries and mutations.
+payload.config.js:
+In your resolver, make sure you set depth: 0 if you're returning data directly from the Local API so that GraphQL can correctly resolve queries to nested values such as relationship data.
+Your function will receive four arguments you can make use of:
+Example
+obj
+The previous object. Not very often used and usually discarded.
+args
+The available arguments from your query or mutation will be available to you here, these must be configured via the custom operation first.
+context
+An object containing the req and res objects that will provide you with the payload, user instances and more, like any other Payload API handler.
+info
+Contextual information about the currently running GraphQL operation. You can get schema information from this as well as contextual information about where this resolver function is being run.
+We've exposed a few types and utilities to help you extend the API further. Payload uses the GraphQL.js package for which you can view the full list of available types in the official documentation.
+GraphQLJSON & GraphQLJSONObject
+GraphQL
+You can directly import the GraphQL package used by Payload, most useful for typing.
+For queries, mutations and handlers make sure you use the GraphQL and payload instances provided via arguments.
+buildPaginatedListType
+This is a utility function that allows you to build a new GraphQL type for a paginated result similar to the Payload's generated schema. It takes in two arguments, the first for the name of this new schema type and the second for the GraphQL type to be used in the docs parameter.
+Example
+payload.collections.slug.graphQL
+If you want to extend more of the provided API then the graphQL object on your collection slug will contain additional types to help you re-use code for types, mutations and queries.
+There are a few ways to structure your code, we recommend using a dedicated graphql directory so you can keep all of your logic in one place. You have total freedom of how you want to structure this but a common pattern is to group functions by type and with their resolver.
+Example
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/graphql/graphql-schema
+
+In Payload the schema is controlled by your collections and globals. All you need to do is run the generate command and the entire schema will be created for you.
+Install @payloadcms/graphql as a dev dependency:
+Run the following command to generate the schema:
+For array, block, group and named tab fields, you can generate top level reusable interfaces. The following group field config:
+will generate:
+The above example outputs all your definitions to a file relative from your Payload config as ./graphql/schema.graphql. By default, the file will be output to your current working directory as schema.graphql.
+ Important
+Payload needs to be able to find your config to generate your GraphQL schema.
+Payload will automatically try and locate your config, but might not always be able to find it. For example, if you are working in a /src directory or similar, you need to tell Payload where to find your config manually by using an environment variable.
+If this applies to you, create an npm script to make generating types easier:
+Now you can run pnpm generate:graphQLSchema to easily generate your schema.
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/queries/overview
+
+In Payload, "querying" means filtering or searching through Documents within a Collection. The querying language in Payload is designed to be simple and powerful, allowing you to filter Documents with extreme precision through an intuitive and standardized structure.
+Payload provides three common APIs for querying your data:
+Each of these APIs share the same underlying querying language, and fully support all of the same features. This means that you can learn Payload's querying language once, and use it across any of the APIs that you might use.
+To query your Documents, you can send any number of Operators through your request:
+The exact query syntax will depend on the API you are using, but the concepts are the same across all APIs. More details.
+Tip: You can also use queries within Access Control functions.
+The following operators are available for use in queries:
+ Operator             
+ Description                                                                                                                                                                      
+ equals 
+ The value must be exactly equal.                                                                                                                                                 
+ not_equals 
+ The query will return all documents where the value is not equal.                                                                                                                
+ greater_than 
+ For numeric or date-based fields.                                                                                                                                                
+ greater_than_equal 
+ For numeric or date-based fields.                                                                                                                                                
+ less_than 
+ For numeric or date-based fields.                                                                                                                                                
+ less_than_equal 
+ For numeric or date-based fields.                                                                                                                                                
+ like 
+ Case-insensitive string must be present. If string of words, all words must be present, in any order.                                                                            
+ contains 
+ Must contain the value entered, case-insensitive.                                                                                                                                
+ in 
+ The value must be found within the provided comma-delimited list of values.                                                                                                      
+ not_in 
+ The value must NOT be within the provided comma-delimited list of values.                                                                                                        
+ all 
+ The value must contain all values provided in the comma-delimited list. Note: currently this operator is supported only with the MongoDB adapter.                                
+ exists 
+ Only return documents where the value either exists (true) or does not exist (false).                                                                                        
+ near 
+ For distance related to a Point Field comma separated as <longitude>, <latitude>, <maxDistance in meters (nullable)>, <minDistance in meters (nullable)>.   
+ within 
+ For Point Fields to filter documents based on whether points are inside of the given area defined in GeoJSON. Example 
+ intersects 
+ For Point Fields to filter documents based on whether points intersect with the given area defined in GeoJSON. Example 
+Tip: If you know your users will be querying on certain fields a lot, add index: true to the Field Config. This will speed up searches using that field immensely.
+In addition to defining simple queries, you can join multiple queries together using AND / OR logic. These can be nested as deeply as you need to create complex queries.
+To join queries, use the and or or keys in your query object:
+Written in plain English, if the above query were passed to a find operation, it would translate to finding posts where either the color is mint OR the color is white AND featured is set to false.
+When working with nested properties, which can happen when using relational fields, it is possible to use the dot notation to access the nested property. For example, when working with a Song collection that has a artists field which is related to an Artists collection using the name: 'artists'. You can access a property within the collection Artists like so:
+Writing queries in Payload is simple and consistent across all APIs, with only minor differences in syntax between them.
+The Local API supports the find operation that accepts a raw query object:
+All find queries in the GraphQL API support the where argument that accepts a raw query object:
+With the REST API, you can use the full power of Payload queries, but they are written as query strings instead:
+https://localhost:3000/api/posts?where[color][equals]=mint
+To understand the syntax, you need to understand that complex URL search strings are parsed into a JSON object. This one isn't too bad, but more complex queries get unavoidably more difficult to write.
+For this reason, we recommend to use the extremely helpful and ubiquitous qs-esm package to parse your JSON / object-formatted queries into query strings:
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/queries/sort
+
+Documents in Payload can be easily sorted by a specific Field. When querying Documents, you can pass the name of any top-level field, and the response will sort the Documents by that field in ascending order. If prefixed with a minus symbol ("-"), they will be sorted in descending order. In Local API multiple fields can be specified by using an array of strings. In REST API multiple fields can be specified by separating fields with comma. The minus symbol can be in front of individual fields.
+Because sorting is handled by the database, the field cannot be a Virtual Field. It must be stored in the database to be searchable.
+Tip: For performance reasons, it is recommended to enable index: true for the fields that will be sorted upon. More details.
+To sort Documents in the Local API, you can use the sort option in your query:
+To sort by multiple fields, you can use the sort option with fields in an array:
+To sort in the REST API, you can use the sort parameter in your query:
+To sort by multiple fields, you can use the sort parameter with fields separated by comma:
+To sort in the GraphQL API, you can use the sort parameter in your query:
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/queries/select
+
+By default, Payload's APIs will return all fields for a given collection or global. But, you may not need all of that data for all of your queries. Sometimes, you might want just a few fields from the response, which can speed up the Payload API and reduce the amount of JSON that is sent to you from the API.
+This is where Payload's select feature comes in. Here, you can define exactly which fields you'd like to retrieve from the API.
+To specify select in the Local API, you can use the select option in your query:
+Important: To perform querying with select efficiently, Payload implements your select query on the database level. Because of that, your beforeRead and afterRead hooks may not receive the full doc. To ensure that some fields are always selected for your hooks / access control, regardless of the select query you can use forceSelect collection config property.
+To specify select in the REST API, you can use the select parameter in your query:
+To understand the syntax, you need to understand that complex URL search strings are parsed into a JSON object. This one isn't too bad, but more complex queries get unavoidably more difficult to write.
+For this reason, we recommend to use the extremely helpful and ubiquitous qs-esm package to parse your JSON / object-formatted queries into query strings:
+Reminder: This is the same for Globals using the /api/globals endpoint.
+The defaultPopulate property allows you specify which fields to select when populating the collection from another document. This is especially useful for links where only the slug is needed instead of the entire document.
+With this feature, you can dramatically reduce the amount of JSON that is populated from Relationship or Upload fields.
+For example, in your content model, you might have a Link field which links out to a different page. When you go to retrieve these links, you really only need the slug of the page.
+Loading all of the page content, its related links, and everything else is going to be overkill and will bog down your Payload APIs. Instead, you can define the defaultPopulate property on your Pages collection, so that when Payload "populates" a related Page, it only selects the slug field and therefore returns significantly less JSON:
+Important: When using defaultPopulate on a collection with Uploads enabled and you want to select the url field, it is important to specify filename: true as well, otherwise Payload will not be able to construct the correct file URL, instead returning url: null.
+Setting defaultPopulate will enforce that each time Payload performs a "population" of a related document, only the fields specified will be queried and returned. However, you can override defaultPopulate with the populate property in the Local and REST API:
+Local API:
+REST API:
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/queries/depth
+
+Documents in Payload can have relationships to other Documents. This is true for both Collections as well as Globals. When you query a Document, you can specify the depth at which to populate any of its related Documents either as full objects, or only their IDs.
+Depth will optimize the performance of your application by limiting the amount of processing made in the database and significantly reducing the amount of data returned. Since Documents can be infinitely nested or recursively related, it's important to be able to control how deep your API populates.
+For example, when you specify a depth of 0, the API response might look like this:
+But with a depth of 1, the response might look like this:
+Important: Depth has no effect in the GraphQL API, because there, depth is based on the shape of your queries.
+To specify depth in the Local API, you can use the depth option in your query:
+Reminder: This is the same for Globals using the findGlobal operation.
+To specify depth in the REST API, you can use the depth parameter in your query:
+Reminder: This is the same for Globals using the /api/globals endpoint.
+Fields like the Relationship Field or the Upload Field can also set a maximum depth. If exceeded, this will limit the population depth regardless of what the depth might be on the request.
+To set a max depth for a field, use the maxDepth property in your field configuration:
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
+URL: https://payloadcms.com/docs/queries/pagination
+
+All collection find queries are paginated automatically. Responses are returned with top-level meta data related to pagination, and returned documents are nested within a docs array.
+Find response properties:
+ Property        
+ Description                                               
+ docs 
+ Array of documents in the collection                      
+ totalDocs 
+ Total available documents within the collection           
+ limit 
+ Limit query parameter - defaults to 10 
+ totalPages 
+ Total pages available, based upon the limit queried for 
+ page 
+ Current page number                                       
+ pagingCounter 
+ number of the first doc on the current page             
+ hasPrevPage 
+ true/false if previous page exists                      
+ hasNextPage 
+ true/false if next page exists                          
+ prevPage 
+ number of previous page, null if it doesn't exist     
+ nextPage 
+ number of next page, null if it doesn't exist         
+Example response:
+All Payload APIs support the pagination controls below. With them, you can create paginated lists of documents within your application:
+ Control 
+ Description                             
+ limit 
+ Limits the number of documents returned 
+ page 
+ Get a specific page number              
+For find operations within the Local API, you can disable pagination to retrieve all documents from a collection by passing pagination: false to the find local operation.
+Star
+Discord
+ online
+Use Cases
+Developers
+Company
+Stay connected
+
+================================================================================
+
