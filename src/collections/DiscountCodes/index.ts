@@ -20,7 +20,16 @@ export const DiscountCodes: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'code',
-    defaultColumns: ['code', 'type', 'value', 'validFrom', 'validUntil', 'usageCount', 'maxUses', 'isActive'],
+    defaultColumns: [
+      'code',
+      'type',
+      'value',
+      'validFrom',
+      'validUntil',
+      'usageCount',
+      'maxUses',
+      'isActive',
+    ],
     group: 'Monetization',
     description: 'Promotional discount codes for subscriptions, rentals, and PPV purchases',
   },
@@ -60,7 +69,8 @@ export const DiscountCodes: CollectionConfig = {
       required: true,
       min: 1,
       admin: {
-        description: 'For percentage: 1-100 (e.g., 20 = 20% off). For amount: value in cents (e.g., 1000 = $10.00 off)',
+        description:
+          'For percentage: 1-100 (e.g., 20 = 20% off). For amount: value in cents (e.g., 1000 = $10.00 off)',
       },
     },
     {
@@ -117,9 +127,12 @@ export const DiscountCodes: CollectionConfig = {
         { label: 'Subscriptions', value: 'subscriptions' },
         { label: 'PPV Events', value: 'ppv' },
         { label: 'Rentals', value: 'rentals' },
+        { label: 'Digital Products', value: 'products' },
+        { label: 'Add-Ons', value: 'addons' },
       ],
       admin: {
-        description: 'Limit this discount code to specific purchase types (leave empty to apply to all)',
+        description:
+          'Limit this discount code to specific purchase types (leave empty to apply to all)',
       },
     },
     {

@@ -497,6 +497,195 @@ export const addProductToSubscriber = async (
 }
 
 /**
+ * Add a one-time add-on to a subscriber
+ * @param payload Payload instance
+ * @param subscriberId Subscriber ID
+ * @param addonId Add-on ID being purchased
+ */
+export const addOneTimeAddonToSubscriber = async (
+  payload: Payload,
+  subscriberId: string,
+  addonId: string,
+) => {
+  try {
+    // Get current subscriber data
+    const subscriber = await payload.findByID({
+      collection: 'subscribers',
+      id: subscriberId,
+    })
+
+    // Update purchasedAddOns array
+    let purchasedAddOns = [...(subscriber.purchasedAddOns || [])]
+    if (!purchasedAddOns.includes(addonId)) {
+      purchasedAddOns.push(addonId)
+    }
+
+    // Update the subscriber
+    const updatedSubscriber = await payload.update({
+      collection: 'subscribers',
+      id: subscriberId,
+      data: {
+        purchasedAddOns,
+      },
+    })
+
+    // Increment the purchase count for the add-on
+    await payload.update({
+      collection: 'addons',
+      id: addonId,
+      data: {
+        purchaseCount: { increment: 1 },
+      },
+    })
+
+    return updatedSubscriber
+  } catch (error) {
+    logger.error(
+      { error, subscriberId, addonId, context: 'addOneTimeAddonToSubscriber' },
+      'Error adding one-time add-on to subscriber',
+    )
+    throw error
+  }
+}
+
+/**
+ * Add a recurring add-on to a subscriber
+ * @param payload Payload instance
+ * @param subscriberId Subscriber ID
+ * @param addonId Add-on ID being subscribed to
+ * @param stripeSubscriptionId Stripe subscription ID
+ * @param status Subscription status
+ * @param currentPeriodEnd When the current billing period ends
+ */
+export const addRecurringAddonToSubscriber = async (
+  payload: Payload,
+  subscriberId: string,
+  addonId: string,
+  stripeSubscriptionId: string,
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' = 'active',
+  currentPeriodEnd?: Date,
+) => {
+  try {
+    // Get current subscriber data
+    const subscriber = await payload.findByID({
+      collection: 'subscribers',
+      id: subscriberId,
+    })
+
+    // Prepare activeRecurringAddOns array
+    const activeRecurringAddOns = [...(subscriber.activeRecurringAddOns || [])]
+
+    // Check if this add-on is already in the array
+    const existingIndex = activeRecurringAddOns.findIndex((item) => item.addon === addonId)
+
+    if (existingIndex >= 0) {
+      // Update existing add-on
+      activeRecurringAddOns[existingIndex].stripeSubscriptionId = stripeSubscriptionId
+      activeRecurringAddOns[existingIndex].status = status
+      if (currentPeriodEnd) {
+        activeRecurringAddOns[existingIndex].currentPeriodEnd = currentPeriodEnd.toISOString()
+      }
+    } else {
+      // Add new add-on
+      activeRecurringAddOns.push({
+        addon: addonId,
+        stripeSubscriptionId,
+        status,
+        startedAt: new Date().toISOString(),
+        currentPeriodEnd: currentPeriodEnd ? currentPeriodEnd.toISOString() : undefined,
+      })
+    }
+
+    // Update the subscriber
+    const updatedSubscriber = await payload.update({
+      collection: 'subscribers',
+      id: subscriberId,
+      data: {
+        activeRecurringAddOns,
+      },
+    })
+
+    // Increment the purchase count for the add-on
+    await payload.update({
+      collection: 'addons',
+      id: addonId,
+      data: {
+        purchaseCount: { increment: 1 },
+      },
+    })
+
+    return updatedSubscriber
+  } catch (error) {
+    logger.error(
+      { error, subscriberId, addonId, context: 'addRecurringAddonToSubscriber' },
+      'Error adding recurring add-on to subscriber',
+    )
+    throw error
+  }
+}
+
+/**
+ * Update a recurring add-on subscription status
+ * @param payload Payload instance
+ * @param subscriberId Subscriber ID
+ * @param stripeSubscriptionId Stripe subscription ID
+ * @param status New subscription status
+ * @param currentPeriodEnd When the current billing period ends (optional)
+ */
+export const updateRecurringAddonStatus = async (
+  payload: Payload,
+  subscriberId: string,
+  stripeSubscriptionId: string,
+  status: 'active' | 'trialing' | 'past_due' | 'canceled',
+  currentPeriodEnd?: Date,
+) => {
+  try {
+    // Get current subscriber data
+    const subscriber = await payload.findByID({
+      collection: 'subscribers',
+      id: subscriberId,
+    })
+
+    // Find the add-on subscription
+    const activeRecurringAddOns = [...(subscriber.activeRecurringAddOns || [])]
+    const addonIndex = activeRecurringAddOns.findIndex(
+      (item) => item.stripeSubscriptionId === stripeSubscriptionId,
+    )
+
+    if (addonIndex === -1) {
+      logger.warn(
+        { subscriberId, stripeSubscriptionId, context: 'updateRecurringAddonStatus' },
+        'No recurring add-on found with the provided subscription ID',
+      )
+      return null
+    }
+
+    // Update the add-on status
+    activeRecurringAddOns[addonIndex].status = status
+    if (currentPeriodEnd) {
+      activeRecurringAddOns[addonIndex].currentPeriodEnd = currentPeriodEnd.toISOString()
+    }
+
+    // Update the subscriber
+    const updatedSubscriber = await payload.update({
+      collection: 'subscribers',
+      id: subscriberId,
+      data: {
+        activeRecurringAddOns,
+      },
+    })
+
+    return updatedSubscriber
+  } catch (error) {
+    logger.error(
+      { error, subscriberId, stripeSubscriptionId, context: 'updateRecurringAddonStatus' },
+      'Error updating recurring add-on status',
+    )
+    throw error
+  }
+}
+
+/**
  * Check if a subscriber has purchased a digital product
  * @param payload Payload instance
  * @param subscriberId Subscriber ID

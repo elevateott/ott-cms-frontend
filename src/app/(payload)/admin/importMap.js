@@ -53,6 +53,7 @@ import { default as default_69e41b1e6980eb02c92f06a00b422b33 } from '@/collectio
 import { default as default_da2bac2466b69e5b9e625b676226b898 } from '@/collections/Subscribers/components/PurchasedRentalsCountCell'
 import { default as default_67e13336b0bef54fd8aa025aa618832b } from '@/collections/Subscribers/components/PurchasedPPVCountCell'
 import { default as default_4b2844a430f33b3520c9fec178d08dff } from '@/collections/Subscribers/components/PurchasedProductsCountCell'
+import { default as default_4b722c7b9d9854c892115c327e1c1952 } from '@/collections/Subscribers/components/PurchasedAddOnsCountCell'
 import { default as default_c4af1c1effa7405e266af9d6cf668218 } from '@/collections/Subscribers/components/PaymentProviderCell'
 import { default as default_68574fcb8a6204d51f9af85523f81467 } from '@/collections/Subscribers/components/StatusCell'
 import { default as default_90ef7556ca285abafcf615d2a76391d8 } from '@/collections/Subscribers/components/DateCell'
@@ -144,6 +145,7 @@ export const importMap = {
   "@/collections/Subscribers/components/PurchasedRentalsCountCell#default": default_da2bac2466b69e5b9e625b676226b898,
   "@/collections/Subscribers/components/PurchasedPPVCountCell#default": default_67e13336b0bef54fd8aa025aa618832b,
   "@/collections/Subscribers/components/PurchasedProductsCountCell#default": default_4b2844a430f33b3520c9fec178d08dff,
+  "@/collections/Subscribers/components/PurchasedAddOnsCountCell#default": default_4b722c7b9d9854c892115c327e1c1952,
   "@/collections/Subscribers/components/PaymentProviderCell#default": default_c4af1c1effa7405e266af9d6cf668218,
   "@/collections/Subscribers/components/StatusCell#default": default_68574fcb8a6204d51f9af85523f81467,
   "@/collections/Subscribers/components/DateCell#default": default_90ef7556ca285abafcf615d2a76391d8,

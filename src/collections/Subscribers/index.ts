@@ -27,6 +27,7 @@ export const Subscribers: CollectionConfig = {
       'activePlansCount',
       'purchasedRentalsCount',
       'purchasedPPVCount',
+      'purchasedAddOnsCount',
       'createdAt',
     ],
     group: 'Monetization',
@@ -111,6 +112,16 @@ export const Subscribers: CollectionConfig = {
         hidden: true, // Hide in the edit form
         components: {
           Cell: '@/collections/Subscribers/components/PurchasedProductsCountCell',
+        },
+      },
+    },
+    {
+      name: 'purchasedAddOnsCount',
+      type: 'text',
+      admin: {
+        hidden: true, // Hide in the edit form
+        components: {
+          Cell: '@/collections/Subscribers/components/PurchasedAddOnsCountCell',
         },
       },
     },
@@ -298,6 +309,69 @@ export const Subscribers: CollectionConfig = {
       admin: {
         description: 'One-time digital products purchased by this subscriber',
       },
+    },
+    {
+      name: 'purchasedAddOns',
+      type: 'relationship',
+      relationTo: 'addons',
+      hasMany: true,
+      admin: {
+        description: 'One-time add-ons purchased by this subscriber',
+      },
+    },
+    {
+      name: 'activeRecurringAddOns',
+      type: 'array',
+      admin: {
+        description: 'Recurring add-ons that this subscriber has active subscriptions for',
+      },
+      fields: [
+        {
+          name: 'addon',
+          type: 'relationship',
+          relationTo: 'addons',
+          required: true,
+        },
+        {
+          name: 'stripeSubscriptionId',
+          type: 'text',
+          admin: {
+            description: 'Stripe Subscription ID for this add-on',
+          },
+        },
+        {
+          name: 'status',
+          type: 'select',
+          options: [
+            { label: 'Active', value: 'active' },
+            { label: 'Trialing', value: 'trialing' },
+            { label: 'Past Due', value: 'past_due' },
+            { label: 'Canceled', value: 'canceled' },
+          ],
+          defaultValue: 'active',
+        },
+        {
+          name: 'startedAt',
+          type: 'date',
+          required: true,
+          defaultValue: () => new Date().toISOString(),
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+        {
+          name: 'currentPeriodEnd',
+          type: 'date',
+          admin: {
+            description: 'When the current billing period ends',
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+      ],
     },
     // Manual Access Overrides
     {

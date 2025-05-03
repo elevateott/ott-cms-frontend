@@ -14,7 +14,7 @@ export const recordTransaction = async (
   payload: Payload,
   transactionData: {
     email: string
-    type: 'subscription' | 'ppv' | 'rental'
+    type: 'subscription' | 'ppv' | 'rental' | 'product' | 'addon'
     amount: number
     currency?: string
     paymentProvider: 'stripe' | 'paypal' | 'manual'
@@ -24,13 +24,16 @@ export const recordTransaction = async (
     event?: string
     content?: string
     plan?: string
+    product?: string
+    addon?: string
+    addonType?: 'one-time' | 'recurring'
     transactionId?: string
     paymentMethod?: string
     metadata?: any
     rentalDuration?: number
     expiresAt?: string
     notes?: string
-  }
+  },
 ) => {
   try {
     const {
@@ -86,7 +89,7 @@ export const recordTransaction = async (
         amount,
         email,
       },
-      `Recorded ${type} transaction for ${email}`
+      `Recorded ${type} transaction for ${email}`,
     )
 
     return transaction
@@ -97,7 +100,7 @@ export const recordTransaction = async (
         error,
         transactionData,
       },
-      'Failed to record transaction'
+      'Failed to record transaction',
     )
 
     // Don't throw the error, just log it

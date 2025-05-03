@@ -7,6 +7,9 @@ import {
   addPPVToSubscriber,
   addEventRentalToSubscriber,
   addProductToSubscriber,
+  addOneTimeAddonToSubscriber,
+  addRecurringAddonToSubscriber,
+  updateRecurringAddonStatus,
 } from '@/utils/subscribers'
 import { recordTransaction } from '@/utils/transactions'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
@@ -71,7 +74,54 @@ export async function POST(request: Request) {
         const customerId = subscription.customer
         const status = subscription.status
         const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
+        const subscriptionId = subscription.id
 
+        // Check if this is an add-on subscription
+        // First, find the subscriber by customer ID
+        const subscriberResult = await payload.find({
+          collection: 'subscribers',
+          where: {
+            paymentProviderCustomerId: {
+              equals: customerId,
+            },
+          },
+          limit: 1,
+        })
+
+        if (subscriberResult.docs.length > 0) {
+          const subscriber = subscriberResult.docs[0]
+
+          // Check if this subscription ID matches any recurring add-ons
+          const hasMatchingAddon = subscriber.activeRecurringAddOns?.some(
+            (addon) => addon.stripeSubscriptionId === subscriptionId,
+          )
+
+          if (hasMatchingAddon) {
+            // This is an add-on subscription, update its status
+            await updateRecurringAddonStatus(
+              payload,
+              subscriber.id,
+              subscriptionId,
+              status as any,
+              currentPeriodEnd,
+            )
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                subscriptionId,
+                status,
+              },
+              'Updated recurring add-on subscription status',
+            )
+
+            break
+          }
+        }
+
+        // If we get here, this is a regular subscription, not an add-on
         // Get the plan IDs
         const planIds = []
         if (subscription.items && subscription.items.data) {
@@ -108,7 +158,47 @@ export async function POST(request: Request) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object
         const customerId = subscription.customer
+        const subscriptionId = subscription.id
 
+        // Check if this is an add-on subscription
+        // First, find the subscriber by customer ID
+        const subscriberResult = await payload.find({
+          collection: 'subscribers',
+          where: {
+            paymentProviderCustomerId: {
+              equals: customerId,
+            },
+          },
+          limit: 1,
+        })
+
+        if (subscriberResult.docs.length > 0) {
+          const subscriber = subscriberResult.docs[0]
+
+          // Check if this subscription ID matches any recurring add-ons
+          const hasMatchingAddon = subscriber.activeRecurringAddOns?.some(
+            (addon) => addon.stripeSubscriptionId === subscriptionId,
+          )
+
+          if (hasMatchingAddon) {
+            // This is an add-on subscription, update its status to canceled
+            await updateRecurringAddonStatus(payload, subscriber.id, subscriptionId, 'canceled')
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                subscriptionId,
+              },
+              'Canceled recurring add-on subscription',
+            )
+
+            break
+          }
+        }
+
+        // If we get here, this is a regular subscription, not an add-on
         // Update the subscriber's subscription status to canceled
         await updateSubscriptionStatus(payload, customerId, 'canceled')
 
@@ -127,6 +217,154 @@ export async function POST(request: Request) {
 
       case 'checkout.session.completed': {
         const session = event.data.object
+
+        // Check if this is an add-on purchase
+        if (
+          session.metadata?.type === 'addon' &&
+          session.metadata?.addonId &&
+          session.metadata?.addonType
+        ) {
+          const addonId = session.metadata.addonId
+          const addonType = session.metadata.addonType
+          const customerEmail = session.customer_details?.email
+          const customerId = session.customer
+
+          if (!customerEmail) {
+            logger.error(
+              { context: 'stripe-webhook', eventType: event.type },
+              'Missing customer email for add-on purchase',
+            )
+            break
+          }
+
+          // Find the subscriber by email
+          const subscriberResult = await payload.find({
+            collection: 'subscribers',
+            where: {
+              email: {
+                equals: customerEmail,
+              },
+            },
+            limit: 1,
+          })
+
+          if (subscriberResult.docs.length === 0) {
+            // Create a new subscriber
+            const newSubscriber = await payload.create({
+              collection: 'subscribers',
+              data: {
+                email: customerEmail,
+                fullName: session.customer_details?.name || customerEmail,
+                paymentProvider: 'stripe',
+                paymentProviderCustomerId: customerId,
+                purchasedAddOns: addonType === 'one-time' ? [addonId] : [],
+                activeRecurringAddOns:
+                  addonType === 'recurring'
+                    ? [
+                        {
+                          addon: addonId,
+                          stripeSubscriptionId: session.subscription,
+                          status: 'active',
+                          startedAt: new Date().toISOString(),
+                        },
+                      ]
+                    : [],
+              },
+            })
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'addon',
+              amount,
+              currency: session.currency,
+              paymentProvider: 'stripe',
+              subscriber: newSubscriber.id,
+              subscriberId: newSubscriber.id,
+              addon: addonId,
+              addonType,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+                subscriptionId: session.subscription,
+              },
+            })
+
+            // Increment the purchase count for the add-on
+            await payload.update({
+              collection: 'addons',
+              id: addonId,
+              data: {
+                purchaseCount: { increment: 1 },
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: newSubscriber.id,
+                addonId,
+                addonType,
+              },
+              'Created new subscriber with add-on purchase',
+            )
+          } else {
+            // Add the add-on to the existing subscriber
+            const subscriber = subscriberResult.docs[0]
+
+            if (addonType === 'one-time') {
+              // Add one-time add-on
+              await addOneTimeAddonToSubscriber(payload, subscriber.id, addonId)
+            } else if (addonType === 'recurring') {
+              // Add recurring add-on
+              await addRecurringAddonToSubscriber(
+                payload,
+                subscriber.id,
+                addonId,
+                session.subscription,
+                'active',
+              )
+            }
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'addon',
+              amount,
+              currency: session.currency,
+              paymentProvider: 'stripe',
+              subscriber: subscriber.id,
+              subscriberId: subscriber.id,
+              addon: addonId,
+              addonType,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+                subscriptionId: session.subscription,
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                addonId,
+                addonType,
+              },
+              'Added add-on to existing subscriber',
+            )
+          }
+
+          break
+        }
 
         // Track discount code usage if one was used
         if (session.metadata?.discountCode) {
