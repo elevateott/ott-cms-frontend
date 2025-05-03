@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
-import { updateSubscriptionStatus, addPPVToSubscriber } from '@/utils/subscribers'
+import {
+  updateSubscriptionStatus,
+  addPPVToSubscriber,
+  addEventRentalToSubscriber,
+} from '@/utils/subscribers'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
 
 /**
@@ -185,6 +189,79 @@ export async function POST(request: Request) {
                 eventId,
               },
               'Added PPV purchase to existing subscriber',
+            )
+          }
+        }
+
+        // Check if this is a rental purchase
+        if (
+          session.mode === 'payment' &&
+          session.metadata?.type === 'rental' &&
+          session.metadata?.eventId &&
+          session.metadata?.durationHours
+        ) {
+          const eventId = session.metadata.eventId
+          const durationHours = parseInt(session.metadata.durationHours, 10)
+          const customerEmail = session.customer_details?.email
+
+          if (!customerEmail) {
+            logger.error(
+              { context: 'stripe-webhook', eventType: event.type },
+              'Missing customer email for rental purchase',
+            )
+            break
+          }
+
+          // Find the subscriber by email
+          const subscriberResult = await payload.find({
+            collection: 'subscribers',
+            where: {
+              email: {
+                equals: customerEmail,
+              },
+            },
+            limit: 1,
+          })
+
+          if (subscriberResult.docs.length === 0) {
+            // Create a new subscriber
+            const newSubscriber = await payload.create({
+              collection: 'subscribers',
+              data: {
+                email: customerEmail,
+                fullName: session.customer_details?.name || customerEmail,
+                paymentProvider: 'stripe',
+                paymentProviderCustomerId: session.customer,
+              },
+            })
+
+            // Add the rental to the new subscriber
+            await addEventRentalToSubscriber(payload, newSubscriber.id, eventId, durationHours)
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: newSubscriber.id,
+                eventId,
+                durationHours,
+              },
+              'Created new subscriber with rental purchase',
+            )
+          } else {
+            // Add the rental to the existing subscriber
+            const subscriber = subscriberResult.docs[0]
+            await addEventRentalToSubscriber(payload, subscriber.id, eventId, durationHours)
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                eventId,
+                durationHours,
+              },
+              'Added rental purchase to existing subscriber',
             )
           }
         }

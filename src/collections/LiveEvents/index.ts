@@ -10,6 +10,7 @@ import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
 import { enforceAccessControl } from '@/hooks/liveEvents/enforceAccessControl'
 import { handleSimulatedLive } from '@/hooks/mux/handleSimulatedLive'
 import { createPPVProduct } from '@/hooks/liveEvents/createPPVProduct'
+import { createRentalProduct } from '@/hooks/liveEvents/createRentalProduct'
 import {
   lexicalEditor,
   FixedToolbarFeature,
@@ -360,6 +361,70 @@ export const LiveEvents: CollectionConfig = {
         condition: (data) => data?.ppvEnabled === true,
       },
     },
+    // Rental Fields
+    {
+      name: 'rentalEnabled',
+      type: 'checkbox',
+      label: 'Enable Rental',
+      defaultValue: false,
+      admin: {
+        description: 'Enable rental access for this event',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'rentalPrice',
+      type: 'number',
+      label: 'Rental Price (USD)',
+      min: 0,
+      admin: {
+        description: 'Price for rental access (in cents, e.g. 499 = $4.99)',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+      validate: (value, { siblingData }) => {
+        if (siblingData?.rentalEnabled && (value === undefined || value <= 0)) {
+          return 'Rental price is required and must be greater than 0'
+        }
+        return true
+      },
+    },
+    {
+      name: 'rentalDurationHours',
+      type: 'number',
+      label: 'Rental Duration (in hours)',
+      defaultValue: 48,
+      min: 1,
+      admin: {
+        description: 'Common values: 48 = 2 days, 168 = 7 days',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+      validate: (value, { siblingData }) => {
+        if (siblingData?.rentalEnabled && (value === undefined || value <= 0)) {
+          return 'Rental duration is required and must be greater than 0'
+        }
+        return true
+      },
+    },
+    {
+      name: 'rentalStripeProductId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Product ID for Rental (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+    },
+    {
+      name: 'rentalStripePriceId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Price ID for Rental (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+    },
     {
       name: 'reminderMinutesBefore',
       type: 'number',
@@ -591,6 +656,7 @@ export const LiveEvents: CollectionConfig = {
       createLiveStream,
       updateLiveStream,
       createPPVProduct,
+      createRentalProduct,
     ],
     // Add hook to fetch the latest status from Mux and compute effectiveHlsUrl
     afterRead: [

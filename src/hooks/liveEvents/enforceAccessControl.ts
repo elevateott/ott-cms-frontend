@@ -129,6 +129,41 @@ export const enforceAccessControl: CollectionAfterReadHook = async ({ doc, req }
     }
   }
 
+  // Check for rental enabled events
+  if (doc.rentalEnabled) {
+    // Get the subscriber ID from the request headers
+    const subscriberId = req.headers?.['x-subscriber-id']
+
+    // If no subscriber ID, deny access
+    if (!subscriberId) {
+      logger.info(
+        { context: 'enforceAccessControl' },
+        `Denying access to rental live event ${doc.id} for unauthenticated user`,
+      )
+
+      return {
+        ...doc,
+        canAccess: false,
+        accessDeniedReason: 'login_required',
+        isRental: true,
+        rentalPrice: doc.rentalPrice,
+        rentalDurationHours: doc.rentalDurationHours,
+      }
+    }
+
+    // Check if the subscriber has rented this event
+    // This will be checked by the frontend using the API
+    return {
+      ...doc,
+      canAccess: false, // Default to false, frontend will check
+      accessDeniedReason: 'rental_required',
+      isRental: true,
+      rentalPrice: doc.rentalPrice,
+      rentalDurationHours: doc.rentalDurationHours,
+      subscriberId,
+    }
+  }
+
   // Default to denying access for unknown access types
   logger.warn(
     { context: 'enforceAccessControl' },

@@ -8,6 +8,7 @@ export const API_ROUTES = {
     STRIPE: {
       CREATE_CHECKOUT: '/api/payments/stripe/create-checkout',
       CREATE_PPV_CHECKOUT: '/api/payments/stripe/create-ppv-checkout',
+      CREATE_RENTAL_CHECKOUT: '/api/payments/stripe/create-rental-checkout',
       CUSTOMER_PORTAL: '/api/payments/stripe/customer-portal',
     },
     PAYPAL: {

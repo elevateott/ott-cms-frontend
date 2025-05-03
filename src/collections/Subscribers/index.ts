@@ -214,6 +214,51 @@ export const Subscribers: CollectionConfig = {
         description: 'Pay-per-view live events purchased by this subscriber',
       },
     },
+    {
+      name: 'purchasedEventRentals',
+      type: 'relationship',
+      relationTo: 'live-events',
+      hasMany: true,
+      admin: {
+        description: 'Live events rented by this subscriber',
+      },
+    },
+    {
+      name: 'eventRentalExpirations',
+      type: 'array',
+      admin: {
+        description: 'Expiration dates for rented live events',
+        condition: (data) => (data?.purchasedEventRentals?.length || 0) > 0,
+      },
+      fields: [
+        {
+          name: 'eventId',
+          type: 'relationship',
+          relationTo: 'live-events',
+          required: true,
+        },
+        {
+          name: 'purchasedAt',
+          type: 'date',
+          required: true,
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+        {
+          name: 'expiresAt',
+          type: 'date',
+          required: true,
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+      ],
+    },
     // Additional information
     {
       name: 'user',

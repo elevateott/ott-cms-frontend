@@ -383,6 +383,76 @@ export const hasContentAccess = async (
  * @param eventId Live event ID to check access for
  * @returns Boolean indicating whether the subscriber has access
  */
+/**
+ * Add an event rental to a subscriber
+ * @param payload Payload instance
+ * @param subscriberId Subscriber ID
+ * @param eventId Live event ID being rented
+ * @param durationHours Duration of the rental in hours
+ */
+export const addEventRentalToSubscriber = async (
+  payload: Payload,
+  subscriberId: string,
+  eventId: string,
+  durationHours: number,
+) => {
+  try {
+    // Get current subscriber data
+    const subscriber = await payload.findByID({
+      collection: 'subscribers',
+      id: subscriberId,
+    })
+
+    // Calculate expiration date
+    const purchasedAt = new Date()
+    const expiresAt = new Date(purchasedAt)
+    expiresAt.setHours(expiresAt.getHours() + durationHours)
+
+    // Prepare rental expirations array
+    const eventRentalExpirations = [...(subscriber.eventRentalExpirations || [])]
+
+    // Add or update rental expiration
+    const existingIndex = eventRentalExpirations.findIndex((rental) => rental.eventId === eventId)
+
+    if (existingIndex >= 0) {
+      // Update existing rental
+      eventRentalExpirations[existingIndex].purchasedAt = purchasedAt.toISOString()
+      eventRentalExpirations[existingIndex].expiresAt = expiresAt.toISOString()
+    } else {
+      // Add new rental
+      eventRentalExpirations.push({
+        eventId,
+        purchasedAt: purchasedAt.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+      })
+    }
+
+    // Update purchasedEventRentals array
+    let purchasedEventRentals = [...(subscriber.purchasedEventRentals || [])]
+    if (!purchasedEventRentals.includes(eventId)) {
+      purchasedEventRentals.push(eventId)
+    }
+
+    // Update the subscriber
+    const updatedSubscriber = await payload.update({
+      collection: 'subscribers',
+      id: subscriberId,
+      data: {
+        eventRentalExpirations,
+        purchasedEventRentals,
+      },
+    })
+
+    return updatedSubscriber
+  } catch (error) {
+    logger.error(
+      { error, subscriberId, eventId, context: 'addEventRentalToSubscriber' },
+      'Error adding event rental to subscriber',
+    )
+    throw error
+  }
+}
+
 export const hasEventAccess = async (payload: Payload, subscriberId: string, eventId: string) => {
   try {
     // Get subscriber data
@@ -412,6 +482,27 @@ export const hasEventAccess = async (payload: Payload, subscriberId: string, eve
     // If event requires ticket, check if in purchasedPPV
     if (event.accessType === 'paid_ticket') {
       return subscriber.purchasedPPV && subscriber.purchasedPPV.includes(eventId)
+    }
+
+    // Check if event is in purchasedEventRentals and rental is still valid
+    if (
+      event.rentalEnabled &&
+      subscriber.purchasedEventRentals &&
+      subscriber.purchasedEventRentals.includes(eventId)
+    ) {
+      // Check if rental is still valid
+      if (subscriber.eventRentalExpirations) {
+        const rental = subscriber.eventRentalExpirations.find((r) => r.eventId === eventId)
+
+        if (rental && new Date(rental.expiresAt) > new Date()) {
+          return true
+        }
+      }
+    }
+
+    // Check if event is PPV and user has purchased it
+    if (event.ppvEnabled && subscriber.purchasedPPV && subscriber.purchasedPPV.includes(eventId)) {
+      return true
     }
 
     return false
