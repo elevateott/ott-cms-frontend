@@ -3,6 +3,10 @@ import type { CollectionConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
 import { slugField } from '@/fields/slug'
 import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHooks'
+import { createStripePlan } from '@/services/stripe/createPlan'
+import { createPayPalPlan } from '@/services/paypal/createPlan'
+import { hasPlanSubscribers } from '@/services/subscription/hasPlanSubscribers'
+import { logger } from '@/utils/logger'
 
 export const SubscriptionPlans: CollectionConfig = {
   slug: 'subscription-plans',
@@ -22,16 +26,26 @@ export const SubscriptionPlans: CollectionConfig = {
     defaultColumns: ['name', 'price', 'interval', 'isActive', 'createdAt'],
     group: 'Monetization',
     description: 'Subscription plans available for purchase',
+    components: {
+      // Add custom components to the edit view
+      beforeFields: ['@/collections/SubscriptionPlans/components/PlanDetails'],
+    },
   },
   fields: [
     {
       name: 'name',
       type: 'text',
       required: true,
+      admin: {
+        description: 'The name of the subscription plan',
+      },
     },
     {
       name: 'description',
       type: 'textarea',
+      admin: {
+        description: 'A detailed description of what this plan includes',
+      },
     },
     ...slugField(),
     {
@@ -42,16 +56,59 @@ export const SubscriptionPlans: CollectionConfig = {
       admin: {
         description: 'Price in cents (e.g., 1000 = $10.00)',
       },
+      hooks: {
+        beforeValidate: [
+          async ({ value, data, operation, originalDoc, req }) => {
+            // Only validate on update
+            if (operation === 'update') {
+              // Check if price is being changed
+              if (originalDoc && originalDoc.price !== value) {
+                // Check if plan has subscribers
+                const hasSubscribers = await hasPlanSubscribers(req.payload, originalDoc.id)
+                if (hasSubscribers) {
+                  throw new Error('Cannot change price for a plan that has active subscribers')
+                }
+              }
+            }
+            return value
+          },
+        ],
+      },
     },
     {
       name: 'interval',
       type: 'select',
       options: [
         { label: 'Monthly', value: 'month' },
+        { label: 'Quarterly', value: 'quarter' },
+        { label: 'Semi-Annual', value: 'semi-annual' },
         { label: 'Yearly', value: 'year' },
       ],
       defaultValue: 'month',
       required: true,
+      admin: {
+        description: 'Billing interval for this subscription',
+      },
+      hooks: {
+        beforeValidate: [
+          async ({ value, data, operation, originalDoc, req }) => {
+            // Only validate on update
+            if (operation === 'update') {
+              // Check if interval is being changed
+              if (originalDoc && originalDoc.interval !== value) {
+                // Check if plan has subscribers
+                const hasSubscribers = await hasPlanSubscribers(req.payload, originalDoc.id)
+                if (hasSubscribers) {
+                  throw new Error(
+                    'Cannot change billing interval for a plan that has active subscribers',
+                  )
+                }
+              }
+            }
+            return value
+          },
+        ],
+      },
     },
     {
       name: 'trialPeriodDays',
@@ -61,6 +118,53 @@ export const SubscriptionPlans: CollectionConfig = {
       admin: {
         description: 'Number of days for the trial period (0 for no trial)',
       },
+      hooks: {
+        beforeValidate: [
+          async ({ value, data, operation, originalDoc, req }) => {
+            // Only validate on update
+            if (operation === 'update') {
+              // Check if trial period is being changed
+              if (originalDoc && originalDoc.trialPeriodDays !== value) {
+                // Check if plan has subscribers
+                const hasSubscribers = await hasPlanSubscribers(req.payload, originalDoc.id)
+                if (hasSubscribers) {
+                  throw new Error(
+                    'Cannot change trial period for a plan that has active subscribers',
+                  )
+                }
+              }
+            }
+            return value
+          },
+        ],
+      },
+    },
+    {
+      name: 'setupFeeAmount',
+      type: 'number',
+      min: 0,
+      defaultValue: 0,
+      admin: {
+        description: 'One-time setup fee in cents (e.g., 500 = $5.00)',
+      },
+      hooks: {
+        beforeValidate: [
+          async ({ value, data, operation, originalDoc, req }) => {
+            // Only validate on update
+            if (operation === 'update') {
+              // Check if setup fee is being changed
+              if (originalDoc && originalDoc.setupFeeAmount !== value) {
+                // Check if plan has subscribers
+                const hasSubscribers = await hasPlanSubscribers(req.payload, originalDoc.id)
+                if (hasSubscribers) {
+                  throw new Error('Cannot change setup fee for a plan that has active subscribers')
+                }
+              }
+            }
+            return value
+          },
+        ],
+      },
     },
     {
       name: 'isActive',
@@ -69,6 +173,9 @@ export const SubscriptionPlans: CollectionConfig = {
       admin: {
         description: 'Whether this plan is currently available for purchase',
         position: 'sidebar',
+        components: {
+          Cell: '@/collections/SubscriptionPlans/components/PlanStatusCell',
+        },
       },
     },
     {
@@ -104,19 +211,53 @@ export const SubscriptionPlans: CollectionConfig = {
       ],
     },
     {
+      name: 'stripeProductId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Product ID (automatically generated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.paymentProvider !== 'paypal',
+      },
+    },
+    {
       name: 'stripePriceId',
       type: 'text',
       admin: {
-        description: 'Stripe Price ID for this plan',
-        condition: (data) => data?.paymentProvider === 'stripe' || !data?.paymentProvider,
+        description: 'Stripe Price ID (automatically generated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.paymentProvider !== 'paypal',
+      },
+    },
+    {
+      name: 'stripeSetupFeeId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Setup Fee Price ID (automatically generated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.setupFeeAmount > 0 && data?.paymentProvider !== 'paypal',
+      },
+    },
+    {
+      name: 'paypalProductId',
+      type: 'text',
+      admin: {
+        description: 'PayPal Product ID (automatically generated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.paymentProvider !== 'stripe',
       },
     },
     {
       name: 'paypalPlanId',
       type: 'text',
       admin: {
-        description: 'PayPal Plan ID for this plan',
-        condition: (data) => data?.paymentProvider === 'paypal' || !data?.paymentProvider,
+        description: 'PayPal Plan ID (automatically generated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.paymentProvider !== 'stripe',
       },
     },
     {
@@ -132,10 +273,101 @@ export const SubscriptionPlans: CollectionConfig = {
         description: 'Which payment provider(s) this plan is available through',
         position: 'sidebar',
       },
+      hooks: {
+        beforeValidate: [
+          async ({ value, data, operation, originalDoc, req }) => {
+            // Only validate on update
+            if (operation === 'update') {
+              // Check if payment provider is being changed
+              if (originalDoc && originalDoc.paymentProvider !== value) {
+                // Check if plan has subscribers
+                const hasSubscribers = await hasPlanSubscribers(req.payload, originalDoc.id)
+                if (hasSubscribers) {
+                  throw new Error(
+                    'Cannot change payment provider for a plan that has active subscribers',
+                  )
+                }
+              }
+            }
+            return value
+          },
+        ],
+      },
+    },
+    {
+      name: 'createdAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, operation }) => {
+            if (operation === 'create') {
+              return new Date().toISOString()
+            }
+            return value
+          },
+        ],
+      },
     },
   ],
   hooks: {
     ...createCollectionLoggingHooks('subscription-plans'),
+    beforeChange: [
+      async ({ data, operation, req }) => {
+        // Only create payment provider plans on create
+        if (operation === 'create') {
+          try {
+            // Create Stripe plan if not PayPal only
+            if (data.paymentProvider !== 'paypal') {
+              const stripeResult = await createStripePlan({
+                name: data.name,
+                description: data.description,
+                price: data.price,
+                interval: data.interval,
+                trialDays: data.trialPeriodDays,
+                setupFeeAmount: data.setupFeeAmount,
+              })
+
+              // Store Stripe IDs
+              data.stripeProductId = stripeResult.productId
+              data.stripePriceId = stripeResult.priceId
+              if (stripeResult.setupFeeId) {
+                data.stripeSetupFeeId = stripeResult.setupFeeId
+              }
+            }
+
+            // Create PayPal plan if not Stripe only
+            if (data.paymentProvider !== 'stripe') {
+              const paypalResult = await createPayPalPlan({
+                name: data.name,
+                description: data.description,
+                price: data.price,
+                interval: data.interval,
+                trialDays: data.trialPeriodDays,
+                setupFeeAmount: data.setupFeeAmount,
+              })
+
+              // Store PayPal IDs if successful
+              if (paypalResult) {
+                data.paypalProductId = paypalResult.productId
+                data.paypalPlanId = paypalResult.planId
+              }
+            }
+          } catch (error) {
+            logger.error(
+              { error, context: 'subscription-plans.beforeChange' },
+              'Error creating payment provider plans',
+            )
+            throw new Error(`Failed to create payment provider plans: ${error.message}`)
+          }
+        }
+
+        return data
+      },
+    ],
   },
 }
 
