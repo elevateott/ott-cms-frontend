@@ -116,6 +116,19 @@ const PaymentSettings: GlobalConfig = {
           admin: {
             description: 'When enabled, all transactions will use the PayPal sandbox environment',
           },
+          hooks: {
+            afterChange: [
+              ({ value, data, siblingData }) => {
+                // Synchronize environment with testMode
+                if (value === true && siblingData.environment !== 'sandbox') {
+                  siblingData.environment = 'sandbox'
+                } else if (value === false && siblingData.environment !== 'live') {
+                  siblingData.environment = 'live'
+                }
+                return value
+              },
+            ],
+          },
         },
         {
           name: 'environment',
@@ -127,6 +140,20 @@ const PaymentSettings: GlobalConfig = {
           defaultValue: 'sandbox',
           admin: {
             description: 'Select the PayPal environment to use',
+            readOnly: true, // Make this read-only since it's controlled by testMode
+          },
+          hooks: {
+            afterChange: [
+              ({ value, siblingData }) => {
+                // Synchronize testMode with environment
+                if (value === 'sandbox' && siblingData.testMode !== true) {
+                  siblingData.testMode = true
+                } else if (value === 'live' && siblingData.testMode !== false) {
+                  siblingData.testMode = false
+                }
+                return value
+              },
+            ],
           },
         },
         {

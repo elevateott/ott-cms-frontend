@@ -51,6 +51,7 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
+  const [isTestMode, setIsTestMode] = useState(false)
   const [scriptLoaded, setScriptLoaded] = useState(false)
   const [buttonRendered, setButtonRendered] = useState(false)
 
@@ -80,6 +81,9 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
           throw new Error('PayPal Client ID is not configured')
         }
 
+        // Set test mode status
+        setIsTestMode(data.settings.paypal.testMode)
+
         // Fetch client ID
         const clientIdResponse = await fetch(API_ROUTES.PAYMENTS.PAYPAL.CLIENT_ID)
         const clientIdData = await clientIdResponse.json()
@@ -89,6 +93,11 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
         }
 
         setClientId(clientIdData.clientId)
+
+        // Double-check test mode from API response
+        if (clientIdData.testMode !== undefined) {
+          setIsTestMode(clientIdData.testMode)
+        }
       } catch (err: any) {
         clientLogger.error(err, 'PayPalButton')
         setError(err.message || 'Failed to initialize PayPal')
@@ -295,7 +304,16 @@ const PayPalButton: React.FC<PayPalButtonProps> = ({
         onLoad={() => setScriptLoaded(true)}
         strategy="lazyOnload"
       />
-      <div id={buttonContainerId} className={className}></div>
+      <div className="relative">
+        {isTestMode && (
+          <div className="absolute -top-6 left-0 right-0 flex justify-center">
+            <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-t-md border border-yellow-200 border-b-0">
+              Test Mode - No real payments will be processed
+            </span>
+          </div>
+        )}
+        <div id={buttonContainerId} className={className}></div>
+      </div>
     </>
   )
 }

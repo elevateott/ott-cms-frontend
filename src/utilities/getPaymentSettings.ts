@@ -93,3 +93,27 @@ export const getStripeApiKey = (settings: StripeSettings): string | undefined =>
     return settings.liveApiKey
   }
 }
+
+/**
+ * Check if any payment gateway is in test mode
+ */
+export const getTestModeGateways = (settings: PaymentSettings): Array<'stripe' | 'paypal'> => {
+  const testModeGateways: Array<'stripe' | 'paypal'> = []
+
+  if (settings.stripe.enabled && settings.stripe.testMode) {
+    testModeGateways.push('stripe')
+  }
+
+  if (settings.paypal.enabled && settings.paypal.testMode) {
+    testModeGateways.push('paypal')
+  }
+
+  return testModeGateways
+}
+
+/**
+ * Check if any payment gateway is in test mode
+ */
+export const isAnyGatewayInTestMode = (settings: PaymentSettings): boolean => {
+  return getTestModeGateways(settings).length > 0
+}

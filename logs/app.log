@@ -1,0 +1,24 @@
+{"level":30,"time":1746278880339,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278884318,"pid":22620,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278885538,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278894391,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278894453,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746278896749,"pid":30964,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278954014,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746278958177,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278961467,"pid":27208,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278963062,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746278963582,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746278968552,"pid":20460,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746279020850,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279080939,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279140909,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279203008,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279260893,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279320960,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279331304,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746279333097,"pid":3644,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746279334654,"pid":2260,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746279337206,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
+{"level":30,"time":1746279341395,"pid":29860,"hostname":"unknown","env":"development","context":"eventsService","msg":"Started connection cleanup interval"}
+{"level":30,"time":1746279395375,"pid":3644,"hostname":"unknown","env":"development","context":"recordings/route","msg":"Fetching recordings"}
