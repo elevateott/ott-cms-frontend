@@ -2,15 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { clientLogger } from '@/utils/clientLogger'
+import StripeCheckoutButton from '@/components/payments/StripeCheckoutButton'
+import PlanPricingInfo from '@/components/payments/PlanPricingInfo'
 
 interface SubscriptionPlan {
   id: string
   name: string
   description?: string
   price: number
-  interval: string
+  interval: 'month' | 'quarter' | 'semi-annual' | 'year'
   trialPeriodDays: number
   setupFeeAmount?: number
   isActive: boolean
@@ -25,6 +35,21 @@ export default function TestSubscriptionPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [canceledMessage, setCanceledMessage] = useState<string | null>(null)
+
+  // Check for success or canceled query params
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('success') === 'true') {
+        setSuccessMessage('Your subscription was successful! Thank you for subscribing.')
+      }
+      if (params.get('canceled') === 'true') {
+        setCanceledMessage('Your subscription was canceled. Please try again when you are ready.')
+      }
+    }
+  }, [])
 
   // Fetch subscription plans on page load
   useEffect(() => {
@@ -52,30 +77,27 @@ export default function TestSubscriptionPlansPage() {
     fetchPlans()
   }, [])
 
-  // Format price from cents to dollars
-  const formatPrice = (price: number) => {
-    return `$${(price / 100).toFixed(2)}`
-  }
-
-  // Format interval
-  const formatInterval = (interval: string) => {
-    switch (interval) {
-      case 'month':
-        return 'Monthly'
-      case 'quarter':
-        return 'Quarterly'
-      case 'semi-annual':
-        return 'Semi-Annual'
-      case 'year':
-        return 'Yearly'
-      default:
-        return interval
-    }
-  }
+  // Get the current origin for success/cancel URLs
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Subscription Plans Test Page</h1>
+      <h1 className="text-3xl font-bold mb-2">Subscription Plans Test Page</h1>
+      <p className="text-gray-500 mb-6">
+        Test page for subscription plans with free trials and setup fees
+      </p>
+      
+      {successMessage && (
+        <div className="p-4 mb-6 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-green-600">{successMessage}</p>
+        </div>
+      )}
+      
+      {canceledMessage && (
+        <div className="p-4 mb-6 bg-amber-50 border border-amber-200 rounded-md">
+          <p className="text-amber-600">{canceledMessage}</p>
+        </div>
+      )}
       
       {loading ? (
         <div className="flex justify-center">
@@ -96,35 +118,28 @@ export default function TestSubscriptionPlansPage() {
               <CardHeader>
                 <CardTitle>{plan.name}</CardTitle>
                 <CardDescription>{plan.description}</CardDescription>
+                
+                <PlanPricingInfo 
+                  price={plan.price}
+                  interval={plan.interval}
+                  trialPeriodDays={plan.trialPeriodDays}
+                  setupFeeAmount={plan.setupFeeAmount || 0}
+                  className="mt-2"
+                />
               </CardHeader>
+              
               <CardContent>
-                <div className="mb-4">
-                  <p className="text-2xl font-bold">
-                    {formatPrice(plan.price)}
-                    <span className="text-sm font-normal text-gray-500">
-                      /{formatInterval(plan.interval).toLowerCase()}
-                    </span>
-                  </p>
-                  
-                  {plan.trialPeriodDays > 0 && (
-                    <p className="text-sm text-green-600 mt-1">
-                      {plan.trialPeriodDays} day free trial
-                    </p>
-                  )}
-                  
-                  {plan.setupFeeAmount > 0 && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {formatPrice(plan.setupFeeAmount)} setup fee
-                    </p>
-                  )}
-                </div>
+                <Separator className="mb-4" />
                 
                 {plan.features && plan.features.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium mb-2">Features:</h3>
-                    <ul className="list-disc list-inside space-y-1">
+                    <h3 className="font-medium mb-2">Features</h3>
+                    <ul className="space-y-2">
                       {plan.features.map((feature, index) => (
-                        <li key={index} className="text-sm">{feature.feature}</li>
+                        <li key={index} className="flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          <span>{feature.feature}</span>
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -132,19 +147,36 @@ export default function TestSubscriptionPlansPage() {
                 
                 <div className="mt-4 text-xs text-gray-500">
                   <p>
-                    Payment Providers: 
+                    Payment Providers:
                     {plan.stripePriceId && plan.paypalPlanId
                       ? ' Stripe, PayPal'
                       : plan.stripePriceId
-                      ? ' Stripe'
-                      : plan.paypalPlanId
-                      ? ' PayPal'
-                      : ' None'}
+                        ? ' Stripe'
+                        : plan.paypalPlanId
+                          ? ' PayPal'
+                          : ' None'}
                   </p>
                 </div>
               </CardContent>
+              
               <CardFooter>
-                <Button className="w-full">Subscribe</Button>
+                {plan.stripePriceId ? (
+                  <StripeCheckoutButton
+                    planId={plan.id}
+                    successUrl={`${origin}/test/subscription-plans?success=true`}
+                    cancelUrl={`${origin}/test/subscription-plans?canceled=true`}
+                    className="w-full"
+                    variant={plan.isDefault ? 'default' : 'outline'}
+                  >
+                    {plan.trialPeriodDays > 0 
+                      ? `Start ${plan.setupFeeAmount && plan.setupFeeAmount > 0 ? 'Paid' : 'Free'} Trial` 
+                      : 'Subscribe Now'}
+                  </StripeCheckoutButton>
+                ) : (
+                  <Button className="w-full" disabled>
+                    Not Available
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}

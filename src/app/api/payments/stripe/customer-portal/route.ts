@@ -55,7 +55,9 @@ export async function POST(request: Request) {
       }
 
       // Initialize Stripe
-      const stripe = require('stripe')(
+      // Use dynamic import for ESM compatibility
+      const Stripe = (await import('stripe')).default
+      const stripe = new Stripe(
         stripeSettings.testMode ? stripeSettings.apiKey : stripeSettings.liveApiKey,
       )
 

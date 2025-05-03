@@ -22,7 +22,9 @@ interface StripePlanResult {
 /**
  * Create a Stripe product and price for a subscription plan
  */
-export const createStripePlan = async (params: CreateStripePlanParams): Promise<StripePlanResult> => {
+export const createStripePlan = async (
+  params: CreateStripePlanParams,
+): Promise<StripePlanResult> => {
   try {
     const { name, description, price, interval, trialDays, setupFeeAmount } = params
 
@@ -36,8 +38,10 @@ export const createStripePlan = async (params: CreateStripePlanParams): Promise<
     }
 
     // Initialize Stripe
-    const stripe = require('stripe')(
-      stripeSettings.testMode ? stripeSettings.apiKey : stripeSettings.liveApiKey
+    // Use dynamic import for ESM compatibility
+    const Stripe = (await import('stripe')).default
+    const stripe = new Stripe(
+      stripeSettings.testMode ? stripeSettings.apiKey : stripeSettings.liveApiKey,
     )
 
     // Create a product
@@ -72,7 +76,7 @@ export const createStripePlan = async (params: CreateStripePlanParams): Promise<
         break
     }
 
-    // Create a price
+    // Create a price with trial period if specified
     const priceObj = await stripe.prices.create({
       product: product.id,
       unit_amount: price,
@@ -80,9 +84,12 @@ export const createStripePlan = async (params: CreateStripePlanParams): Promise<
       recurring: {
         interval: stripeInterval,
         interval_count: intervalCount,
+        ...(trialDays && trialDays > 0 ? { trial_period_days: trialDays } : {}),
       },
       metadata: {
         source: 'ott-cms',
+        ...(trialDays && trialDays > 0 ? { trial_days: trialDays.toString() } : {}),
+        ...(setupFeeAmount && setupFeeAmount > 0 ? { setup_fee: setupFeeAmount.toString() } : {}),
       },
     })
 
@@ -107,10 +114,7 @@ export const createStripePlan = async (params: CreateStripePlanParams): Promise<
       setupFeeId,
     }
   } catch (error) {
-    logger.error(
-      { error, context: 'createStripePlan' },
-      'Error creating Stripe plan'
-    )
+    logger.error({ error, context: 'createStripePlan' }, 'Error creating Stripe plan')
     throw error
   }
 }

@@ -1,0 +1,8 @@
+fix: Add Slate to Lexical migration support
+
+- Add SlateToLexicalFeature to default lexical editor configuration
+- Add SlateToLexicalFeature to PaymentSettings rich text fields
+- Enable on-the-fly conversion of Slate data to Lexical format
+- Fix rich text editor errors when viewing payment settings
+
+This change addresses the error "You have tried to pass in data from the old Slate editor to the new Lexical editor" by adding on-the-fly conversion of Slate data to Lexical format. When users edit and save rich text fields, the data will be permanently converted from Slate to Lexical format.

@@ -5,6 +5,10 @@ export const API_ROUTES = {
   EVENTS: '/api/events',
   PAYMENTS: {
     TEST: '/api/payments/test',
+    STRIPE: {
+      CREATE_CHECKOUT: '/api/payments/stripe/create-checkout',
+      CUSTOMER_PORTAL: '/api/payments/stripe/customer-portal',
+    },
     PAYPAL: {
       CLIENT_ID: '/api/payments/paypal/client-id',
       CREATE_ORDER: '/api/payments/paypal/create-order',

@@ -28,7 +28,10 @@ export const SubscriptionPlans: CollectionConfig = {
     description: 'Subscription plans available for purchase',
     components: {
       // Add custom components to the edit view
-      beforeFields: ['@/collections/SubscriptionPlans/components/PlanDetails'],
+      beforeFields: [
+        '@/collections/SubscriptionPlans/components/PlanDetails',
+        '@/collections/SubscriptionPlans/components/PlanTrialInfo',
+      ],
     },
   },
   fields: [
@@ -114,9 +117,10 @@ export const SubscriptionPlans: CollectionConfig = {
       name: 'trialPeriodDays',
       type: 'number',
       min: 0,
+      max: 30,
       defaultValue: 0,
       admin: {
-        description: 'Number of days for the trial period (0 for no trial)',
+        description: 'Free Trial (Days) - 0 = no trial. Up to 30 days allowed.',
       },
       hooks: {
         beforeValidate: [
@@ -145,7 +149,8 @@ export const SubscriptionPlans: CollectionConfig = {
       min: 0,
       defaultValue: 0,
       admin: {
-        description: 'One-time setup fee in cents (e.g., 500 = $5.00)',
+        description:
+          'Setup Fee (Paid Trial) - Optional one-time fee charged before trial starts, in cents (e.g., 500 = $5.00)',
       },
       hooks: {
         beforeValidate: [
