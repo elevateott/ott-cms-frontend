@@ -1,4 +1,7 @@
 'use client'
+
+import { clientLogger } from '@/utils/clientLogger';
+
 import type { FormFieldBlock, Form as FormType } from '@payloadcms/plugin-form-builder/types'
 
 import { useRouter } from 'next/navigation'
@@ -100,7 +103,7 @@ export const FormBlock: React.FC<
             if (redirectUrl) router.push(redirectUrl)
           }
         } catch (err) {
-          console.warn(err)
+          clientLogger.warn(err, 'Form/Component')
           setIsLoading(false)
           setError({
             message: 'Something went wrong.',

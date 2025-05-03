@@ -8,6 +8,8 @@ import React from 'react'
 
 import { importMap } from './admin/importMap.js'
 import './custom.scss'
+import EventBridge from '@/components/EventProvider/EventBridge' // <-- Add this import
+import ClientProviders from '@/components/EventProvider/ClientProviders'
 
 type Args = {
   children: React.ReactNode
@@ -24,7 +26,7 @@ const serverFunction: ServerFunctionClient = async function (args) {
 
 const Layout = ({ children }: Args) => (
   <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
-    {children}
+    <ClientProviders>{children}</ClientProviders>
   </RootLayout>
 )
 

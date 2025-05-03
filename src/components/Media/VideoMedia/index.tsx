@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import { cn } from '@/utilities/ui'
 import React, { useEffect, useRef } from 'react'
 
@@ -18,7 +21,7 @@ export const VideoMedia: React.FC<MediaProps> = (props) => {
     if (video) {
       video.addEventListener('suspend', () => {
         // setShowFallback(true);
-        // console.warn('Video was suspended, rendering fallback image.')
+        // clientLogger.warn('Video was suspended, rendering fallback image.', 'MediaVideoMedia')
       })
     }
   }, [])

@@ -72,6 +72,16 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
+    'mux-webhook-jobs': MuxWebhookJob;
+    videoassets: Videoasset;
+    content: Content;
+    creators: Creator;
+    series: Series;
+    filters: Filter;
+    carousels: Carousel;
+    'live-events': LiveEvent;
+    recordings: Recording;
+    'live-event-registrations': LiveEventRegistration;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -88,6 +98,16 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    'mux-webhook-jobs': MuxWebhookJobsSelect<false> | MuxWebhookJobsSelect<true>;
+    videoassets: VideoassetsSelect<false> | VideoassetsSelect<true>;
+    content: ContentSelect<false> | ContentSelect<true>;
+    creators: CreatorsSelect<false> | CreatorsSelect<true>;
+    series: SeriesSelect<false> | SeriesSelect<true>;
+    filters: FiltersSelect<false> | FiltersSelect<true>;
+    carousels: CarouselsSelect<false> | CarouselsSelect<true>;
+    'live-events': LiveEventsSelect<false> | LiveEventsSelect<true>;
+    recordings: RecordingsSelect<false> | RecordingsSelect<true>;
+    'live-event-registrations': LiveEventRegistrationsSelect<false> | LiveEventRegistrationsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -103,10 +123,20 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'streaming-settings': StreamingSetting;
+    'ott-settings': OttSetting;
+    'cloud-integrations': CloudIntegration;
+    'site-settings': SiteSetting;
+    'email-settings': EmailSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'streaming-settings': StreamingSettingsSelect<false> | StreamingSettingsSelect<true>;
+    'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
+    'cloud-integrations': CloudIntegrationsSelect<false> | CloudIntegrationsSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    'email-settings': EmailSettingsSelect<false> | EmailSettingsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -194,11 +224,24 @@ export interface Page {
   layout: (CallToActionBlock | ContentBlock | MediaBlock | ArchiveBlock | FormBlock)[];
   meta?: {
     title?: string | null;
+    description?: string | null;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
-    description?: string | null;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   publishedAt?: string | null;
   slug?: string | null;
@@ -234,11 +277,24 @@ export interface Post {
   categories?: (string | Category)[] | null;
   meta?: {
     title?: string | null;
+    description?: string | null;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
     image?: (string | null) | Media;
-    description?: string | null;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
   };
   publishedAt?: string | null;
   authors?: (string | User)[] | null;
@@ -352,9 +408,47 @@ export interface Media {
  */
 export interface Category {
   id: string;
+  /**
+   * The name of the category displayed to users
+   */
   title: string;
+  /**
+   * Displayed on the category's public page
+   */
+  description?: string | null;
+  /**
+   * Used for the category URL (must be unique)
+   */
   slug?: string | null;
   slugLock?: boolean | null;
+  /**
+   * Shown as a preview image or banner on catalog pages
+   */
+  featuredImage?: (string | null) | Media;
+  /**
+   * If checked, this category is featured on the homepage or catalog
+   */
+  featuredCategory?: boolean | null;
+  /**
+   * Controls whether the category is visible to customers
+   */
+  showInCatalog?: boolean | null;
+  /**
+   * Content linked to this category
+   */
+  content?: (string | Content)[] | null;
+  /**
+   * Used for manual sorting in menus or grids
+   */
+  order?: number | null;
+  /**
+   * Optional parent category for hierarchical organization
+   */
+  parentCategory?: (string | null) | Category;
+  /**
+   * Control where this category is featured
+   */
+  featuredOn?: ('none' | 'home' | 'nav' | 'both') | null;
   parent?: (string | null) | Category;
   breadcrumbs?:
     | {
@@ -364,8 +458,277 @@ export interface Category {
         id?: string | null;
       }[]
     | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
+  };
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content".
+ */
+export interface Content {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Main poster image for this content
+   */
+  posterImage: string | Media;
+  /**
+   * When this content was or will be released
+   */
+  releaseDate?: string | null;
+  /**
+   * The main video for this content
+   */
+  mainVideo: string | Videoasset;
+  /**
+   * Optional trailer video for this content
+   */
+  trailerVideo?: (string | null) | Videoasset;
+  /**
+   * Additional bonus videos for this content
+   */
+  bonusVideos?:
+    | {
+        title: string;
+        description?: string | null;
+        video: string | Videoasset;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Categories this content belongs to
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * Creators associated with this content
+   */
+  creators?: (string | Creator)[] | null;
+  /**
+   * Add relevant keywords for filtering and discovery
+   */
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Content status (draft or published)
+   */
+  status: 'draft' | 'published';
+  /**
+   * Uncheck to hide this content from users.
+   */
+  isPublished?: boolean | null;
+  /**
+   * Schedule when this content should go live.
+   */
+  publishAt?: string | null;
+  /**
+   * Schedule when this content should expire.
+   */
+  unpublishAt?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videoassets".
+ */
+export interface Videoasset {
+  id: string;
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Choose how this video is delivered
+   */
+  sourceType: 'mux' | 'embedded';
+  /**
+   * When checked, this video will use its own DRM settings instead of the global defaults.
+   */
+  overrideDRM?: boolean | null;
+  /**
+   * Protect this video with DRM (Widevine / FairPlay). Playback will require a compatible player. Can only be set before upload.
+   */
+  useDRM?: boolean | null;
+  /**
+   * The Mux DRM Configuration ID to use for this video.
+   */
+  drmConfigurationId?: string | null;
+  muxData?: {
+    /**
+     * Mux Upload ID (automatically populated)
+     */
+    uploadId?: string | null;
+    /**
+     * Mux Asset ID (automatically populated)
+     */
+    assetId?: string | null;
+    /**
+     * Mux Playback ID (automatically populated)
+     */
+    playbackId?: string | null;
+    /**
+     * Current status of the Mux video
+     */
+    status?: ('uploading' | 'processing' | 'ready' | 'error') | null;
+  };
+  /**
+   * Configure advanced settings for this Mux video
+   */
+  muxAdvancedSettings?: {
+    /**
+     * Select the encoding quality tier for this video
+     */
+    videoQuality?: ('basic' | 'plus' | 'premium') | null;
+    /**
+     * Maximum resolution for this video
+     */
+    maxResolution?: '1080p' | null;
+    /**
+     * Control how this video can be accessed
+     */
+    playbackPolicy?: ('public' | 'signed') | null;
+    /**
+     * Automatically adjust audio levels for consistent volume
+     */
+    normalizeAudio?: boolean | null;
+    /**
+     * Automatically generate English captions for this video
+     */
+    autoGenerateCaptions?: boolean | null;
+  };
+  /**
+   * Manage subtitle and caption tracks for this video
+   */
+  subtitles?: {
+    /**
+     * List of subtitle and caption tracks for this video
+     */
+    tracks?:
+      | {
+          /**
+           * Language code (e.g., en, es, fr)
+           */
+          language: string;
+          /**
+           * Display name for this track (e.g., English, Spanish)
+           */
+          name?: string | null;
+          kind: 'subtitles' | 'captions' | 'descriptions';
+          closedCaptions?: boolean | null;
+          /**
+           * Mux Track ID (automatically populated)
+           */
+          muxTrackId?: string | null;
+          /**
+           * URL to the subtitle file (automatically populated)
+           */
+          url?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Enter an HLS stream URL (e.g., from Vimeo or DaCast)
+   */
+  embeddedUrl?: string | null;
+  /**
+   * Video duration in seconds (automatically populated for Mux videos)
+   */
+  duration?: number | null;
+  /**
+   * Video aspect ratio (automatically populated for Mux videos)
+   */
+  aspectRatio?: string | null;
+  /**
+   * Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)
+   */
+  thumbnail?: (string | null) | Media;
+  muxThumbnailUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creators".
+ */
+export interface Creator {
+  id: string;
+  name: string;
+  /**
+   * Displayed on the creator's public profile.
+   */
+  bio?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Profile image for this creator
+   */
+  avatar?: (string | null) | Media;
+  /**
+   * Controls whether this creator is visible on the public site
+   */
+  publicProfile?: boolean | null;
+  /**
+   * Social media links for this creator
+   */
+  socialLinks?:
+    | {
+        platform: 'website' | 'twitter' | 'instagram' | 'youtube' | 'facebook' | 'linkedin' | 'tiktok' | 'other';
+        url: string;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -729,6 +1092,458 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mux-webhook-jobs".
+ */
+export interface MuxWebhookJob {
+  id: string;
+  videoId: string;
+  assetId: string;
+  status: 'pending' | 'complete' | 'failed';
+  attemptCount?: number | null;
+  lastAttempt?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series".
+ */
+export interface Series {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Main thumbnail image for this series
+   */
+  thumbnail: string | Media;
+  /**
+   * Optional video trailer shown before watching the full series
+   */
+  trailer?: (string | null) | Videoasset;
+  /**
+   * Episodes or videos that are part of this series (custom order will be preserved)
+   */
+  content?: (string | Content)[] | null;
+  /**
+   * Creators associated with this series
+   */
+  creators?: (string | Creator)[] | null;
+  /**
+   * Categories this series belongs to
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * Add relevant keywords for filtering and discovery
+   */
+  tags?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * How the series content is displayed on the frontend
+   */
+  layout?: ('grid' | 'list' | 'carousel') | null;
+  /**
+   * Mark this series as featured on the homepage or catalog
+   */
+  isFeatured?: boolean | null;
+  /**
+   * Allows free access to this series
+   */
+  isFree?: boolean | null;
+  /**
+   * Optional price for the series if monetized individually
+   */
+  price?: number | null;
+  /**
+   * Controls whether this series is publicly visible
+   */
+  isPublished?: boolean | null;
+  /**
+   * When to automatically publish this series
+   */
+  publishAt?: string | null;
+  /**
+   * When to automatically unpublish this series
+   */
+  unpublishAt?: string | null;
+  createdAt: string;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+    /**
+     * Social media specific settings
+     */
+    socialMedia?: {
+      /**
+       * The type of Twitter card to use
+       */
+      twitterCard?: ('summary' | 'summary_large_image' | 'player') | null;
+      /**
+       * Twitter handle (e.g. @yourbrand)
+       */
+      twitterHandle?: string | null;
+    };
+  };
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filters".
+ */
+export interface Filter {
+  id: string;
+  /**
+   * Display name for this filter
+   */
+  label: string;
+  /**
+   * Type of filter
+   */
+  type: 'category' | 'creator' | 'tag' | 'series' | 'custom';
+  /**
+   * Value to filter by (category ID, tag name, etc.)
+   */
+  value: string;
+  /**
+   * Path to the field in the collection (e.g., categories, tags.value)
+   */
+  fieldPath?: string | null;
+  /**
+   * Order in which this filter appears (lower numbers first)
+   */
+  order?: number | null;
+  /**
+   * Whether this filter is active and should be shown
+   */
+  isActive?: boolean | null;
+  /**
+   * Optional group name to organize filters (e.g., "Difficulty", "Format")
+   */
+  group?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carousels".
+ */
+export interface Carousel {
+  id: string;
+  /**
+   * The title displayed above the carousel (e.g., "Latest Releases", "Top Picks")
+   */
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Optional description to display below the carousel title
+   */
+  description?: string | null;
+  /**
+   * Add content or series to this carousel
+   */
+  items?:
+    | {
+        /**
+         * Select the type of item to add
+         */
+        itemType: 'content' | 'series';
+        /**
+         * Select the content or series to add to this carousel
+         */
+        item?:
+          | ({
+              relationTo: 'content';
+              value: string | Content;
+            } | null)
+          | ({
+              relationTo: 'series';
+              value: string | Series;
+            } | null);
+        /**
+         * Position in the carousel (1 = first, 2 = second, etc.)
+         */
+        order: number;
+        /**
+         * Optional custom title to override the original title
+         */
+        customTitle?: string | null;
+        /**
+         * Optional custom description to override the original description
+         */
+        customDescription?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Configure how this carousel is displayed
+   */
+  displayOptions: {
+    /**
+     * The visual style of the carousel
+     */
+    layout: 'standard' | 'featured' | 'compact';
+    /**
+     * Number of items visible at once
+     */
+    itemsPerView: 'auto' | '2' | '3' | '4' | '5';
+    /**
+     * Show navigation arrows on the sides
+     */
+    showArrows?: boolean | null;
+    /**
+     * Show navigation dots below the carousel
+     */
+    showDots?: boolean | null;
+    /**
+     * Automatically scroll through items
+     */
+    autoplay?: boolean | null;
+    /**
+     * Time between slides in milliseconds (if autoplay is enabled)
+     */
+    autoplaySpeed?: number | null;
+  };
+  /**
+   * Toggle to show/hide this carousel
+   */
+  isActive?: boolean | null;
+  /**
+   * Order of this carousel on the page (lower numbers appear first)
+   */
+  order?: number | null;
+  /**
+   * Select which pages this carousel should appear on
+   */
+  showOnPages?: ('home' | 'content' | 'series')[] | null;
+  /**
+   * Optional date when this carousel should start being visible
+   */
+  visibleFrom?: string | null;
+  /**
+   * Optional date when this carousel should stop being visible
+   */
+  visibleUntil?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-events".
+ */
+export interface LiveEvent {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Thumbnail image for this live event
+   */
+  thumbnail?: (string | null) | Media;
+  /**
+   * Enable this to use an external HLS stream URL instead of Mux
+   */
+  useExternalHlsUrl?: boolean | null;
+  /**
+   * Enter a valid HLS URL (must end with .m3u8) if using an external live streaming provider
+   */
+  externalHlsUrl?: string | null;
+  /**
+   * Record this live stream for on-demand playback after the event
+   */
+  isRecordingEnabled?: boolean | null;
+  /**
+   * Recordings of this live event
+   */
+  recordings?: (string | Recording)[] | null;
+  /**
+   * Time allowed to reconnect after a disconnect (in seconds, max 300)
+   */
+  reconnectWindow?: number | null;
+  /**
+   * Controls how the live stream can be accessed. Public streams are accessible to anyone with the URL. Signed streams require a signed token.
+   */
+  playbackPolicy?: ('public' | 'signed') | null;
+  status: 'draft' | 'scheduled' | 'active' | 'completed' | 'cancelled';
+  /**
+   * When this live event is scheduled to start
+   */
+  scheduledStartTime?: string | null;
+  /**
+   * When this live event is scheduled to end
+   */
+  scheduledEndTime?: string | null;
+  /**
+   * Allow users to register for this event before it starts
+   */
+  preregistrationEnabled?: boolean | null;
+  /**
+   * Users who have registered for this event
+   */
+  registrations?: (string | LiveEventRegistration)[] | null;
+  /**
+   * Control who can access this live event
+   */
+  accessType: 'free' | 'subscription' | 'paid_ticket';
+  /**
+   * Price for a one-time ticket to this event (in cents, e.g. 1000 = $10.00)
+   */
+  ticketPrice?: number | null;
+  /**
+   * How many minutes before the event to send reminder emails
+   */
+  reminderMinutesBefore?: number | null;
+  /**
+   * Mux Live Stream ID (automatically populated)
+   */
+  muxLiveStreamId?: string | null;
+  /**
+   * Mux Stream Key (automatically populated)
+   */
+  muxStreamKey?: string | null;
+  /**
+   * Mux Playback IDs (automatically populated)
+   */
+  muxPlaybackIds?:
+    | {
+        playbackId?: string | null;
+        policy?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Current status of the Mux live stream (updates automatically)
+   */
+  muxStatus?: ('idle' | 'active' | 'disconnected' | 'completed' | 'disabled') | null;
+  /**
+   * When the Mux live stream was created
+   */
+  muxCreatedAt?: string | null;
+  /**
+   * Mux Asset ID for the recording (if recording is enabled)
+   */
+  recordingAssetId?: string | null;
+  /**
+   * Optional targets to simulcast this live stream to (RTMP destinations)
+   */
+  simulcastTargets?:
+    | {
+        id?: string | null;
+        /**
+         * Name of the simulcast target (e.g., YouTube, Facebook)
+         */
+        name: string;
+        /**
+         * RTMP URL for the simulcast target
+         */
+        url: string;
+        /**
+         * Stream key for the simulcast target
+         */
+        streamKey: string;
+        /**
+         * Current status of the simulcast target
+         */
+        status?: ('connected' | 'disconnected' | 'error') | null;
+      }[]
+    | null;
+  /**
+   * When the live stream was completed
+   */
+  endedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordings".
+ */
+export interface Recording {
+  id: string;
+  title: string;
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * The live event this recording is from
+   */
+  liveEvent: string | LiveEvent;
+  /**
+   * HLS playback URL for this recording
+   */
+  playbackUrl?: string | null;
+  /**
+   * URL to the thumbnail image for this recording
+   */
+  thumbnailUrl?: string | null;
+  /**
+   * Duration of the recording in seconds
+   */
+  duration?: number | null;
+  /**
+   * Mux Asset ID for this recording
+   */
+  muxAssetId?: string | null;
+  /**
+   * Mux Playback ID for this recording
+   */
+  muxPlaybackId?: string | null;
+  /**
+   * Controls how the recording can be accessed
+   */
+  playbackPolicy?: ('public' | 'signed') | null;
+  /**
+   * Optional price in cents for this recording
+   */
+  price?: number | null;
+  /**
+   * URL to download the recording (if available)
+   */
+  downloadUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-event-registrations".
+ */
+export interface LiveEventRegistration {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  /**
+   * The live event this registration is for
+   */
+  liveEvent: string | LiveEvent;
+  /**
+   * Whether the registration has been confirmed via email
+   */
+  confirmed?: boolean | null;
+  /**
+   * Token used for email confirmation
+   */
+  confirmationToken?: string | null;
+  /**
+   * Whether a reminder email has been sent
+   */
+  reminderSent?: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -920,6 +1735,46 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
+        relationTo: 'mux-webhook-jobs';
+        value: string | MuxWebhookJob;
+      } | null)
+    | ({
+        relationTo: 'videoassets';
+        value: string | Videoasset;
+      } | null)
+    | ({
+        relationTo: 'content';
+        value: string | Content;
+      } | null)
+    | ({
+        relationTo: 'creators';
+        value: string | Creator;
+      } | null)
+    | ({
+        relationTo: 'series';
+        value: string | Series;
+      } | null)
+    | ({
+        relationTo: 'filters';
+        value: string | Filter;
+      } | null)
+    | ({
+        relationTo: 'carousels';
+        value: string | Carousel;
+      } | null)
+    | ({
+        relationTo: 'live-events';
+        value: string | LiveEvent;
+      } | null)
+    | ({
+        relationTo: 'recordings';
+        value: string | Recording;
+      } | null)
+    | ({
+        relationTo: 'live-event-registrations';
+        value: string | LiveEventRegistration;
+      } | null)
+    | ({
         relationTo: 'redirects';
         value: string | Redirect;
       } | null)
@@ -1022,8 +1877,14 @@ export interface PagesSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
-        image?: T;
         description?: T;
+        image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   publishedAt?: T;
   slug?: T;
@@ -1130,8 +1991,14 @@ export interface PostsSelect<T extends boolean = true> {
     | T
     | {
         title?: T;
-        image?: T;
         description?: T;
+        image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   publishedAt?: T;
   authors?: T;
@@ -1246,8 +2113,16 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
+  description?: T;
   slug?: T;
   slugLock?: T;
+  featuredImage?: T;
+  featuredCategory?: T;
+  showInCatalog?: T;
+  content?: T;
+  order?: T;
+  parentCategory?: T;
+  featuredOn?: T;
   parent?: T;
   breadcrumbs?:
     | T
@@ -1256,6 +2131,19 @@ export interface CategoriesSelect<T extends boolean = true> {
         url?: T;
         label?: T;
         id?: T;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1275,6 +2163,323 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "mux-webhook-jobs_select".
+ */
+export interface MuxWebhookJobsSelect<T extends boolean = true> {
+  videoId?: T;
+  assetId?: T;
+  status?: T;
+  attemptCount?: T;
+  lastAttempt?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "videoassets_select".
+ */
+export interface VideoassetsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  sourceType?: T;
+  overrideDRM?: T;
+  useDRM?: T;
+  drmConfigurationId?: T;
+  muxData?:
+    | T
+    | {
+        uploadId?: T;
+        assetId?: T;
+        playbackId?: T;
+        status?: T;
+      };
+  muxAdvancedSettings?:
+    | T
+    | {
+        videoQuality?: T;
+        maxResolution?: T;
+        playbackPolicy?: T;
+        normalizeAudio?: T;
+        autoGenerateCaptions?: T;
+      };
+  subtitles?:
+    | T
+    | {
+        tracks?:
+          | T
+          | {
+              language?: T;
+              name?: T;
+              kind?: T;
+              closedCaptions?: T;
+              muxTrackId?: T;
+              url?: T;
+              id?: T;
+            };
+      };
+  embeddedUrl?: T;
+  duration?: T;
+  aspectRatio?: T;
+  thumbnail?: T;
+  muxThumbnailUrl?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "content_select".
+ */
+export interface ContentSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  posterImage?: T;
+  releaseDate?: T;
+  mainVideo?: T;
+  trailerVideo?: T;
+  bonusVideos?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        video?: T;
+        id?: T;
+      };
+  categories?: T;
+  creators?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  status?: T;
+  isPublished?: T;
+  publishAt?: T;
+  unpublishAt?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "creators_select".
+ */
+export interface CreatorsSelect<T extends boolean = true> {
+  name?: T;
+  bio?: T;
+  slug?: T;
+  slugLock?: T;
+  avatar?: T;
+  publicProfile?: T;
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "series_select".
+ */
+export interface SeriesSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  thumbnail?: T;
+  trailer?: T;
+  content?: T;
+  creators?: T;
+  categories?: T;
+  tags?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  layout?: T;
+  isFeatured?: T;
+  isFree?: T;
+  price?: T;
+  isPublished?: T;
+  publishAt?: T;
+  unpublishAt?: T;
+  createdAt?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        socialMedia?:
+          | T
+          | {
+              twitterCard?: T;
+              twitterHandle?: T;
+            };
+      };
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "filters_select".
+ */
+export interface FiltersSelect<T extends boolean = true> {
+  label?: T;
+  type?: T;
+  value?: T;
+  fieldPath?: T;
+  order?: T;
+  isActive?: T;
+  group?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carousels_select".
+ */
+export interface CarouselsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  description?: T;
+  items?:
+    | T
+    | {
+        itemType?: T;
+        item?: T;
+        order?: T;
+        customTitle?: T;
+        customDescription?: T;
+        id?: T;
+      };
+  displayOptions?:
+    | T
+    | {
+        layout?: T;
+        itemsPerView?: T;
+        showArrows?: T;
+        showDots?: T;
+        autoplay?: T;
+        autoplaySpeed?: T;
+      };
+  isActive?: T;
+  order?: T;
+  showOnPages?: T;
+  visibleFrom?: T;
+  visibleUntil?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-events_select".
+ */
+export interface LiveEventsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  thumbnail?: T;
+  useExternalHlsUrl?: T;
+  externalHlsUrl?: T;
+  isRecordingEnabled?: T;
+  recordings?: T;
+  reconnectWindow?: T;
+  playbackPolicy?: T;
+  status?: T;
+  scheduledStartTime?: T;
+  scheduledEndTime?: T;
+  preregistrationEnabled?: T;
+  registrations?: T;
+  accessType?: T;
+  ticketPrice?: T;
+  reminderMinutesBefore?: T;
+  muxLiveStreamId?: T;
+  muxStreamKey?: T;
+  muxPlaybackIds?:
+    | T
+    | {
+        playbackId?: T;
+        policy?: T;
+        id?: T;
+      };
+  muxStatus?: T;
+  muxCreatedAt?: T;
+  recordingAssetId?: T;
+  simulcastTargets?:
+    | T
+    | {
+        id?: T;
+        name?: T;
+        url?: T;
+        streamKey?: T;
+        status?: T;
+      };
+  endedAt?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordings_select".
+ */
+export interface RecordingsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  liveEvent?: T;
+  playbackUrl?: T;
+  thumbnailUrl?: T;
+  duration?: T;
+  muxAssetId?: T;
+  muxPlaybackId?: T;
+  playbackPolicy?: T;
+  price?: T;
+  downloadUrl?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "live-event-registrations_select".
+ */
+export interface LiveEventRegistrationsSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  email?: T;
+  liveEvent?: T;
+  confirmed?: T;
+  confirmationToken?: T;
+  reminderSent?: T;
+  createdAt?: T;
+  updatedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1590,6 +2795,205 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "streaming-settings".
+ */
+export interface StreamingSetting {
+  id: string;
+  /**
+   * Control which video source types are allowed in the system
+   */
+  streamingSourceTypes: 'Mux' | 'Embedded' | 'Both';
+  /**
+   * Mux configuration settings
+   */
+  muxSettings?: {
+    /**
+     * Automatically generate thumbnails from Mux videos
+     */
+    autoGenerateThumbnails?: boolean | null;
+    /**
+     * Default playback policy for new Mux videos
+     */
+    defaultPlaybackPolicy?: ('public' | 'signed') | null;
+    /**
+     * Mux API credentials (leave empty to use environment variables)
+     */
+    apiCredentials?: {
+      /**
+       * Token ID for Mux API authentication
+       */
+      tokenId?: string | null;
+      /**
+       * Secret key for Mux API authentication
+       */
+      tokenSecret?: string | null;
+      /**
+       * Secret used to verify webhook signatures from Mux
+       */
+      webhookSecret?: string | null;
+      /**
+       * Mux Signing Key ID (for signed playback)
+       */
+      signingKeyId?: string | null;
+      /**
+       * Private key used for signing playback URLs (in PEM format)
+       */
+      signingKeyPrivateKey?: string | null;
+      /**
+       * When enabled, all new Mux videos will use DRM protection unless overridden at the video level
+       */
+      enableDRMByDefault?: boolean | null;
+      /**
+       * Mux DRM Configuration ID (for DRM-protected videos)
+       */
+      drmConfigurationId?: string | null;
+    };
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ott-settings".
+ */
+export interface OttSetting {
+  id: string;
+  general: {
+    siteName: string;
+    siteDescription?: string | null;
+    logo?: (string | null) | Media;
+    favicon?: (string | null) | Media;
+  };
+  features?: {
+    /**
+     * Enable paid membership and subscription features
+     */
+    enableMembershipFeatures?: boolean | null;
+    /**
+     * Allow users to download videos for offline viewing
+     */
+    enableDownloads?: boolean | null;
+    /**
+     * Allow users to comment on videos
+     */
+    enableComments?: boolean | null;
+    /**
+     * Allow users to rate videos
+     */
+    enableRatings?: boolean | null;
+  };
+  player?: {
+    /**
+     * Automatically play videos when the page loads
+     */
+    autoplay?: boolean | null;
+    /**
+     * Automatically play the next video in a series
+     */
+    enableAutoNext?: boolean | null;
+    /**
+     * Default video quality for the player
+     */
+    defaultPlayerQuality?: ('auto' | '480p' | '720p' | '1080p' | '2160p') | null;
+  };
+  monetization?: {
+    /**
+     * Set up subscription plans for your platform
+     */
+    plans?:
+      | {
+          name: string;
+          price: number;
+          interval?: ('month' | 'year') | null;
+          features?:
+            | {
+                feature?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  analytics?: {
+    /**
+     * Google Analytics Measurement ID (e.g., G-XXXXXXXXXX)
+     */
+    googleAnalyticsId?: string | null;
+    /**
+     * Enable advanced video analytics with Mux Data
+     */
+    enableMuxAnalytics?: boolean | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Configure cloud storage integration settings for video uploads
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cloud-integrations".
+ */
+export interface CloudIntegration {
+  id: string;
+  /**
+   * API key for Dropbox integration. Create an app in the Dropbox Developer Console.
+   */
+  dropboxAppKey?: string | null;
+  /**
+   * API key for Google Drive integration. Create in the Google Cloud Console.
+   */
+  googleApiKey?: string | null;
+  /**
+   * OAuth client ID for Google Drive integration. Create in the Google Cloud Console.
+   */
+  googleClientId?: string | null;
+  /**
+   * Application (client) ID for OneDrive integration. Create in the Microsoft Azure Portal.
+   */
+  onedriveClientId?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: string;
+  siteName?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Configure email service provider settings for notifications and transactional emails
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-settings".
+ */
+export interface EmailSetting {
+  id: string;
+  /**
+   * Enable Resend as the email service provider
+   */
+  resendEnabled?: boolean | null;
+  /**
+   * API key for Resend integration. Create in the Resend dashboard.
+   */
+  resendApiKey?: string | null;
+  /**
+   * The email address that will appear as the sender (must be verified in Resend)
+   */
+  resendFromAddress?: string | null;
+  /**
+   * The name that will appear as the sender
+   */
+  resendFromName?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -1630,6 +3034,125 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "streaming-settings_select".
+ */
+export interface StreamingSettingsSelect<T extends boolean = true> {
+  streamingSourceTypes?: T;
+  muxSettings?:
+    | T
+    | {
+        autoGenerateThumbnails?: T;
+        defaultPlaybackPolicy?: T;
+        apiCredentials?:
+          | T
+          | {
+              tokenId?: T;
+              tokenSecret?: T;
+              webhookSecret?: T;
+              signingKeyId?: T;
+              signingKeyPrivateKey?: T;
+              enableDRMByDefault?: T;
+              drmConfigurationId?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ott-settings_select".
+ */
+export interface OttSettingsSelect<T extends boolean = true> {
+  general?:
+    | T
+    | {
+        siteName?: T;
+        siteDescription?: T;
+        logo?: T;
+        favicon?: T;
+      };
+  features?:
+    | T
+    | {
+        enableMembershipFeatures?: T;
+        enableDownloads?: T;
+        enableComments?: T;
+        enableRatings?: T;
+      };
+  player?:
+    | T
+    | {
+        autoplay?: T;
+        enableAutoNext?: T;
+        defaultPlayerQuality?: T;
+      };
+  monetization?:
+    | T
+    | {
+        plans?:
+          | T
+          | {
+              name?: T;
+              price?: T;
+              interval?: T;
+              features?:
+                | T
+                | {
+                    feature?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+      };
+  analytics?:
+    | T
+    | {
+        googleAnalyticsId?: T;
+        enableMuxAnalytics?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cloud-integrations_select".
+ */
+export interface CloudIntegrationsSelect<T extends boolean = true> {
+  dropboxAppKey?: T;
+  googleApiKey?: T;
+  googleClientId?: T;
+  onedriveClientId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-settings_select".
+ */
+export interface EmailSettingsSelect<T extends boolean = true> {
+  resendEnabled?: T;
+  resendApiKey?: T;
+  resendFromAddress?: T;
+  resendFromName?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

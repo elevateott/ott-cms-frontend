@@ -1,0 +1,32 @@
+/* Immediate styling for Mux Uploader button */
+mux-uploader button,
+.mux-uploader button {
+  margin-top: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  background-color: rgb(37, 99, 235) !important; /* bg-blue-600 */
+  color: white !important;
+  border-radius: 0.375rem !important; /* rounded-md */
+  transition-property: background-color !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+  font-weight: 500 !important;
+}
+
+mux-uploader button:hover,
+.mux-uploader button:hover {
+  background-color: rgb(29, 78, 216) !important; /* bg-blue-700 */
+}
+
+/* Hide all mux-uploader buttons initially */
+mux-uploader button {
+  visibility: hidden !important;
+}
+
+/* Show buttons only after our class is applied */
+mux-uploader.styled button,
+button.mux-styled-button {
+  visibility: visible !important;
+}
