@@ -54,3 +54,4 @@ coverage/
 .editorconfig
 .vscode/settings.json
 .qodo
+logs/app.log
