@@ -23,6 +23,7 @@ export const Subscribers: CollectionConfig = {
       'email',
       'paymentProvider',
       'subscriptionStatus',
+      'hasManualSubscription',
       'activePlansCount',
       'purchasedRentalsCount',
       'purchasedPPVCount',
@@ -50,6 +51,21 @@ export const Subscribers: CollectionConfig = {
         label: 'Payment Provider',
         type: 'select',
         options: ['stripe', 'paypal', 'unknown'],
+      },
+      {
+        field: 'hasManualSubscription',
+        label: 'Manual Subscription',
+        type: 'select',
+        options: [
+          {
+            label: 'Yes',
+            value: 'true',
+          },
+          {
+            label: 'No',
+            value: 'false',
+          },
+        ],
       },
     ],
     // Enable search by name and email
@@ -252,6 +268,65 @@ export const Subscribers: CollectionConfig = {
           type: 'date',
           required: true,
           admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+      ],
+    },
+    // Manual Access Overrides
+    {
+      name: 'hasManualSubscription',
+      type: 'checkbox',
+      label: 'Manual Subscription Override',
+      defaultValue: false,
+      admin: {
+        description: 'Grants full subscriber access without billing provider',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'manuallyGrantedPPV',
+      type: 'relationship',
+      relationTo: 'live-events',
+      hasMany: true,
+      label: 'Manually Granted PPV Events',
+      admin: {
+        description: 'These events are unlocked for this user without purchase',
+      },
+    },
+    {
+      name: 'manuallyGrantedRentals',
+      type: 'array',
+      label: 'Manually Granted Rentals',
+      admin: {
+        description: 'Live events with temporary access granted manually',
+      },
+      fields: [
+        {
+          name: 'event',
+          type: 'relationship',
+          relationTo: 'live-events',
+          required: true,
+        },
+        {
+          name: 'grantedAt',
+          type: 'date',
+          required: true,
+          defaultValue: () => new Date().toISOString(),
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+        {
+          name: 'expiresAt',
+          type: 'date',
+          required: true,
+          admin: {
+            description: 'When this manual rental access expires',
             date: {
               pickerAppearance: 'dayAndTime',
             },
