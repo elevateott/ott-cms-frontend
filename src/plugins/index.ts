@@ -52,8 +52,69 @@ export const plugins: Plugin[] = [
     generateURL: (docs) => docs.reduce((url, doc) => `${url}/${doc.slug}`, ''),
   }),
   seoPlugin({
-    generateTitle,
-    generateURL,
+    collections: ['pages', 'posts', 'content', 'videos', 'categories', 'series'],
+    uploadsCollection: 'media',
+    generateTitle: ({ doc }) => {
+      // Fallback chain: meta.title -> title -> collection name
+      return doc.meta?.title || doc.title || `${doc.collection} | OTT CMS`
+    },
+    generateDescription: ({ doc }) => {
+      // Fallback chain: meta.description -> description -> excerpt
+      return doc.meta?.description || doc.description || doc.excerpt || ''
+    },
+    generateURL: ({ doc }) => {
+      // Handle different collection URL patterns
+      const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+
+      switch (doc.collection) {
+        case 'posts':
+          return `${baseUrl}/posts/${doc.slug}`
+        case 'content':
+          return `${baseUrl}/content/${doc.slug}`
+        case 'videos':
+          return `${baseUrl}/video/${doc.slug}`
+        case 'categories':
+          return `${baseUrl}/category/${doc.slug}`
+        case 'series':
+          return `${baseUrl}/series/${doc.slug}`
+        default:
+          return `${baseUrl}/${doc.slug}`
+      }
+    },
+    fields: ({ defaultFields }) => {
+      return [
+        ...defaultFields,
+        {
+          name: 'socialMedia',
+          type: 'group',
+          admin: {
+            description: 'Social media specific settings',
+          },
+          fields: [
+            {
+              name: 'twitterCard',
+              type: 'select',
+              defaultValue: 'summary_large_image',
+              options: [
+                { label: 'Summary', value: 'summary' },
+                { label: 'Summary with Large Image', value: 'summary_large_image' },
+                { label: 'Player', value: 'player' },
+              ],
+              admin: {
+                description: 'The type of Twitter card to use',
+              },
+            },
+            {
+              name: 'twitterHandle',
+              type: 'text',
+              admin: {
+                description: 'Twitter handle (e.g. @yourbrand)',
+              },
+            },
+          ],
+        },
+      ]
+    },
   }),
   formBuilderPlugin({
     fields: {

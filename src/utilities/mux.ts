@@ -1,57 +1,161 @@
-import { createMuxService } from '@/services/mux';
+/**
+ * Mux Utilities
+ *
+ * This file provides utility functions for working with Mux.
+ * These functions ensure the MuxService is properly initialized before use.
+ */
 
-const muxService = createMuxService();
+import { createMuxService } from '@/services/mux'
+import { MuxAsset } from '@/types/mux'
+import { getMuxSettings } from '@/utilities/getMuxSettings'
+import { logger } from '@/utils/logger'
 
+// Initialize the Mux service
+const getMuxService = async () => await createMuxService()
+
+/**
+ * Create a Mux upload
+ */
 export const createMuxUpload = async (options?: {
   metadata?: Record<string, string>
   passthrough?: Record<string, string>
+  enableDRM?: boolean
 }) => {
-  try {
-    console.log('Creating Mux upload with options:', options)
-    return await muxService.createDirectUpload(options);
-  } catch (error) {
-    console.error('Error creating Mux upload:', error)
-    throw error
-  }
-}
+  const muxService = await getMuxService()
+  const muxSettings = await getMuxSettings()
 
-export const getMuxAsset = async (assetId: string) => {
-  try {
-    return await muxService.getAsset(assetId);
-  } catch (error) {
-    console.error(`Error fetching Mux asset ${assetId}:`, error)
-    throw new Error('Failed to fetch Mux asset')
-  }
-}
+  // If DRM is enabled, add the DRM configuration
+  if (options?.enableDRM) {
+    const drmConfigId = muxSettings.drmConfigurationId
 
-export const createMuxThumbnail = async (assetId: string, time: number = 0) => {
-  try {
-    // For now, we'll just return the URL to the thumbnail
-    // In a real implementation, you would use the Mux API to create a thumbnail
-    // and then upload it to your media collection
-    const playbackId = (await getMuxAsset(assetId)).playback_ids?.[0]?.id
-
-    if (!playbackId) {
-      throw new Error('No playback ID found for asset')
+    if (!drmConfigId) {
+      logger.warn(
+        { context: 'mux' },
+        'DRM is enabled but no DRM configuration ID is set in global settings or environment variables',
+      )
+    } else {
+      // Add DRM configuration to the upload options
+      return muxService.createDirectUpload({
+        ...options,
+        newAssetSettings: {
+          playbackPolicy: ['signed'], // DRM requires signed playback policy
+          drm: {
+            drmConfigurationIds: [drmConfigId],
+          },
+        },
+      })
     }
-
-    // Return the thumbnail URL
-    const thumbnailUrl = `https://image.mux.com/${playbackId}/thumbnail.jpg?time=${time}`
-
-    return { url: thumbnailUrl }
-  } catch (error) {
-    console.error(`Error creating Mux thumbnail for asset ${assetId}:`, error)
-    throw new Error('Failed to create Mux thumbnail')
   }
+
+  // Default case without DRM
+  return muxService.createDirectUpload(options)
 }
 
-export const deleteMuxAsset = async (assetId: string) => {
-  try {
-    await video.assets.delete(assetId)
-    return true
-  } catch (error) {
-    console.error(`Error deleting Mux asset ${assetId}:`, error)
-    throw new Error('Failed to delete Mux asset')
-  }
+/**
+ * Get a Mux asset
+ */
+export const getMuxAsset = async (assetId: string): Promise<MuxAsset | null> => {
+  const muxService = await getMuxService()
+  return muxService.getAsset(assetId)
 }
 
+/**
+ * Create a Mux thumbnail
+ */
+export const createMuxThumbnail = async (
+  assetId: string,
+  time: number = 0,
+): Promise<{ url: string }> => {
+  const muxService = await getMuxService()
+  return muxService.createMuxThumbnail(assetId, time)
+}
+
+/**
+ * Delete a Mux asset
+ */
+export const deleteMuxAsset = async (assetId: string): Promise<boolean> => {
+  const muxService = await getMuxService()
+  return muxService.deleteAsset(assetId)
+}
+
+/**
+ * Delete all Mux assets
+ */
+export const deleteAllMuxAssets = async (): Promise<{
+  success: boolean
+  count: number
+  failedCount: number
+  totalCount: number
+}> => {
+  const muxService = await getMuxService()
+  return muxService.deleteAllMuxAssets()
+}
+
+/**
+ * Update a Mux asset with advanced properties
+ */
+export const updateMuxAsset = async (
+  assetId: string,
+  data: {
+    playback_policy?: ('public' | 'signed')[]
+    mp4_support?: 'none' | 'standard'
+    encoding_tier?: 'basic' | 'plus' | 'premium'
+    max_resolution_tier?: '1080p'
+    normalize_audio?: boolean
+    generated_subtitles?: { name: string; language_code: string }[]
+  },
+): Promise<any> => {
+  const muxService = await getMuxService()
+  return muxService.updateAsset(assetId, data)
+}
+
+/**
+ * Create a subtitle track for a Mux asset
+ */
+export const createSubtitleTrack = async (
+  assetId: string,
+  subtitleData: {
+    language: string
+    name?: string
+    closedCaptions?: boolean
+    type?: 'subtitles' | 'captions'
+  },
+  fileUrl: string,
+): Promise<{
+  id: string
+  url?: string
+}> => {
+  const muxService = await getMuxService()
+  return muxService.createSubtitleTrack(assetId, subtitleData, fileUrl)
+}
+
+/**
+ * Get all subtitle tracks for a Mux asset
+ */
+export const getSubtitleTracks = async (assetId: string) => {
+  const muxService = await getMuxService()
+  return muxService.getSubtitleTracks(assetId)
+}
+
+/**
+ * Delete a subtitle track from a Mux asset
+ */
+export const deleteSubtitleTrack = async (assetId: string, trackId: string): Promise<boolean> => {
+  const muxService = await getMuxService()
+  return muxService.deleteSubtitleTrack(assetId, trackId)
+}
+
+/**
+ * Generate auto-captions for a Mux asset
+ */
+export const generateAutoCaptions = async (
+  assetId: string,
+  options?: {
+    language?: string
+  },
+): Promise<{
+  id: string
+}> => {
+  const muxService = await getMuxService()
+  return muxService.generateAutoCaptions(assetId, options)
+}

@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState, useEffect } from 'react'
 import MuxVideoUploader from './MuxVideoUploader'
 
@@ -15,7 +18,7 @@ const ClientVideoUploader: React.FC<ClientVideoUploaderProps> = (props) => {
 
   useEffect(() => {
     setIsMounted(true)
-    console.log('ClientVideoUploader mounted')
+    clientLogger.info('ClientVideoUploader mounted', 'videoClientVideoUploader')
   }, [])
 
   if (!isMounted) {

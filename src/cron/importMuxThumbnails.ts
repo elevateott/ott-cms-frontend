@@ -1,7 +1,8 @@
+import { logger } from '@/utils/logger';
 // src/cron/importMuxThumbnails.ts
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
-import { createMuxThumbnail } from '@/utilities/mux'
+import { createMuxService } from '@/services/mux'
 
 export async function importMuxThumbnails() {
   try {
@@ -37,8 +38,11 @@ export async function importMuxThumbnails() {
         // Skip if no asset ID
         if (!video.muxData?.assetId) continue
 
+        // Initialize the Mux service
+        const muxService = createMuxService()
+
         // Create a thumbnail
-        const thumbnail = await createMuxThumbnail(video.muxData.assetId, 1) // 1 second in
+        const thumbnail = await muxService.createMuxThumbnail(video.muxData.assetId, 1) // 1 second in
 
         // Download the thumbnail and create a media item
         const response = await fetch(thumbnail.url)
@@ -79,6 +83,6 @@ export async function importMuxThumbnails() {
     }
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error(`Error in importMuxThumbnails job: ${errorMessage}`)
+    logger.error({ context: 'cron/importMuxThumbnails' }, `Error in importMuxThumbnails job: ${errorMessage}`)
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import MuxUploader from '@mux/mux-uploader-react'
 import { MuxUploaderDrop, MuxUploaderFileSelect } from '@mux/mux-uploader-react'
@@ -10,12 +10,22 @@ import { Progress } from '@/components/ui/progress'
 import { cn } from '@/utilities/ui'
 import { eventBus } from '@/utilities/eventBus'
 import { EVENTS } from '@/constants/events'
+import { clientLogger } from '@/utils/clientLogger'
 import styles from './MuxVideoUploader.module.css'
 import MuxUploaderStyles from './MuxUploaderStyles'
 import Script from 'next/script'
+import CloudProviderButtons from './CloudProviderButtons'
 
 // Video list component
-const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll: () => void }) => {
+const VideoList = ({
+  videos,
+  onClearAll,
+  isUploading,
+}: {
+  videos: UploadedVideo[]
+  onClearAll: () => void
+  isUploading: boolean
+}) => {
   if (videos.length === 0) {
     return null
   }
@@ -28,7 +38,8 @@ const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll
           variant="outline"
           size="sm"
           onClick={onClearAll}
-          className="text-xs flex items-center gap-1"
+          disabled={isUploading}
+          className={`text-xs flex items-center gap-1 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <Trash2 className="w-3 h-3" />
           Clear All
@@ -76,10 +87,14 @@ const VideoList = ({ videos, onClearAll }: { videos: UploadedVideo[]; onClearAll
           </div>
         ))}
       </div>
-      <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
+      <div className="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-700 space-y-2">
         <p>
-          <strong>Note:</strong> Videos will appear in the list below once they have been processed.
+          <strong>Note:</strong> Videos will appear in the list below once they have been uploaded.
           This may take a few minutes depending on the file size.
+        </p>
+        <p>
+          <strong>Auto-cleanup:</strong> Video upload statuses are automatically removed after 24
+          hours.
         </p>
       </div>
     </div>
@@ -96,6 +111,7 @@ interface UploadedVideo {
   title: string
   status: UploadStatus
   progress: number
+  createdAt: number // Timestamp when the entry was created
   error?: string
   assetId?: string
   playbackId?: string
@@ -110,6 +126,7 @@ const ensureValidVideo = (video: Partial<UploadedVideo>): UploadedVideo => {
     title: video.title || 'Untitled video',
     status: video.status || 'uploading',
     progress: video.progress || 0,
+    createdAt: video.createdAt || Date.now(), // Use existing timestamp or create a new one
     error: video.error,
     assetId: video.assetId,
     playbackId: video.playbackId,
@@ -122,6 +139,7 @@ export interface MuxVideoUploaderProps {
   onUploadComplete?: (data: { uploadId?: string; assetId?: string; playbackId?: string }) => void
   onUploadError?: (error: Error) => void
   className?: string
+  onUploadingStateChange?: (isUploading: boolean) => void
 }
 
 const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
@@ -129,6 +147,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   onUploadComplete,
   onUploadError,
   className,
+  onUploadingStateChange,
 }) => {
   const [uploadedVideos, setUploadedVideos] = useLocalStorage<UploadedVideo[]>(
     'ott-cms-uploaded-videos',
@@ -136,6 +155,8 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
   )
   const [uploaderKey, setUploaderKey] = useState<number>(0)
   const [isUploaderReady, setIsUploaderReady] = useState<boolean>(false)
+  const [isUploading, setIsUploading] = useState<boolean>(false)
+  const muxUploaderRef = useRef<any>(null)
 
   // Effect to set the uploader ready state after a short delay
   useEffect(() => {
@@ -147,9 +168,154 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     return () => clearTimeout(timer)
   }, [])
 
+  // Create a wrapper for the endpoint function with retry capability
+  const endpointWithRetry = useCallback(
+    async (file?: File) => {
+      if (!file || !endpoint) return ''
+
+      const MAX_RETRIES = 3
+      let retryCount = 0
+      let lastError: Error | null = null
+
+      while (retryCount < MAX_RETRIES) {
+        try {
+          clientLogger.info(
+            `Attempting to get upload URL (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+            'MuxVideoUploader',
+          )
+
+          // Call the original endpoint function
+          const url = await endpoint(file)
+
+          if (url) {
+            clientLogger.info('Successfully got upload URL', 'MuxVideoUploader')
+            return url
+          } else {
+            throw new Error('Empty URL returned from endpoint')
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error))
+
+          // Only retry on timeout or network errors
+          const errorMessage = lastError.message.toLowerCase()
+          const isTimeoutError =
+            errorMessage.includes('timeout') ||
+            errorMessage.includes('timed out') ||
+            errorMessage.includes('network') ||
+            errorMessage.includes('failed to get endpoint')
+
+          if (isTimeoutError && retryCount < MAX_RETRIES - 1) {
+            retryCount++
+            const delay = 2000 * retryCount // Exponential backoff: 2s, 4s, 6s
+
+            clientLogger.warn(
+              `Endpoint error: ${lastError.message}. Retrying in ${delay / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`,
+              'MuxVideoUploader',
+            )
+
+            // Wait before retrying
+            await new Promise((resolve) => setTimeout(resolve, delay))
+          } else {
+            // Don't retry for other errors or if we've reached max retries
+            clientLogger.error(
+              `Failed to get endpoint after ${retryCount + 1} attempts: ${lastError.message}`,
+              'MuxVideoUploader',
+            )
+            throw lastError
+          }
+        }
+      }
+
+      // This should never be reached due to the throw in the loop,
+      // but TypeScript requires a return value
+      throw lastError || new Error('Failed to get upload URL after multiple attempts')
+    },
+    [endpoint],
+  )
+
+  // Function to clean up old uploads
+  const cleanupOldUploads = useCallback(() => {
+    const now = Date.now()
+    const twentyFourHours = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
+    const storageKey = 'ott-cms-uploaded-videos'
+
+    try {
+      // Get videos directly from localStorage
+      const storedVideosJson = localStorage.getItem(storageKey)
+      if (!storedVideosJson) return
+
+      const storedVideos = JSON.parse(storedVideosJson) as UploadedVideo[]
+
+      // Filter out old videos
+      const filteredVideos = storedVideos.filter((video) => {
+        // If video has no createdAt timestamp, add one now
+        if (!video.createdAt) {
+          video.createdAt = Date.now()
+          return true
+        }
+
+        // Keep videos less than 24 hours old
+        return now - video.createdAt < twentyFourHours
+      })
+
+      // Only update if we actually removed something
+      if (filteredVideos.length < storedVideos.length) {
+        const removedCount = storedVideos.length - filteredVideos.length
+        clientLogger.info(`Removed ${removedCount} old video upload entries`, 'MuxVideoUploader')
+
+        // Update localStorage directly
+        localStorage.setItem(storageKey, JSON.stringify(filteredVideos))
+
+        // Update React state to match - but only if component is still mounted
+        setUploadedVideos(filteredVideos)
+      }
+    } catch (error) {
+      clientLogger.error('Error cleaning up old uploads', 'MuxVideoUploader', { error })
+    }
+  }, [setUploadedVideos])
+
+  // Effect to clean up old uploads when component mounts
+  useEffect(() => {
+    // Run cleanup once when component mounts
+    if (typeof window !== 'undefined') {
+      // Small delay to ensure component is fully mounted
+      setTimeout(cleanupOldUploads, 500)
+    }
+  }, [cleanupOldUploads])
+
+  // Effect to set up periodic cleanup
+  useEffect(() => {
+    // Set up interval for periodic cleanup (every 3 hours)
+    let intervalId: NodeJS.Timeout | null = null
+
+    if (typeof window !== 'undefined') {
+      intervalId = setInterval(
+        () => {
+          clientLogger.info('Running periodic cleanup of old video uploads', 'MuxVideoUploader')
+          cleanupOldUploads()
+        },
+        3 * 60 * 60 * 1000,
+      ) // Every 3 hours
+    }
+
+    // Clean up interval on unmount
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [cleanupOldUploads])
+
+  // Effect to notify parent component when uploading state changes
+  useEffect(() => {
+    if (onUploadingStateChange) {
+      onUploadingStateChange(isUploading)
+    }
+  }, [isUploading, onUploadingStateChange])
+
   // Effect to log when uploadedVideos changes and check for stalled uploads
   useEffect(() => {
-    console.log('uploadedVideos state updated:', uploadedVideos)
+    clientLogger.debug('uploadedVideos state updated', 'MuxVideoUploader', {
+      videos: uploadedVideos,
+    })
 
     // Check if there are any videos in the 'uploading' state
     const hasUploadingVideos = uploadedVideos.some((video) => video.status === 'uploading')
@@ -157,14 +323,18 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     if (hasUploadingVideos) {
       // Set up a timer to check for videos that have been in 'uploading' state for too long
       const timer = setTimeout(() => {
-        console.log('Checking for stalled uploads...')
+        clientLogger.debug('Checking for stalled uploads', 'MuxVideoUploader')
 
         setUploadedVideos((prev) => {
           // Find videos that have been in 'uploading' state for too long
           const updatedVideos = prev.map((video) => {
             // If a video has been in 'uploading' state and has 100% progress, mark it as 'ready'
             if (video.status === 'uploading' && video.progress >= 99) {
-              console.log('Found stalled upload with 100% progress, marking as ready:', video)
+              clientLogger.info(
+                'Found stalled upload with 100% progress, marking as ready',
+                'MuxVideoUploader',
+                { video },
+              )
               return {
                 ...video,
                 status: 'ready' as UploadStatus,
@@ -187,9 +357,14 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     const file = event.detail?.file || event.detail
 
     if (!file || !file.name) {
-      console.error('File is undefined or missing name property:', event.detail)
+      clientLogger.error('File is undefined or missing name property', 'MuxVideoUploader', {
+        detail: event.detail,
+      })
       return
     }
+
+    // Set uploading state to true when upload starts
+    setIsUploading(true)
 
     const newVideo = ensureValidVideo({
       id: Date.now().toString(),
@@ -197,6 +372,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
       title: file.name.split('.').slice(0, -1).join('.'), // Remove extension
       status: 'uploading',
       progress: 0,
+      createdAt: Date.now(), // Add timestamp when creating new entry
     })
 
     setUploadedVideos((prev) => [...prev, newVideo])
@@ -239,6 +415,13 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         })
       }
 
+      // Check if there are any remaining uploads in progress
+      const hasUploadingVideos = updatedVideos.some((video) => video.status === 'uploading')
+      if (!hasUploadingVideos) {
+        // If no more uploads in progress, set isUploading to false
+        setIsUploading(false)
+      }
+
       return updatedVideos
     })
 
@@ -265,8 +448,208 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
 
   // Function to handle upload error
   const handleError = (event: CustomEvent) => {
-    const error = event.detail as Error
+    // Log the full error event for debugging
+    clientLogger.error('Upload error event', 'MuxVideoUploader', {
+      eventDetail: event.detail ? JSON.stringify(event.detail) : 'No detail',
+      eventType: event.type,
+    })
 
+    let errorMessage = 'Unknown error'
+    let errorObj: Error | null = null
+
+    // Extract error details from the event
+    if (event.detail) {
+      if (typeof event.detail === 'string') {
+        errorMessage = event.detail
+      } else if (event.detail instanceof Error) {
+        errorObj = event.detail
+        errorMessage = event.detail.message || 'Unknown error'
+      } else if (typeof event.detail === 'object') {
+        // Try to extract message from object
+        errorMessage = event.detail.message || event.detail.error || JSON.stringify(event.detail)
+      }
+    }
+
+    // Special handling for "Server responded with 0" error
+    if (errorMessage.includes('Server responded with 0')) {
+      errorMessage =
+        'Connection to upload server was lost. Please check your network connection and try again.'
+
+      // Reset the uploader to allow for retry
+      setTimeout(() => {
+        setUploaderKey((prev) => prev + 1)
+      }, 1000)
+    }
+
+    clientLogger.error(`Upload error: ${errorMessage}`, 'MuxVideoUploader')
+
+    setUploadedVideos((prev) => {
+      const updatedVideos = [...prev]
+      const lastVideoIndex = updatedVideos.length - 1
+
+      if (lastVideoIndex >= 0) {
+        updatedVideos[lastVideoIndex] = ensureValidVideo({
+          ...updatedVideos[lastVideoIndex],
+          status: 'error',
+          error: errorMessage,
+        })
+      }
+
+      // Check if there are any remaining uploads in progress
+      const hasUploadingVideos = updatedVideos.some((video) => video.status === 'uploading')
+      if (!hasUploadingVideos) {
+        // If no more uploads in progress, set isUploading to false
+        setIsUploading(false)
+      }
+
+      return updatedVideos
+    })
+
+    if (onUploadError) {
+      onUploadError(errorObj || new Error(errorMessage))
+    }
+  }
+
+  // Function to handle cloud file selection
+  const handleCloudFileSelected = async (file: File) => {
+    try {
+      clientLogger.info('Cloud file selected for upload', 'MuxVideoUploader', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      })
+
+      // Set uploading state to true
+      setIsUploading(true)
+
+      // Create a new video entry
+      const newVideo = ensureValidVideo({
+        id: Date.now().toString(),
+        filename: file.name,
+        title: file.name.split('.').slice(0, -1).join('.'), // Remove extension
+        status: 'uploading',
+        progress: 0,
+        createdAt: Date.now(),
+      })
+
+      // Add to uploaded videos
+      setUploadedVideos((prev) => [...prev, newVideo])
+
+      // Get upload URL from endpoint
+      const uploadUrl = await endpoint(file)
+
+      if (!uploadUrl) {
+        throw new Error('Failed to get upload URL')
+      }
+
+      // Create FormData and upload the file
+      const formData = new FormData()
+      formData.append('file', file)
+
+      // Track upload progress
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100)
+
+          setUploadedVideos((prev) => {
+            const updatedVideos = [...prev]
+            const lastVideoIndex = updatedVideos.length - 1
+
+            if (lastVideoIndex >= 0) {
+              updatedVideos[lastVideoIndex] = ensureValidVideo({
+                ...updatedVideos[lastVideoIndex],
+                progress: progress,
+              })
+            }
+
+            return updatedVideos
+          })
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Upload successful
+          try {
+            const response = JSON.parse(xhr.responseText)
+            const { upload_id, asset_id, playback_ids } = response
+
+            setUploadedVideos((prev) => {
+              const updatedVideos = [...prev]
+              const lastVideoIndex = updatedVideos.length - 1
+
+              if (lastVideoIndex >= 0) {
+                updatedVideos[lastVideoIndex] = ensureValidVideo({
+                  ...updatedVideos[lastVideoIndex],
+                  status: 'complete',
+                  progress: 100,
+                  assetId: asset_id,
+                  playbackId: playback_ids?.[0]?.id,
+                })
+              }
+
+              return updatedVideos
+            })
+
+            // Emit client-side event for upload completed
+            eventBus.emit(EVENTS.VIDEO_UPLOAD_COMPLETED, {
+              uploadId: upload_id,
+              assetId: asset_id,
+              playbackId: playback_ids?.[0]?.id,
+              timestamp: Date.now(),
+              source: 'client',
+            })
+
+            if (onUploadComplete) {
+              onUploadComplete({
+                uploadId: upload_id,
+                assetId: asset_id,
+                playbackId: playback_ids?.[0]?.id,
+              })
+            }
+
+            // Check if there are any remaining uploads in progress
+            setUploadedVideos((prev) => {
+              const hasUploadingVideos = prev.some((video) => video.status === 'uploading')
+              if (!hasUploadingVideos) {
+                // If no more uploads in progress, set isUploading to false
+                setIsUploading(false)
+              }
+              return prev
+            })
+          } catch (error) {
+            clientLogger.error('Error parsing upload response', 'MuxVideoUploader', { error })
+            handleCloudUploadError(new Error('Error parsing upload response'))
+          }
+        } else {
+          // Upload failed
+          handleCloudUploadError(new Error(`Upload failed with status ${xhr.status}`))
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        handleCloudUploadError(new Error('Network error during upload'))
+      })
+
+      xhr.addEventListener('abort', () => {
+        handleCloudUploadError(new Error('Upload aborted'))
+      })
+
+      // Start the upload
+      xhr.open('POST', uploadUrl)
+      xhr.send(formData)
+    } catch (error) {
+      clientLogger.error('Error handling cloud file upload', 'MuxVideoUploader', { error })
+      handleCloudUploadError(
+        error instanceof Error ? error : new Error('Unknown error during upload'),
+      )
+    }
+  }
+
+  // Helper function to handle cloud upload errors
+  const handleCloudUploadError = (error: Error) => {
     setUploadedVideos((prev) => {
       const updatedVideos = [...prev]
       const lastVideoIndex = updatedVideos.length - 1
@@ -285,12 +668,22 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     if (onUploadError) {
       onUploadError(error)
     }
+
+    // Check if there are any remaining uploads in progress
+    setUploadedVideos((prev) => {
+      const hasUploadingVideos = prev.some((video) => video.status === 'uploading')
+      if (!hasUploadingVideos) {
+        // If no more uploads in progress, set isUploading to false
+        setIsUploading(false)
+      }
+      return prev
+    })
   }
 
   // Function to clear all uploads
   const handleClearAll = () => {
     setUploadedVideos([])
-    console.log('All uploads cleared')
+    clientLogger.info('All uploads cleared', 'MuxVideoUploader')
   }
 
   // Effect to automatically update video status to ready after upload completes
@@ -299,16 +692,23 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     const uploadingVideos = uploadedVideos.filter((video) => video.status === 'uploading')
 
     if (uploadingVideos.length > 0) {
-      console.log('Found videos in uploading state:', uploadingVideos)
+      clientLogger.debug('Found videos in uploading state', 'MuxVideoUploader', {
+        videos: uploadingVideos,
+      })
 
       // Set a timer to automatically update the status to complete after 10 seconds
       const timer = setTimeout(() => {
-        console.log('Auto-updating video status to complete after timeout')
+        clientLogger.info(
+          'Auto-updating video status to complete after timeout',
+          'MuxVideoUploader',
+        )
 
         setUploadedVideos((prev) => {
           return prev.map((video) => {
             if (video.status === 'uploading') {
-              console.log('Auto-updating video to complete status:', video)
+              clientLogger.info('Auto-updating video to complete status', 'MuxVideoUploader', {
+                video,
+              })
               return ensureValidVideo({
                 ...video,
                 status: 'complete',
@@ -332,7 +732,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         strategy="afterInteractive"
         src="/mux-uploader-preload.js"
         onLoad={() => {
-          console.log('Mux Uploader preload script loaded')
+          clientLogger.info('Mux Uploader preload script loaded', 'MuxVideoUploader')
         }}
       />
 
@@ -351,7 +751,7 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
           // Show uploader when ready
           <MuxUploader
             key={uploaderKey}
-            endpoint={endpoint}
+            endpoint={endpointWithRetry}
             onUploadStart={handleUploadStart as any}
             onProgress={handleProgress as any}
             onSuccess={handleSuccess as any}
@@ -406,8 +806,16 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         )}
       </div>
 
+      {/* Cloud Provider Buttons */}
+      {isUploaderReady && (
+        <div className="mt-2">
+          <p className="text-sm text-gray-500 mb-2">Or select a video from cloud storage:</p>
+          <CloudProviderButtons onFileSelected={handleCloudFileSelected} disabled={isUploading} />
+        </div>
+      )}
+
       {/* Uploaded Videos List */}
-      <VideoList videos={uploadedVideos} onClearAll={handleClearAll} />
+      <VideoList videos={uploadedVideos} onClearAll={handleClearAll} isUploading={isUploading} />
     </div>
   )
 }

@@ -4,6 +4,9 @@
  * A simple event bus for client-side communication between components
  */
 
+// src\utilities\eventBus.ts
+import { clientLogger } from '@/utils/clientLogger'
+
 type EventCallback<T = any> = (data?: T) => void
 
 class EventBus {
@@ -26,26 +29,28 @@ class EventBus {
    * @returns A function to unsubscribe
    */
   on<T = any>(event: string, callback: EventCallback<T>): () => void {
-    console.log(`🔍 DEBUG [EventBus] Subscribing to event: ${event}`)
+    clientLogger.debug(`Subscribing to event: ${event}`, 'EventBus')
 
     if (!this.events[event]) {
       this.events[event] = []
-      console.log(`🔍 DEBUG [EventBus] Created new event array for: ${event}`)
+      clientLogger.debug(`Created new event array for: ${event}`, 'EventBus')
     }
 
     this.events[event].push(callback as EventCallback)
-    console.log(
-      `🔍 DEBUG [EventBus] Added callback to event: ${event}, total listeners: ${this.events[event].length}`,
+    clientLogger.debug(
+      `Added callback to event: ${event}, total listeners: ${this.events[event].length}`,
+      'EventBus',
     )
 
     // Return unsubscribe function
     return () => {
-      console.log(`🔍 DEBUG [EventBus] Unsubscribing from event: ${event}`)
+      clientLogger.debug(`Unsubscribing from event: ${event}`, 'EventBus')
       if (this.events[event]) {
         const prevLength = this.events[event].length
         this.events[event] = this.events[event].filter((cb) => cb !== callback)
-        console.log(
-          `🔍 DEBUG [EventBus] Removed callback from event: ${event}, listeners before: ${prevLength}, after: ${this.events[event].length}`,
+        clientLogger.debug(
+          `Removed callback from event: ${event}, listeners before: ${prevLength}, after: ${this.events[event].length}`,
+          'EventBus',
         )
       }
     }
@@ -77,42 +82,44 @@ class EventBus {
    * @param data The data to pass to the callbacks
    */
   emit<T = any>(event: string, data?: T): void {
-    console.log(`🔍 DEBUG [EventBus] Emitting event: ${event}`, data)
+    clientLogger.debug(`Emitting event: ${event}`, 'EventBus', data)
 
     // Call regular subscribers
     if (this.events[event]) {
-      console.log(
-        `🔍 DEBUG [EventBus] Found ${this.events[event].length} regular listeners for event: ${event}`,
+      clientLogger.debug(
+        `Found ${this.events[event].length} regular listeners for event: ${event}`,
+        'EventBus',
       )
       this.events[event].forEach((callback, index) => {
         try {
-          console.log(`🔍 DEBUG [EventBus] Calling regular listener #${index} for event: ${event}`)
+          clientLogger.debug(`Calling regular listener #${index} for event: ${event}`, 'EventBus')
           callback(data)
         } catch (error) {
-          console.error(`🔍 DEBUG [EventBus] Error in event listener for ${event}:`, error)
+          clientLogger.error(`Error in event listener for ${event}`, 'EventBus', { error })
         }
       })
     } else {
-      console.log(`🔍 DEBUG [EventBus] No regular listeners found for event: ${event}`)
+      clientLogger.debug(`No regular listeners found for event: ${event}`, 'EventBus')
     }
 
     // Call once subscribers
     if (this.onceEvents[event]) {
-      console.log(
-        `🔍 DEBUG [EventBus] Found ${this.onceEvents[event].length} once listeners for event: ${event}`,
+      clientLogger.debug(
+        `Found ${this.onceEvents[event].length} once listeners for event: ${event}`,
+        'EventBus',
       )
       const callbacks = [...this.onceEvents[event]]
       this.onceEvents[event] = []
       callbacks.forEach((callback, index) => {
         try {
-          console.log(`🔍 DEBUG [EventBus] Calling once listener #${index} for event: ${event}`)
+          clientLogger.debug(`Calling once listener #${index} for event: ${event}`, 'EventBus')
           callback(data)
         } catch (error) {
-          console.error(`🔍 DEBUG [EventBus] Error in once event listener for ${event}:`, error)
+          clientLogger.error(`Error in once event listener for ${event}`, 'EventBus', { error })
         }
       })
     } else {
-      console.log(`🔍 DEBUG [EventBus] No once listeners found for event: ${event}`)
+      clientLogger.debug(`No once listeners found for event: ${event}`, 'EventBus')
     }
   }
 
@@ -137,23 +144,26 @@ class EventBus {
 // Create a singleton instance
 export const eventBus = EventBus.getInstance()
 
-// Event names
+// DEPRECATED: Use the EVENTS from constants/events.ts instead
+// This is kept for backward compatibility
 export const EVENTS = {
   // Video events
-  VIDEO_UPDATED: 'video_updated',
-  VIDEO_CREATED: 'video_created',
-  VIDEO_DELETED: 'video_deleted',
-  VIDEO_UPLOAD_STARTED: 'video_upload_started',
-  VIDEO_UPLOAD_PROGRESS: 'video_upload_progress',
-  VIDEO_UPLOAD_COMPLETED: 'video_upload_completed',
-  VIDEO_UPLOAD_ERROR: 'video_upload_error',
+  VIDEO_UPDATED: 'video:updated',
+  VIDEO_CREATED: 'video:created',
+  VIDEO_DELETED: 'video:deleted',
+  VIDEO_UPLOAD_STARTED: 'video:upload:started',
+  VIDEO_UPLOAD_PROGRESS: 'video:upload:progress',
+  VIDEO_UPLOAD_COMPLETED: 'video:upload:completed',
+  VIDEO_UPLOAD_ERROR: 'video:upload:error',
+  VIDEO_STATUS_READY: 'video:status:ready',
+  VIDEO_STATUS_UPDATED: 'video:status:updated',
 
   // UI events
-  MODAL_OPEN: 'modal_open',
-  MODAL_CLOSE: 'modal_close',
+  MODAL_OPEN: 'modal:open',
+  MODAL_CLOSE: 'modal:close',
   NOTIFICATION: 'notification',
 
   // Navigation events
-  NAVIGATION_START: 'navigation_start',
-  NAVIGATION_END: 'navigation_end',
+  NAVIGATION_START: 'navigation:start',
+  NAVIGATION_END: 'navigation:end',
 }

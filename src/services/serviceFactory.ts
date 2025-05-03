@@ -1,69 +1,26 @@
-/**
- * Service Factory
- *
- * Provides a centralized way to create service instances
- */
+import { MuxService } from './mux/muxService'
+import VideoAssetWebhookHandler from './mux/videoAssetWebhookHandler'
 
-import { Payload } from 'payload'
-import { VideoRepository } from '@/repositories/videoRepository'
-import { MuxService } from '@/services/mux/muxService'
-import { MockMuxService } from '@/services/mux/mockMuxService'
-import { WebhookHandlerService } from '@/services/mux/webhookHandlerService'
-import { appConfig, muxConfig } from '@/config'
-import { IMuxService } from '@/services/mux/IMuxService'
-import { MuxUploadRequest, MuxAsset, MuxWebhookEvent } from '@/types/mux'
-import configPromise from '@payload-config'
+export function createMuxService() {
+  const tokenId = process.env.MUX_TOKEN_ID
+  const tokenSecret = process.env.MUX_TOKEN_SECRET
 
-let muxServiceInstance: IMuxService | null = null;
-
-export function createVideoRepository(payload: Payload): VideoRepository {
-  return new VideoRepository(payload)
-}
-
-export function createMuxService(): IMuxService {
-  if (muxServiceInstance) {
-    return muxServiceInstance;
+  if (!tokenId || !tokenSecret) {
+    throw new Error('Mux credentials not found in environment variables')
   }
 
-  if (appConfig.environment === 'development' && process.env.USE_MOCK_MUX === 'true') {
-    console.log('Using mock Mux service for development')
-    muxServiceInstance = new MockMuxService()
-    return muxServiceInstance
-  }
-
-  console.log('Using real Mux service')
-  muxServiceInstance = new MuxService({
-    tokenId: muxConfig.tokenId,
-    tokenSecret: muxConfig.tokenSecret,
+  return new MuxService({
+    tokenId,
+    tokenSecret,
   })
-  return muxServiceInstance
 }
 
-export function createWebhookHandlerService(
-  payload: Payload,
-  eventEmitter: (event: string, data: any) => void,
-): WebhookHandlerService {
-  const videoRepository = createVideoRepository(payload)
-  const muxService = createMuxService()
-
-  return new WebhookHandlerService(videoRepository, muxService, eventEmitter)
+export const createWebhookHandlerService = (payload?: any) => {
+  return new VideoAssetWebhookHandler(payload)
 }
 
-export function createServices(
-  payload: Payload,
-  eventEmitter: (event: string, data: any) => void,
-): {
-  videoRepository: VideoRepository
-  muxService: IMuxService
-  webhookHandlerService: WebhookHandlerService
-} {
-  const videoRepository = createVideoRepository(payload)
-  const muxService = createMuxService()
-  const webhookHandlerService = new WebhookHandlerService(videoRepository, muxService, eventEmitter)
-
-  return {
-    videoRepository,
-    muxService,
-    webhookHandlerService,
-  }
+// Export a service factory object with all service creation methods
+export const serviceFactory = {
+  createMuxService,
+  createWebhookHandlerService,
 }

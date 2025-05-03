@@ -1,5 +1,7 @@
-// src/components/admin/BatchVideoUpload.tsx
 'use client'
+
+// src/components/admin/BatchVideoUpload.tsx
+
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'

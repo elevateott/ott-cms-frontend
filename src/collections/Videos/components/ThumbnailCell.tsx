@@ -1,5 +1,7 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger'
+
 import React, { useEffect } from 'react'
 import type { DefaultCellComponentProps } from 'payload'
 import Image from 'next/image'
@@ -20,13 +22,14 @@ const ThumbnailCell = (props: DefaultCellComponentProps) => {
   // Log when status changes from context
   useEffect(() => {
     if (statusMap[videoId]) {
-      console.log(
+      clientLogger.info(
         `🔍 DEBUG [ThumbnailCell] Video ${videoId} status updated from context: ${statusMap[videoId]}`,
+        'components/ThumbnailCell',
       )
     }
   }, [statusMap, videoId])
 
-  console.log('muxStatus', muxStatus)
+  clientLogger.info('muxStatus', muxStatus)
 
   const renderContent = () => {
     switch (muxStatus) {

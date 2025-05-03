@@ -1,7 +1,10 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useEffect, useState } from 'react'
-import { EventBridge } from '../EventBridge'
+import EventBridge from '@/components/EventProvider/EventBridge'
 import { eventBus, EVENTS } from '@/utilities/eventBus'
 
 export function AdminEventProvider({ children }: { children: React.ReactNode }) {
@@ -9,10 +12,10 @@ export function AdminEventProvider({ children }: { children: React.ReactNode }) 
 
   // Log when component is mounted
   useEffect(() => {
-    console.log('AdminEventProvider mounted')
+    clientLogger.info('AdminEventProvider mounted', 'AdminEventProviderindex')
     setMounted(true)
     return () => {
-      console.log('AdminEventProvider unmounted')
+      clientLogger.info('AdminEventProvider unmounted', 'AdminEventProviderindex')
       setMounted(false)
     }
   }, [])

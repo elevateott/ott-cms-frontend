@@ -1,12 +1,26 @@
-// src/components/VideoPlayer/index.tsx
 'use client'
+
+import { clientLogger } from '@/utils/clientLogger';
+// src/components/VideoPlayer/index.tsx
+
 
 import React, { useState, useEffect } from 'react'
 import Hls from 'hls.js'
 import MuxVideo from '@mux/mux-video-react'
 
+type VideoAsset = {
+  id: string
+  title: string
+  sourceType: 'mux' | 'embedded'
+  muxData?: {
+    playbackId?: string
+    status?: string
+  }
+  embeddedUrl?: string
+}
+
 type VideoPlayerProps = {
-  video: any // Your Video type
+  video: any // Can be either old Video type or new VideoAsset type
   autoplay?: boolean
   loop?: boolean
   muted?: boolean
@@ -46,18 +60,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       hls.attachMedia(videoElement)
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setPlayerReady(true)
-        if (autoplay) videoElement.play().catch((e) => console.error('Autoplay failed:', e))
+        if (autoplay) videoElement.play().catch((e) => clientLogger.error('Autoplay failed:', e), 'VideoPlayerindex')
       })
     } else {
-      console.error('HLS is not supported in this browser')
+      clientLogger.error('HLS is not supported in this browser', 'VideoPlayerindex')
     }
   }, [video, autoplay])
 
   if (!video) return null
 
   // Handle different video source types
-  const isMuxVideo = video.sourceType === 'mux' && video.muxData?.playbackId
-  const isEmbeddedVideo = video.sourceType === 'embedded' && video.embeddedUrl
+  const isMuxVideo = video?.sourceType === 'mux' && video?.muxData?.playbackId
+  const isEmbeddedVideo = video?.sourceType === 'embedded' && video?.embeddedUrl
 
   if (isMuxVideo) {
     return (

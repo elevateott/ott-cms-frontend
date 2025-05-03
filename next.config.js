@@ -41,6 +41,15 @@ const nextConfig = {
   },
   reactStrictMode: true,
   redirects,
+  // Configure Turbopack
+  experimental: {
+    turbo: {
+      // Configure any Turbopack-specific options here
+      resolveAlias: {
+        // Add any module aliases if needed
+      },
+    },
+  },
 }
 
 export default withPayload(nextConfig, { devBundleServerPackages: false })

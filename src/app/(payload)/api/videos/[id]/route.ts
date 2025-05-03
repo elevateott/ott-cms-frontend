@@ -7,7 +7,8 @@
 import { NextRequest as _NextRequest } from 'next/server'
 import { createGetHandler, createPutHandler, createDeleteHandler } from '@/utils/apiHandler'
 import { createApiResponse, createErrorResponse, createNotFoundResponse } from '@/utils/apiResponse'
-import { createVideoRepository } from '@/services/serviceFactory'
+// TODO: Fix this import when VideoRepository is implemented
+// import { createVideoRepository } from '@/services/serviceFactory'
 
 /**
  * GET /api/videos/[id]

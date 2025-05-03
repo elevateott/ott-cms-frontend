@@ -1,0 +1,23 @@
+.seo-fields-wrapper {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.seo-fields-wrapper input,
+.seo-fields-wrapper textarea {
+  background-color: white;
+  border: 1px solid #d1d5db;
+}
+
+.seo-fields-wrapper label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.seo-fields-wrapper .field-description {
+  color: #6b7280;
+  font-size: 0.875rem;
+}

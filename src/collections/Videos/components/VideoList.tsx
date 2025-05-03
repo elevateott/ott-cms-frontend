@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useEffect, useCallback, useState } from 'react'
 import { useEventBusOn } from '@/hooks/useEventBus'
 import { EVENTS } from '@/constants/events'
@@ -17,7 +20,7 @@ const fetchVideosFromServer = async (): Promise<Video[]> => {
     if (!res.ok) throw new Error('Failed to fetch videos')
     return await res.json()
   } catch (err) {
-    console.error('Error fetching videos:', err)
+    clientLogger.error('Error fetching videos:', err, 'components/VideoList')
     return []
   }
 }

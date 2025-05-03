@@ -1,5 +1,7 @@
 'use client'
 
+import { logger } from '@/utils/logger'
+
 import { useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -15,7 +17,10 @@ export const useRefreshListView = () => {
 
   // Function to refresh the list view
   const refreshListView = useCallback(() => {
-    console.log('🔍 DEBUG [useRefreshListView] Attempting to refresh list view')
+    logger.info(
+      { context: 'RefreshListView' },
+      '🔍 DEBUG [useRefreshListView] Attempting to refresh list view',
+    )
 
     try {
       // Try to find and click the refresh button in the list view
@@ -24,7 +29,10 @@ export const useRefreshListView = () => {
       ) as HTMLButtonElement
 
       if (refreshButton) {
-        console.log('🔍 DEBUG [useRefreshListView] Found refresh button, clicking it')
+        logger.info(
+          { context: 'RefreshListView' },
+          '🔍 DEBUG [useRefreshListView] Found refresh button, clicking it',
+        )
 
         // Click the refresh button multiple times with a small delay between clicks
         // This is more aggressive but ensures the list view is refreshed
@@ -32,30 +40,44 @@ export const useRefreshListView = () => {
 
         // Schedule additional clicks with delays
         setTimeout(() => {
-          console.log('🔍 DEBUG [useRefreshListView] Clicking refresh button again (1)')
+          logger.info(
+            { context: 'RefreshListView' },
+            '🔍 DEBUG [useRefreshListView] Clicking refresh button again (1)',
+          )
           refreshButton.click()
 
           // Try one more time after another delay
           setTimeout(() => {
-            console.log('🔍 DEBUG [useRefreshListView] Clicking refresh button again (2)')
+            logger.info(
+              { context: 'RefreshListView' },
+              '🔍 DEBUG [useRefreshListView] Clicking refresh button again (2)',
+            )
             refreshButton.click()
           }, 500)
         }, 500)
 
         // Successfully clicked the refresh button
-        console.log('🔍 DEBUG [useRefreshListView] Refresh button clicked successfully')
+        logger.info(
+          { context: 'RefreshListView' },
+          '🔍 DEBUG [useRefreshListView] Refresh button clicked successfully',
+        )
 
         return true
       } else {
-        console.log(
-          '🔍 DEBUG [useRefreshListView] Refresh button not found, using router.refresh()',
+        logger.info(
+          { context: 'RefreshListView' },
+          'Refresh button not found, using router.refresh()',
         )
         // If the button is not found, use the router to refresh the page
         router.refresh()
         return true
       }
     } catch (error) {
-      console.error('🔍 DEBUG [useRefreshListView] Error refreshing list view:', error)
+      logger.error(
+        { context: 'RefreshListView' },
+        '🔍 DEBUG [useRefreshListView] Error refreshing list view:',
+        error,
+      )
       return false
     }
   }, [router])

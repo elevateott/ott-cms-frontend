@@ -1,217 +1,202 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import { clientLogger } from '@/utils/clientLogger'
+
+// src\components\EventMonitor\EventMonitor.tsx
+import React, { useEffect, useState, useCallback } from 'react'
+import { eventBus } from '@/services/events/eventEmitter'
 import { EVENTS } from '@/constants/events'
-import { useEventSource } from '@/hooks/useEventSource'
-import { API_ROUTES } from '@/constants/api'
-import { eventBus } from '@/utilities/eventBus'
+
+// Create a context-specific logger
+const logger = clientLogger.createContextLogger('EventMonitor')
 
 interface EventLog {
   id: string
-  timestamp: Date
-  eventName: string
-  data: any
-  source: 'server' | 'client'
+  type: string
+  data: unknown
+  timestamp: string
 }
 
-export function EventMonitor() {
-  const [logs, setLogs] = useState<EventLog[]>([])
-  const [connectionStatus, setConnectionStatus] = useState<string>('connecting')
+export const EventMonitor: React.FC = () => {
+  logger.debug('EventMonitor component initializing')
+  const [events, setEvents] = useState<EventLog[]>([])
   const [isExpanded, setIsExpanded] = useState(false)
-  const [filter, setFilter] = useState('')
-  const logsEndRef = useRef<HTMLDivElement>(null)
-  const eventContainerRef = useRef<HTMLDivElement>(null)
 
-  const clearLogs = () => {
-    setLogs([])
-  }
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded)
-  }
-
-  // Filter events based on search input
-  const filteredEvents = logs.filter(event =>
-    event.eventName.toLowerCase().includes(filter.toLowerCase())
-  )
-
-  // Helper function to get event name color
-  const getEventColor = (eventName: string) => {
-    if (eventName.includes('error')) return 'text-red-600'
-    if (eventName.includes('created')) return 'text-green-600'
-    if (eventName.includes('updated')) return 'text-blue-600'
-    return 'text-gray-600'
-  }
-
-  // Helper function to get source color
-  const getSourceColor = (source: 'server' | 'client') => {
-    return source === 'server' ? 'text-purple-600' : 'text-orange-600'
-  }
-
-  const logEvent = (eventName: string, data: any, source: 'server' | 'client') => {
-    console.log(`🎯 EventMonitor: Logging ${source} event:`, { eventName, data })
-
-    setLogs((prevLogs) => [
-      ...prevLogs,
-      {
-        id: crypto.randomUUID(),
-        timestamp: new Date(),
-        eventName,
-        data,
-        source,
-      },
-    ])
-  }
-
-  // Set up event source for server-sent events
-  const { connected } = useEventSource({
-    url: API_ROUTES.EVENTS,
-    events: {
-      connected: (data) => {
-        console.log('🎯 EventMonitor: Connected to event source', data)
-        logEvent('connected', data, 'server')
-      },
-      [EVENTS.VIDEO_CREATED]: (data) => {
-        console.log('🎯 EventMonitor: Received VIDEO_CREATED event', data)
-        logEvent(EVENTS.VIDEO_CREATED, data, 'server')
-      },
-      [EVENTS.VIDEO_UPDATED]: (data) => {
-        console.log('🎯 EventMonitor: Received VIDEO_UPDATED event', data)
-        logEvent(EVENTS.VIDEO_UPDATED, data, 'server')
-      },
-      [EVENTS.VIDEO_STATUS_READY]: (data) => {
-        console.log('🎯 EventMonitor: Received VIDEO_STATUS_READY event', data)
-        logEvent(EVENTS.VIDEO_STATUS_READY, data, 'server')
-      },
-    },
-    onOpen: () => {
-      console.log('🎯 EventMonitor: SSE Connection opened')
-      setConnectionStatus('connected')
-    },
-    onError: (error) => {
-      console.error('🎯 EventMonitor: SSE Connection error:', error)
-      setConnectionStatus('error')
-    }
-  })
-
-  // Listen for client-side events
-  useEffect(() => {
-    console.log('🎯 EventMonitor: Setting up client event listeners')
-
-    const eventNames = Object.values(EVENTS)
-    const unsubscribes = eventNames.map((eventName) =>
-      eventBus.on(eventName, (data) => {
-        console.log(`🎯 EventMonitor: Received client event: ${eventName}`, data)
-        logEvent(eventName, data, 'client')
-      })
-    )
-
-    return () => {
-      console.log('🎯 EventMonitor: Cleaning up client event listeners')
-      unsubscribes.forEach((unsub) => unsub())
-    }
+  // Generate a unique ID for events
+  const generateId = useCallback(() => {
+    // Use crypto.randomUUID() if available, otherwise fallback to Math.random
+    return typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
   }, [])
 
-  // Scroll to bottom when new logs are added
+  const addEvent = useCallback(
+    (type: string, data: unknown) => {
+      const eventId = generateId()
+      logger.info(`📝 Received event: ${type}`, { eventId, eventType: type, eventData: data })
+
+      setEvents((prev) => {
+        const newEvents = [
+          {
+            id: eventId,
+            type,
+            data,
+            timestamp: new Date().toISOString(),
+          },
+          ...prev.slice(0, 99), // Keep last 100 events
+        ]
+        logger.debug(`Updated events array, now contains ${newEvents.length} events`, {
+          latestEventId: eventId,
+          totalEvents: newEvents.length,
+        })
+        return newEvents
+      })
+    },
+    [generateId],
+  )
+
+  // Add lifecycle logging and SSE connection
   useEffect(() => {
-    if (logsEndRef.current && isExpanded) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    logger.info('EventMonitor component mounted')
+
+    // Subscribe to client-side events via eventBus
+    const clientEventSubscriptions = Object.entries(EVENTS).map(([_, eventName]) => {
+      logger.debug(`Subscribing to client event: ${eventName}`)
+      // Store the event name and handler function for later unsubscribe
+      const handler = (data: unknown) => {
+        addEvent(eventName, data)
+      }
+      eventBus.on(eventName, handler)
+      return { eventName, handler }
+    })
+
+    // Connect to SSE stream directly
+    logger.info('Connecting to SSE stream...')
+    const eventSource = new EventSource('/api/events/stream')
+
+    // Handle connection open
+    eventSource.onopen = () => {
+      logger.info('SSE connection opened')
     }
-  }, [logs, isExpanded])
+
+    // Handle connection error
+    eventSource.onerror = (error) => {
+      logger.error('SSE connection error', { error })
+    }
+
+    // Handle connected event
+    eventSource.addEventListener('connected', (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        logger.info('Received connected event from server', { data })
+        addEvent('connected', data)
+      } catch (err) {
+        logger.error('Error parsing connected event data', { error: err })
+      }
+    })
+
+    // Handle ping events
+    eventSource.addEventListener('ping', (event) => {
+      logger.debug('Received ping from server', { timestamp: event.data })
+    })
+
+    // Register listeners for all events directly from SSE
+    Object.values(EVENTS).forEach((eventName) => {
+      logger.debug(`Registering SSE listener for event: ${eventName}`)
+      eventSource.addEventListener(eventName, (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          logger.info(`Received SSE event: ${eventName}`, { eventName, data })
+          addEvent(eventName, data)
+        } catch (err) {
+          logger.error(`Error parsing SSE event data for ${eventName}:`, { error: err })
+        }
+      })
+    })
+
+    return () => {
+      logger.info('EventMonitor component unmounting - cleaning up')
+      // Unsubscribe from client-side events
+      clientEventSubscriptions.forEach(({ eventName, handler }) => {
+        logger.debug(`Unsubscribing from client event: ${eventName}`)
+        eventBus.off(eventName, handler)
+      })
+      // Close SSE connection
+      eventSource.close()
+      logger.info('EventMonitor component unmounted')
+    }
+  }, [addEvent])
+
+  // Log when expanded/collapsed
+  useEffect(() => {
+    logger.debug(`EventMonitor display state changed: ${isExpanded ? 'expanded' : 'collapsed'}`, {
+      isExpanded,
+      eventsCount: events.length,
+    })
+  }, [isExpanded, events.length])
+
+  // Handle expand/collapse
+  const handleExpand = useCallback(() => {
+    logger.debug('Expanding EventMonitor', { currentEvents: events.length })
+    setIsExpanded(true)
+  }, [events.length])
+
+  const handleCollapse = useCallback(() => {
+    logger.debug('Collapsing EventMonitor')
+    setIsExpanded(false)
+  }, [])
+
+  // Handle clear events
+  const handleClearEvents = useCallback(() => {
+    logger.info('Clearing all events', { eventsCleared: events.length })
+    setEvents([])
+  }, [events.length])
+
+  if (!isExpanded) {
+    return (
+      <button
+        className="fixed bottom-4 left-4 bg-blue-500 text-white p-2 rounded"
+        onClick={handleExpand}
+      >
+        Show Event Monitor ({events.length})
+      </button>
+    )
+  }
 
   return (
-    <div
-      className={`fixed bottom-4 left-4 bg-white border border-gray-200 rounded-md shadow-lg z-50 transition-all duration-300 ${
-        isExpanded ? 'w-96 h-96' : 'w-64 h-auto'
-      }`}
-    >
-      <div className="p-3 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
-        <div className="flex items-center">
-          <h3 className="text-sm font-medium text-gray-800">Event Monitor</h3>
-          <span
-            className="ml-2 px-2 py-0.5 text-xs rounded-full"
-            style={{
-              backgroundColor:
-                connectionStatus === 'connected'
-                  ? '#10b981'
-                  : connectionStatus === 'connecting'
-                  ? '#f59e0b'
-                  : '#ef4444',
-              color: 'white',
-            }}
-          >
-            {connectionStatus}
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
+    <div className="fixed bottom-4 left-4 w-96 h-96 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+      <div className="p-2 bg-blue-500 text-white flex justify-between items-center">
+        <h3>Event Monitor</h3>
+        <div className="flex space-x-2">
           <button
-            onClick={clearLogs}
-            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded"
+            onClick={handleClearEvents}
+            className="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
           >
             Clear
           </button>
-          <button
-            onClick={toggleExpanded}
-            className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
-          >
-            {isExpanded ? 'Minimize' : 'Expand'}
-          </button>
+          <button onClick={handleCollapse}>Minimize</button>
         </div>
       </div>
-
-      {isExpanded && (
-        <div className="p-2 border-b border-gray-200">
-          <input
-            type="text"
-            placeholder="Filter events..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-          />
-        </div>
-      )}
-
-      <div
-        ref={eventContainerRef}
-        className={`overflow-auto ${isExpanded ? 'h-[calc(100%-6rem)]' : 'max-h-40'}`}
-      >
-        {filteredEvents.length === 0 ? (
-          <div className="p-3 text-sm text-gray-500 italic">No events recorded yet</div>
+      <div className="p-2 h-full overflow-auto">
+        {events.length === 0 ? (
+          <div className="text-center text-gray-500 mt-4">No events captured yet</div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {filteredEvents.map((event) => (
-              <div key={event.id} className="p-2 hover:bg-gray-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <span className={`text-xs font-medium ${getEventColor(event.eventName)}`}>
-                    {event.eventName}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {event.timestamp.toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="flex items-center mt-1">
-                  <span className={`text-xs ${getSourceColor(event.source)}`}>{event.source}</span>
-                </div>
-                {isExpanded && (
-                  <pre className="mt-1 text-xs bg-gray-50 p-1 rounded overflow-x-auto">
-                    {JSON.stringify(event.data, null, 2)}
-                  </pre>
-                )}
+          events.map((event) => {
+            logger.debug(`Rendering event ${event.id}`, { eventType: event.type })
+            return (
+              <div key={event.id} className="mb-2 p-2 border-b border-gray-200">
+                <div className="font-bold text-sm">{event.type}</div>
+                <div className="text-xs text-gray-500">{event.timestamp}</div>
+                <pre className="text-xs mt-1 bg-gray-50 p-1 rounded">
+                  {JSON.stringify(event.data, null, 2)}
+                </pre>
               </div>
-            ))}
-            <div ref={logsEndRef} />
-          </div>
+            )
+          })
         )}
-      </div>
-
-      <div className="p-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-        {logs.length} events recorded
       </div>
     </div>
   )
 }
 
 export default EventMonitor
-
-
-

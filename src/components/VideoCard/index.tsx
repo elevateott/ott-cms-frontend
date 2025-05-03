@@ -1,5 +1,7 @@
-// src/components/VideoCard.tsx
 'use client'
+
+// src/components/VideoCard.tsx
+
 
 import React from 'react'
 import Link from 'next/link'

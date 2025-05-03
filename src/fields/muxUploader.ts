@@ -9,5 +9,11 @@ export const muxUploaderField: Field = {
     components: {
       Field: '@/collections/Videos/components/MuxUploaderField',
     },
+    // Pass the enableDRM flag from the parent document
+    props: (args) => {
+      return {
+        enableDRM: args?.data?.enableDRM || false,
+      }
+    },
   },
 }

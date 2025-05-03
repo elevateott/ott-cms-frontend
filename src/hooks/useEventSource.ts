@@ -1,78 +1,144 @@
+import { logger } from '@/utils/logger';
 /**
  * useEventSource Hook
  *
  * A custom hook for using Server-Sent Events (EventSource) with React
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { UseEventSourceOptions, UseEventSourceResult } from '@/types/hooks'
-import { API_ROUTES } from '@/constants/api'
+import { useEffect, useRef, useState, useCallback } from 'react'
+
+interface EventSourceProps {
+  url: string
+  events: { [key: string]: (data: any) => void }
+  onOpen?: () => void
+  onError?: (error: Event) => void
+}
 
 /**
  * Hook for connecting to a server-sent events endpoint
  */
-export function useEventSource(
-  options: UseEventSourceOptions = {
-    url: API_ROUTES.EVENTS,
-    events: {},
-  },
-): UseEventSourceResult {
-  const { url = API_ROUTES.EVENTS, events = {}, onOpen, onError } = options
+export function useEventSource({ url, events, onOpen, onError }: EventSourceProps) {
   const [connected, setConnected] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const lastConnectionAttemptRef = useRef(0)
+  const MINIMUM_RECONNECT_DELAY = 2000 // Minimum 2 seconds between reconnection attempts
+  const MAX_RECONNECT_ATTEMPTS = 5
+  const INITIAL_RETRY_DELAY = 1000
+  const MAX_RETRY_DELAY = 30000
 
-  useEffect(() => {
-    // If we already have a connection, don't create a new one
-    if (eventSourceRef.current) {
-      console.log('🔌 EventSource: Connection already exists, skipping initialization')
+  const connect = useCallback(() => {
+    const now = Date.now()
+    if (now - lastConnectionAttemptRef.current < MINIMUM_RECONNECT_DELAY) {
+      logger.info({ context: 'EventSource' }, 'Throttling connection attempt...')
+      return
+    }
+    lastConnectionAttemptRef.current = now
+
+    // Don't create a new connection if we already have one
+    if (eventSourceRef.current?.readyState === EventSource.OPEN) {
       return
     }
 
-    console.log('🔌 EventSource: Initializing connection to:', url)
-    console.log('🔌 EventSource: Registering event handlers for:', Object.keys(events))
-
-    const eventSource = new EventSource(url)
-    eventSourceRef.current = eventSource
-
-    eventSource.onopen = () => {
-      console.log('🔌 EventSource: Connection opened')
-      setConnected(true)
-      if (onOpen) onOpen()
-    }
-
-    eventSource.onerror = (error) => {
-      console.error('🔌 EventSource: Connection error:', error)
-      setConnected(false)
-      if (onError) onError(error)
-    }
-
-    // Register event handlers
-    Object.entries(events).forEach(([eventName, handler]) => {
-      console.log(`🔌 EventSource: Adding listener for event: ${eventName}`)
-
-      eventSource.addEventListener(eventName, (event: MessageEvent) => {
-        console.log(`🔌 EventSource: Received event: ${eventName}`, event.data)
-        try {
-          const data = event.data ? JSON.parse(event.data) : {}
-          handler(data)
-        } catch (error) {
-          console.error(`🔌 EventSource: Error handling event ${eventName}:`, error)
-          handler(event.data)
-        }
-      })
-    })
-
-    return () => {
-      console.log('🔌 EventSource: Cleaning up connection')
+    try {
+      // Clean up existing connection if it exists
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         eventSourceRef.current = null
       }
-      setConnected(false)
+
+      logger.info({ context: 'EventSource' }, 'Creating new EventSource connection...')
+      const eventSource = new EventSource(url)
+      eventSourceRef.current = eventSource
+
+      // Connection opened
+      eventSource.onopen = () => {
+        logger.info({ context: 'EventSource' }, 'SSE Connection opened')
+        setConnected(true)
+        reconnectAttemptsRef.current = 0
+        if (onOpen) onOpen()
+      }
+
+      // Handle errors
+      eventSource.onerror = (error) => {
+        logger.info({ context: 'EventSource' }, 'SSE Connection error:', error)
+
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setConnected(false)
+          if (onError) onError(error)
+
+          // Don't attempt to reconnect if we got a 503
+          if ((error as any).status === 503) {
+            logger.info({ context: 'EventSource' }, 'Too many connections, waiting longer before retry...')
+            const backoffTime = INITIAL_RETRY_DELAY * 2
+            if (reconnectTimeoutRef.current) {
+              clearTimeout(reconnectTimeoutRef.current)
+            }
+            reconnectTimeoutRef.current = setTimeout(connect, backoffTime)
+            return
+          }
+
+          // Attempt reconnection if under max attempts
+          if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+            const backoffTime = Math.min(
+              INITIAL_RETRY_DELAY * Math.pow(2, reconnectAttemptsRef.current),
+              MAX_RETRY_DELAY
+            )
+            logger.info({ context: 'EventSource' }, `Attempting reconnect in ${backoffTime}ms (attempt ${reconnectAttemptsRef.current + 1}/${MAX_RECONNECT_ATTEMPTS})`)
+
+            if (reconnectTimeoutRef.current) {
+              clearTimeout(reconnectTimeoutRef.current)
+            }
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectAttemptsRef.current++
+              connect()
+            }, backoffTime)
+          }
+        }
+      }
+
+      // Register event handlers
+      Object.entries(events).forEach(([eventName, handler]) => {
+        eventSource.addEventListener(eventName, (event: MessageEvent) => {
+          try {
+            const data = event.data ? JSON.parse(event.data) : {}
+            handler(data)
+          } catch (error) {
+            logger.error({ context: 'EventSource' }, `Error handling ${eventName} event:`, error)
+            handler(event.data)
+          }
+        })
+      })
+
+    } catch (error) {
+      logger.error({ context: 'EventSource' }, 'Error creating EventSource:', error)
+      if (onError) onError(error as Event)
     }
-  }, []) // Empty dependency array - only run once on mount
+  }, [url, events, onOpen, onError])
+
+  useEffect(() => {
+    connect()
+
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+      }
+      if (eventSourceRef.current) {
+        logger.info({ context: 'EventSource' }, 'Closing EventSource connection...')
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [connect])
 
   return { connected }
 }
+
+
+
+
+
+
 
 

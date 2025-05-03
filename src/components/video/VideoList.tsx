@@ -1,5 +1,8 @@
 'use client'
 
+import { clientLogger } from '@/utils/clientLogger';
+
+
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/utilities/ui'
@@ -56,7 +59,7 @@ export const VideoList: React.FC<VideoListProps> = ({
       setVideos(videos)
       setError(null)
     } catch (err) {
-      console.error('Error fetching videos:', err)
+      clientLogger.error('Error fetching videos:', err, 'videoVideoList')
       setError('Failed to load videos')
     } finally {
       setLoading(false)

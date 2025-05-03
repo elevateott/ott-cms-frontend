@@ -7,7 +7,8 @@
 import { NextRequest as _NextRequest } from 'next/server'
 import { createGetHandler, createPostHandler } from '@/utils/apiHandler'
 import { createApiResponse, createErrorResponse } from '@/utils/apiResponse'
-import { createVideoRepository } from '@/services/serviceFactory'
+// TODO: Fix this import when VideoRepository is implemented
+// import { createVideoRepository } from '@/services/serviceFactory'
 import { PAGINATION } from '@/constants/index'
 
 /**
