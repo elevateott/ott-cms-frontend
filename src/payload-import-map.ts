@@ -10,4 +10,6 @@ export default {
   '@/components/fields/SecureTextField': () => import('./components/fields/SecureTextField'),
   '@/components/admin/CloudStorageInstructions/CloudStorageInstructionsField': () =>
     import('./components/admin/CloudStorageInstructions/CloudStorageInstructionsField'),
+  '@/components/admin/CustomLogin': () => import('./components/admin/CustomLogin'),
+  '@/components/admin/ClientLoginWrapper': () => import('./components/admin/ClientLoginWrapper'),
 }
