@@ -7,6 +7,7 @@ import {
   addPPVToSubscriber,
   addEventRentalToSubscriber,
 } from '@/utils/subscribers'
+import { recordTransaction } from '@/utils/transactions'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
 
 /**
@@ -205,6 +206,24 @@ export async function POST(request: Request) {
               },
             })
 
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'ppv',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: newSubscriber.id,
+              subscriberId: newSubscriber.id,
+              event: eventId,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+              },
+            })
+
             logger.info(
               {
                 context: 'stripe-webhook',
@@ -218,6 +237,24 @@ export async function POST(request: Request) {
             // Add the PPV event to the existing subscriber
             const subscriber = subscriberResult.docs[0]
             await addPPVToSubscriber(payload, subscriber.id, eventId)
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'ppv',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: subscriber.id,
+              subscriberId: subscriber.id,
+              event: eventId,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+              },
+            })
 
             logger.info(
               {
@@ -276,6 +313,29 @@ export async function POST(request: Request) {
             // Add the rental to the new subscriber
             await addEventRentalToSubscriber(payload, newSubscriber.id, eventId, durationHours)
 
+            // Record the transaction
+            const amount = session.amount_total || 0
+            const expiresAt = new Date()
+            expiresAt.setHours(expiresAt.getHours() + durationHours)
+
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'rental',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: newSubscriber.id,
+              subscriberId: newSubscriber.id,
+              event: eventId,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              rentalDuration: durationHours,
+              expiresAt: expiresAt.toISOString(),
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+              },
+            })
+
             logger.info(
               {
                 context: 'stripe-webhook',
@@ -290,6 +350,29 @@ export async function POST(request: Request) {
             // Add the rental to the existing subscriber
             const subscriber = subscriberResult.docs[0]
             await addEventRentalToSubscriber(payload, subscriber.id, eventId, durationHours)
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            const expiresAt = new Date()
+            expiresAt.setHours(expiresAt.getHours() + durationHours)
+
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'rental',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: subscriber.id,
+              subscriberId: subscriber.id,
+              event: eventId,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              rentalDuration: durationHours,
+              expiresAt: expiresAt.toISOString(),
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+              },
+            })
 
             logger.info(
               {
@@ -353,6 +436,36 @@ export async function POST(request: Request) {
               },
             })
 
+            // Find the plan to get the price
+            const planResult = await payload.find({
+              collection: 'subscription-plans',
+              where: {
+                id: {
+                  equals: planId,
+                },
+              },
+              limit: 1,
+            })
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'subscription',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: newSubscriber.id,
+              subscriberId: newSubscriber.id,
+              plan: planId,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+                subscriptionId: session.subscription,
+              },
+            })
+
             logger.info(
               {
                 context: 'stripe-webhook',
@@ -382,6 +495,25 @@ export async function POST(request: Request) {
                 subscriptionStatus: 'active',
                 subscriptionExpiresAt: expiresAt.toISOString(),
                 activePlans,
+              },
+            })
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'subscription',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: subscriber.id,
+              subscriberId: subscriber.id,
+              plan: planId,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+                subscriptionId: session.subscription,
               },
             })
 

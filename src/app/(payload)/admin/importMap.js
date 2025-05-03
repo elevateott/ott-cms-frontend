@@ -54,6 +54,9 @@ import { default as default_c4af1c1effa7405e266af9d6cf668218 } from '@/collectio
 import { default as default_68574fcb8a6204d51f9af85523f81467 } from '@/collections/Subscribers/components/StatusCell'
 import { default as default_90ef7556ca285abafcf615d2a76391d8 } from '@/collections/Subscribers/components/DateCell'
 import { default as default_e08afe55b81a45a9c729af998b534cf9 } from '@/collections/SubscriptionPlans/components/PlanStatusCell'
+import { default as default_b957c8bd1586ecf3ffd532b9748713af } from '@/collections/Transactions/components/TransactionTypeCell'
+import { default as default_f323153fa6618602c70970f93c5eba90 } from '@/collections/Transactions/components/TransactionAmountCell'
+import { default as default_0dc43d7f67d59455dfb218cd7de5fcb2 } from '@/collections/Transactions/components/TransactionStatusCell'
 import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
@@ -138,6 +141,9 @@ export const importMap = {
   "@/collections/Subscribers/components/StatusCell#default": default_68574fcb8a6204d51f9af85523f81467,
   "@/collections/Subscribers/components/DateCell#default": default_90ef7556ca285abafcf615d2a76391d8,
   "@/collections/SubscriptionPlans/components/PlanStatusCell#default": default_e08afe55b81a45a9c729af998b534cf9,
+  "@/collections/Transactions/components/TransactionTypeCell#default": default_b957c8bd1586ecf3ffd532b9748713af,
+  "@/collections/Transactions/components/TransactionAmountCell#default": default_f323153fa6618602c70970f93c5eba90,
+  "@/collections/Transactions/components/TransactionStatusCell#default": default_0dc43d7f67d59455dfb218cd7de5fcb2,
   "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,
