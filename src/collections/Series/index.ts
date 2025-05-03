@@ -201,6 +201,16 @@ export const Series: CollectionConfig = {
         },
       },
     },
+    {
+      name: '_socialSharing',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '@/components/admin/SocialSharingPanel',
+        },
+      },
+    },
   ],
   hooks: {
     // Add logging hooks

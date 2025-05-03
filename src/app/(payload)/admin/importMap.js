@@ -36,6 +36,7 @@ import { default as default_f7f51ca3d5041217fd3b2041f14340df } from '@/collectio
 import { default as default_63b621dd77e052b96270f257ad0acfed } from '@/collections/Content/components/ScheduledUnpublishingField'
 import { default as default_388c4887794a7c72d4a900d8b27fa304 } from '@/collections/Content/components/ManualPublishingNoteField'
 import { default as default_f1e33a4b225e7192cbc66810817a0942 } from '@/components/admin/SimpleSEOPreview'
+import { default as default_461323e571948c89c4ff68a3a4206baf } from '@/components/admin/SocialSharingPanel'
 import { default as default_0e8cc95af714c002dadcfbc134fcf5ed } from '@/collections/Content/components/ExportButtonBar'
 import { default as default_4e734c8eb614822eb7d309a8c5affe16 } from '@/collections/Series/components/TagsCell'
 import { default as default_2f4a68f01bdd871fbeb0520b1d8f2d42 } from '@/collections/Carousels/components/ItemRowLabel'
@@ -99,6 +100,7 @@ export const importMap = {
   "@/collections/Content/components/ScheduledUnpublishingField#default": default_63b621dd77e052b96270f257ad0acfed,
   "@/collections/Content/components/ManualPublishingNoteField#default": default_388c4887794a7c72d4a900d8b27fa304,
   "@/components/admin/SimpleSEOPreview#default": default_f1e33a4b225e7192cbc66810817a0942,
+  "@/components/admin/SocialSharingPanel#default": default_461323e571948c89c4ff68a3a4206baf,
   "@/collections/Content/components/ExportButtonBar#default": default_0e8cc95af714c002dadcfbc134fcf5ed,
   "@/collections/Series/components/TagsCell#default": default_4e734c8eb614822eb7d309a8c5affe16,
   "@/collections/Carousels/components/ItemRowLabel#default": default_2f4a68f01bdd871fbeb0520b1d8f2d42,
