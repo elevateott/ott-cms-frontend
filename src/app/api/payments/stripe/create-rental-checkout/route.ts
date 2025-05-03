@@ -15,6 +15,7 @@ import { getPaymentSettings } from '@/utilities/getPaymentSettings'
  *   successUrl: string,
  *   cancelUrl: string,
  *   customerEmail?: string,
+ *   discountCode?: string,
  * }
  */
 export async function POST(req: Request) {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
 
     // Get request body
     const body = await req.json()
-    const { eventId, successUrl, cancelUrl, customerEmail } = body
+    const { eventId, successUrl, cancelUrl, customerEmail, discountCode } = body
 
     // Validate required fields
     if (!eventId) {
@@ -108,6 +109,62 @@ export async function POST(req: Request) {
       sessionParams.customer_email = customerEmail
     }
 
+    // Handle discount code if provided
+    if (discountCode) {
+      // Find the discount code in the database
+      const discountCodeResult = await payload.find({
+        collection: 'discount-codes',
+        where: {
+          code: {
+            equals: discountCode,
+          },
+          isActive: {
+            equals: true,
+          },
+        },
+        limit: 1,
+      })
+
+      if (discountCodeResult.docs.length > 0) {
+        const discountCodeDoc = discountCodeResult.docs[0]
+
+        // Check if the discount code is valid for rentals
+        const isValidForRentals =
+          !discountCodeDoc.limitTo ||
+          discountCodeDoc.limitTo.length === 0 ||
+          discountCodeDoc.limitTo.includes('rentals')
+
+        // Check if the discount code is within valid date range
+        const now = new Date()
+        const isWithinDateRange =
+          (!discountCodeDoc.validFrom || new Date(discountCodeDoc.validFrom) <= now) &&
+          (!discountCodeDoc.validUntil || new Date(discountCodeDoc.validUntil) >= now)
+
+        // Check if the discount code has not exceeded max uses
+        const hasNotExceededMaxUses =
+          !discountCodeDoc.maxUses ||
+          discountCodeDoc.maxUses === 0 ||
+          discountCodeDoc.usageCount < discountCodeDoc.maxUses
+
+        // Apply the discount if valid
+        if (
+          isValidForRentals &&
+          isWithinDateRange &&
+          hasNotExceededMaxUses &&
+          discountCodeDoc.stripeCouponId
+        ) {
+          sessionParams.discounts = [
+            {
+              coupon: discountCodeDoc.stripeCouponId,
+            },
+          ]
+
+          // Add discount code to metadata
+          sessionParams.metadata.discountCode = discountCode
+        }
+      }
+    }
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create(sessionParams)
 
@@ -118,7 +175,10 @@ export async function POST(req: Request) {
       publishableKey: settings.stripe.publishableKey,
     })
   } catch (error) {
-    logger.error({ error, context: 'create-rental-checkout' }, 'Error creating rental checkout session')
+    logger.error(
+      { error, context: 'create-rental-checkout' },
+      'Error creating rental checkout session',
+    )
     return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
   }
 }

@@ -9,9 +9,17 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { clientLogger } from '@/utils/clientLogger'
 import { API_ROUTES } from '@/constants/api'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle, AlertTriangle, Info } from 'lucide-react'
+import { DiscountCodeInput } from '@/components/payments/DiscountCodeInput'
 
 interface Event {
   id: string
@@ -36,12 +44,14 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
   const { isLoggedIn, subscriberId } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
-  
+
   const [event, setEvent] = useState<Event | null>(null)
   const [accessStatus, setAccessStatus] = useState<'loading' | 'hasAccess' | 'noAccess'>('loading')
   const [isCheckingAccess, setIsCheckingAccess] = useState(false)
   const [isLoadingEvent, setIsLoadingEvent] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [ppvDiscountCode, setPpvDiscountCode] = useState<string | undefined>()
+  const [rentalDiscountCode, setRentalDiscountCode] = useState<string | undefined>()
 
   // Fetch event data
   useEffect(() => {
@@ -49,13 +59,13 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
       try {
         setIsLoadingEvent(true)
         setError(null)
-        
+
         const response = await fetch(`/api/events/${eventId}`)
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch event data')
         }
-        
+
         const eventData = await response.json()
         setEvent(eventData)
       } catch (err) {
@@ -65,7 +75,7 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
         setIsLoadingEvent(false)
       }
     }
-    
+
     fetchEvent()
   }, [eventId])
 
@@ -76,10 +86,10 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
         setAccessStatus('noAccess')
         return
       }
-      
+
       try {
         setIsCheckingAccess(true)
-        
+
         const response = await fetch('/api/subscribers/check-access', {
           method: 'POST',
           headers: {
@@ -90,11 +100,11 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
             eventId,
           }),
         })
-        
+
         if (!response.ok) {
           throw new Error('Failed to check access status')
         }
-        
+
         const { hasAccess } = await response.json()
         setAccessStatus(hasAccess ? 'hasAccess' : 'noAccess')
       } catch (err) {
@@ -105,7 +115,7 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
         setIsCheckingAccess(false)
       }
     }
-    
+
     checkAccess()
   }, [isLoggedIn, subscriberId, eventId])
 
@@ -122,12 +132,12 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
   // Handle PPV checkout
   const handlePPVCheckout = async () => {
     if (!event) return
-    
+
     try {
       // Create success and cancel URLs
       const successUrl = `${window.location.origin}/events/${eventId}?ppv_success=true`
       const cancelUrl = `${window.location.origin}/events/${eventId}?ppv_canceled=true`
-      
+
       // Call the API to create a checkout session
       const response = await fetch(API_ROUTES.PAYMENTS.STRIPE.CREATE_PPV_CHECKOUT, {
         method: 'POST',
@@ -138,16 +148,17 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
           eventId,
           successUrl,
           cancelUrl,
+          discountCode: ppvDiscountCode,
         }),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to create checkout session')
       }
-      
+
       const { url } = await response.json()
-      
+
       // Redirect to the checkout page
       window.location.href = url
     } catch (err) {
@@ -163,12 +174,12 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
   // Handle rental checkout
   const handleRentalCheckout = async () => {
     if (!event) return
-    
+
     try {
       // Create success and cancel URLs
       const successUrl = `${window.location.origin}/events/${eventId}?rental_success=true`
       const cancelUrl = `${window.location.origin}/events/${eventId}?rental_canceled=true`
-      
+
       // Call the API to create a checkout session
       const response = await fetch(API_ROUTES.PAYMENTS.STRIPE.CREATE_RENTAL_CHECKOUT, {
         method: 'POST',
@@ -179,16 +190,17 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
           eventId,
           successUrl,
           cancelUrl,
+          discountCode: rentalDiscountCode,
         }),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to create checkout session')
       }
-      
+
       const { url } = await response.json()
-      
+
       // Redirect to the checkout page
       window.location.href = url
     } catch (err) {
@@ -254,104 +266,89 @@ export const CheckoutOptions = ({ eventId }: CheckoutOptionsProps) => {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Get Access to: {event.title}</h2>
-      
+
       {/* Subscription Option */}
       {event.accessType === 'subscription' && (
         <Card>
           <CardHeader>
             <CardTitle>🔒 Access with Subscription</CardTitle>
-            <CardDescription>
-              Subscribe to unlock this and all premium content
-            </CardDescription>
+            <CardDescription>Subscribe to unlock this and all premium content</CardDescription>
           </CardHeader>
           <CardContent>
             <p>Get unlimited access to all premium content with a subscription.</p>
           </CardContent>
           <CardFooter>
             {isLoggedIn ? (
-              <Button 
-                onClick={handleSubscribeClick} 
-                className="w-full"
-              >
+              <Button onClick={handleSubscribeClick} className="w-full">
                 View Subscription Plans
               </Button>
             ) : (
-              <Button 
-                onClick={handleLoginClick} 
-                className="w-full"
-              >
+              <Button onClick={handleLoginClick} className="w-full">
                 Log in to Subscribe
               </Button>
             )}
           </CardFooter>
         </Card>
       )}
-      
+
       {/* PPV Option */}
       {event.ppvEnabled && event.ppvPrice && (
         <Card>
           <CardHeader>
             <CardTitle>💸 One-Time Purchase (PPV)</CardTitle>
-            <CardDescription>
-              Pay once for permanent access to this event
-            </CardDescription>
+            <CardDescription>Pay once for permanent access to this event</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-lg font-semibold">{formatPrice(event.ppvPrice)}</p>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-4">
             {isLoggedIn ? (
-              <Button 
-                onClick={handlePPVCheckout} 
-                className="w-full"
-                variant="outline"
-              >
-                Buy for {formatPrice(event.ppvPrice)}
-              </Button>
+              <>
+                <DiscountCodeInput
+                  onApply={(code) => setPpvDiscountCode(code)}
+                  onClear={() => setPpvDiscountCode(undefined)}
+                />
+                <Button onClick={handlePPVCheckout} className="w-full" variant="outline">
+                  Buy for {formatPrice(event.ppvPrice)}
+                </Button>
+              </>
             ) : (
-              <Button 
-                onClick={handleLoginClick} 
-                className="w-full"
-                variant="outline"
-              >
+              <Button onClick={handleLoginClick} className="w-full" variant="outline">
                 Log in to Purchase
               </Button>
             )}
           </CardFooter>
         </Card>
       )}
-      
+
       {/* Rental Option */}
       {event.rentalEnabled && event.rentalPrice && event.rentalDurationHours && (
         <Card>
           <CardHeader>
             <CardTitle>⏱ Limited-Time Rental</CardTitle>
-            <CardDescription>
-              Rent this event for a limited time
-            </CardDescription>
+            <CardDescription>Rent this event for a limited time</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-lg font-semibold">
-              {formatPrice(event.rentalPrice)} for {event.rentalDurationHours >= 24 
-                ? `${event.rentalDurationHours / 24} days` 
+              {formatPrice(event.rentalPrice)} for{' '}
+              {event.rentalDurationHours >= 24
+                ? `${event.rentalDurationHours / 24} days`
                 : `${event.rentalDurationHours} hours`}
             </p>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-4">
             {isLoggedIn ? (
-              <Button 
-                onClick={handleRentalCheckout} 
-                className="w-full"
-                variant="outline"
-              >
-                Rent Now
-              </Button>
+              <>
+                <DiscountCodeInput
+                  onApply={(code) => setRentalDiscountCode(code)}
+                  onClear={() => setRentalDiscountCode(undefined)}
+                />
+                <Button onClick={handleRentalCheckout} className="w-full" variant="outline">
+                  Rent Now
+                </Button>
+              </>
             ) : (
-              <Button 
-                onClick={handleLoginClick} 
-                className="w-full"
-                variant="outline"
-              >
+              <Button onClick={handleLoginClick} className="w-full" variant="outline">
                 Log in to Rent
               </Button>
             )}

@@ -7,6 +7,7 @@ import { API_ROUTES } from '@/constants/api'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import { DiscountCodeInput } from '@/components/payments/DiscountCodeInput'
 
 interface RentalPurchaseOptionsProps {
   event: {
@@ -22,11 +23,13 @@ const RentalPurchaseOptions: React.FC<RentalPurchaseOptionsProps> = ({ event }) 
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [discountCode, setDiscountCode] = useState<string | undefined>()
 
   const formattedPrice = formatPrice(event.rentalPrice)
-  const durationText = event.rentalDurationHours >= 24 
-    ? `${event.rentalDurationHours / 24} days` 
-    : `${event.rentalDurationHours} hours`
+  const durationText =
+    event.rentalDurationHours >= 24
+      ? `${event.rentalDurationHours / 24} days`
+      : `${event.rentalDurationHours} hours`
 
   const handleLoginClick = () => {
     router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
@@ -50,6 +53,7 @@ const RentalPurchaseOptions: React.FC<RentalPurchaseOptionsProps> = ({ event }) 
           eventId: event.id,
           successUrl,
           cancelUrl,
+          discountCode,
         }),
       })
 
@@ -72,22 +76,33 @@ const RentalPurchaseOptions: React.FC<RentalPurchaseOptionsProps> = ({ event }) 
       setIsLoading(false)
     }
   }
-  
+
+  const handleApplyDiscountCode = (code: string) => {
+    setDiscountCode(code)
+  }
+
+  const handleClearDiscountCode = () => {
+    setDiscountCode(undefined)
+  }
+
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-6">
       <h3 className="text-amber-800 font-medium">Rental Access</h3>
       <p className="text-amber-700 text-sm mt-1 mb-4">
         Rent this event for {formattedPrice} and get {durationText} of access.
       </p>
-      
+
       {isLoggedIn ? (
-        <Button
-          onClick={handlePurchaseClick}
-          disabled={isLoading}
-          className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-        >
-          {isLoading ? 'Processing...' : `Rent for ${formattedPrice} (${durationText})`}
-        </Button>
+        <div className="space-y-4">
+          <DiscountCodeInput onApply={handleApplyDiscountCode} onClear={handleClearDiscountCode} />
+          <Button
+            onClick={handlePurchaseClick}
+            disabled={isLoading}
+            className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            {isLoading ? 'Processing...' : `Rent for ${formattedPrice} (${durationText})`}
+          </Button>
+        </div>
       ) : (
         <Button
           onClick={handleLoginClick}

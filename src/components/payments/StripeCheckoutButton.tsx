@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { clientLogger } from '@/utils/clientLogger'
 import { API_ROUTES } from '@/constants/api'
 import { loadStripe } from '@stripe/stripe-js'
+import { DiscountCodeInput } from './DiscountCodeInput'
 
 interface StripeCheckoutButtonProps extends ButtonProps {
   planId: string
@@ -13,6 +14,7 @@ interface StripeCheckoutButtonProps extends ButtonProps {
   cancelUrl: string
   customerEmail?: string
   children?: React.ReactNode
+  showDiscountField?: boolean
 }
 
 const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
@@ -21,10 +23,12 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   cancelUrl,
   customerEmail,
   children,
+  showDiscountField = false,
   ...props
 }) => {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [discountCode, setDiscountCode] = useState<string | undefined>()
 
   const handleClick = async () => {
     try {
@@ -41,6 +45,7 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
           successUrl,
           cancelUrl,
           customerEmail,
+          discountCode,
         }),
       })
 
@@ -85,10 +90,23 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
     }
   }
 
+  const handleApplyDiscountCode = (code: string) => {
+    setDiscountCode(code)
+  }
+
+  const handleClearDiscountCode = () => {
+    setDiscountCode(undefined)
+  }
+
   return (
-    <Button onClick={handleClick} disabled={loading} {...props}>
-      {loading ? 'Loading...' : children || 'Subscribe Now'}
-    </Button>
+    <div className="flex flex-col space-y-4">
+      {showDiscountField && (
+        <DiscountCodeInput onApply={handleApplyDiscountCode} onClear={handleClearDiscountCode} />
+      )}
+      <Button onClick={handleClick} disabled={loading} {...props}>
+        {loading ? 'Loading...' : children || 'Subscribe Now'}
+      </Button>
+    </div>
   )
 }
 

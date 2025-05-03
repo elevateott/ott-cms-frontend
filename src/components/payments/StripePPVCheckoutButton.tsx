@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { clientLogger } from '@/utils/clientLogger'
 import { API_ROUTES } from '@/constants/api'
 import { loadStripe } from '@stripe/stripe-js'
+import { DiscountCodeInput } from './DiscountCodeInput'
 
 interface StripePPVCheckoutButtonProps extends ButtonProps {
   eventId: string
@@ -13,6 +14,7 @@ interface StripePPVCheckoutButtonProps extends ButtonProps {
   cancelUrl: string
   customerEmail?: string
   children?: React.ReactNode
+  showDiscountField?: boolean
 }
 
 const StripePPVCheckoutButton: React.FC<StripePPVCheckoutButtonProps> = ({
@@ -21,10 +23,12 @@ const StripePPVCheckoutButton: React.FC<StripePPVCheckoutButtonProps> = ({
   cancelUrl,
   customerEmail,
   children,
+  showDiscountField = false,
   ...props
 }) => {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [discountCode, setDiscountCode] = useState<string | undefined>()
 
   const handleClick = async () => {
     try {
@@ -41,6 +45,7 @@ const StripePPVCheckoutButton: React.FC<StripePPVCheckoutButtonProps> = ({
           successUrl,
           cancelUrl,
           customerEmail,
+          discountCode,
         }),
       })
 
@@ -84,10 +89,23 @@ const StripePPVCheckoutButton: React.FC<StripePPVCheckoutButtonProps> = ({
     }
   }
 
+  const handleApplyDiscountCode = (code: string) => {
+    setDiscountCode(code)
+  }
+
+  const handleClearDiscountCode = () => {
+    setDiscountCode(undefined)
+  }
+
   return (
-    <Button onClick={handleClick} disabled={loading} {...props}>
-      {loading ? 'Processing...' : children || 'Purchase Access'}
-    </Button>
+    <div className="flex flex-col space-y-4">
+      {showDiscountField && (
+        <DiscountCodeInput onApply={handleApplyDiscountCode} onClear={handleClearDiscountCode} />
+      )}
+      <Button onClick={handleClick} disabled={loading} {...props}>
+        {loading ? 'Processing...' : children || 'Purchase Access'}
+      </Button>
+    </div>
   )
 }
 

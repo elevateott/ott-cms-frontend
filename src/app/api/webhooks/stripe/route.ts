@@ -126,6 +126,44 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object
 
+        // Track discount code usage if one was used
+        if (session.metadata?.discountCode) {
+          const discountCode = session.metadata.discountCode
+
+          // Find the discount code in the database
+          const discountCodeResult = await payload.find({
+            collection: 'discount-codes',
+            where: {
+              code: {
+                equals: discountCode,
+              },
+            },
+            limit: 1,
+          })
+
+          if (discountCodeResult.docs.length > 0) {
+            const discountCodeDoc = discountCodeResult.docs[0]
+
+            // Increment the usage count
+            await payload.update({
+              collection: 'discount-codes',
+              id: discountCodeDoc.id,
+              data: {
+                usageCount: (discountCodeDoc.usageCount || 0) + 1,
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                discountCode,
+              },
+              'Incremented discount code usage count',
+            )
+          }
+        }
+
         // Check if this is a PPV purchase
         if (
           session.mode === 'payment' &&
