@@ -99,6 +99,7 @@ export async function POST(req: Request) {
       cancel_url: cancelUrl,
       metadata: {
         planId,
+        type: 'subscription',
       },
     }
 

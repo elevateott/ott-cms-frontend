@@ -304,6 +304,99 @@ export async function POST(request: Request) {
           }
         }
 
+        // Check if this is a subscription purchase
+        if (
+          session.mode === 'subscription' &&
+          session.metadata?.type === 'subscription' &&
+          session.metadata?.planId
+        ) {
+          const planId = session.metadata.planId
+          const customerEmail = session.customer_details?.email
+          const customerId = session.customer
+
+          if (!customerEmail) {
+            logger.error(
+              { context: 'stripe-webhook', eventType: event.type },
+              'Missing customer email for subscription purchase',
+            )
+            break
+          }
+
+          // Find the subscriber by email
+          const subscriberResult = await payload.find({
+            collection: 'subscribers',
+            where: {
+              email: {
+                equals: customerEmail,
+              },
+            },
+            limit: 1,
+          })
+
+          // Calculate subscription expiration date (default to 1 month from now)
+          // This will be updated by the customer.subscription.created event later
+          const expiresAt = new Date()
+          expiresAt.setMonth(expiresAt.getMonth() + 1)
+
+          if (subscriberResult.docs.length === 0) {
+            // Create a new subscriber
+            const newSubscriber = await payload.create({
+              collection: 'subscribers',
+              data: {
+                email: customerEmail,
+                fullName: session.customer_details?.name || customerEmail,
+                paymentProvider: 'stripe',
+                paymentProviderCustomerId: customerId,
+                subscriptionStatus: 'active',
+                subscriptionExpiresAt: expiresAt.toISOString(),
+                activePlans: [planId],
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: newSubscriber.id,
+                planId,
+              },
+              'Created new subscriber with subscription purchase',
+            )
+          } else {
+            // Update the existing subscriber
+            const subscriber = subscriberResult.docs[0]
+
+            // Get current active plans
+            const activePlans = [...(subscriber.activePlans || [])]
+            if (!activePlans.includes(planId)) {
+              activePlans.push(planId)
+            }
+
+            // Update the subscriber
+            await payload.update({
+              collection: 'subscribers',
+              id: subscriber.id,
+              data: {
+                paymentProvider: 'stripe',
+                paymentProviderCustomerId: customerId,
+                subscriptionStatus: 'active',
+                subscriptionExpiresAt: expiresAt.toISOString(),
+                activePlans,
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                planId,
+              },
+              'Updated subscriber with subscription purchase',
+            )
+          }
+        }
+
         break
       }
     }
