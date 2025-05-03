@@ -10,6 +10,7 @@ import { LiveEventRegistrationForm } from '@/components/LiveEventRegistrationFor
 import { LiveEventCountdown } from '@/components/LiveEventCountdown'
 import { AlertCircle, Lock, CreditCard, Users } from 'lucide-react'
 import { clientLogger } from '@/utils/clientLogger'
+import EventAccessControl from './EventAccessControl'
 
 const logger = clientLogger.createContextLogger('EventPage')
 
@@ -27,6 +28,17 @@ type LiveEvent = {
   effectiveHlsUrl?: string
   canAccess: boolean
   accessDeniedReason?: string
+  // PPV fields
+  ppvEnabled?: boolean
+  ppvPrice?: number
+  ppvStripeProductId?: string
+  ppvStripePriceId?: string
+  // Rental fields
+  rentalEnabled?: boolean
+  rentalPrice?: number
+  rentalDurationHours?: number
+  rentalStripeProductId?: string
+  rentalStripePriceId?: string
 }
 
 export default function EventPage() {
@@ -34,18 +46,18 @@ export default function EventPage() {
   const [event, setEvent] = useState<LiveEvent | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         setLoading(true)
-        
+
         const response = await fetch(`/api/public/events/${slug}`)
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch event')
         }
-        
+
         const data = await response.json()
         setEvent(data)
       } catch (error) {
@@ -55,12 +67,12 @@ export default function EventPage() {
         setLoading(false)
       }
     }
-    
+
     if (slug) {
       fetchEvent()
     }
   }, [slug])
-  
+
   if (loading) {
     return (
       <div className="container mx-auto py-12 flex justify-center">
@@ -68,87 +80,30 @@ export default function EventPage() {
       </div>
     )
   }
-  
+
   if (error || !event) {
     return (
       <div className="container mx-auto py-12">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error || 'Event not found'}
-          </AlertDescription>
+          <AlertDescription>{error || 'Event not found'}</AlertDescription>
         </Alert>
       </div>
     )
   }
-  
+
   const now = new Date()
   const startTime = new Date(event.scheduledStartTime)
   const endTime = event.scheduledEndTime ? new Date(event.scheduledEndTime) : null
   const isLive = now >= startTime && (!endTime || now <= endTime)
   const hasEnded = endTime && now > endTime
-  
+
+  // Access control is now handled by the EventAccessControl component
   const renderAccessControl = () => {
-    if (event.canAccess) {
-      return null
-    }
-    
-    switch (event.accessDeniedReason) {
-      case 'subscription_required':
-        return (
-          <Alert className="mb-6">
-            <Lock className="h-4 w-4" />
-            <AlertTitle>Subscription Required</AlertTitle>
-            <AlertDescription>
-              This event is only available to subscribers. Please subscribe to access this content.
-              <div className="mt-4">
-                <Button>Subscribe Now</Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )
-      case 'ticket_required':
-        return (
-          <Alert className="mb-6">
-            <CreditCard className="h-4 w-4" />
-            <AlertTitle>Ticket Required</AlertTitle>
-            <AlertDescription>
-              This event requires a ticket purchase to access.
-              <div className="mt-4">
-                <Button>
-                  Purchase Ticket (${((event.ticketPrice || 0) / 100).toFixed(2)})
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )
-      case 'login_required':
-        return (
-          <Alert className="mb-6">
-            <Users className="h-4 w-4" />
-            <AlertTitle>Login Required</AlertTitle>
-            <AlertDescription>
-              Please log in to access this event.
-              <div className="mt-4">
-                <Button>Log In</Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )
-      default:
-        return (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>
-              You do not have permission to access this event.
-            </AlertDescription>
-          </Alert>
-        )
-    }
+    return null
   }
-  
+
   const renderEventContent = () => {
     // If the event is live and the user has access, show the video player
     if (isLive && event.canAccess && event.effectiveHlsUrl) {
@@ -164,7 +119,7 @@ export default function EventPage() {
         </div>
       )
     }
-    
+
     // If the event has ended
     if (hasEnded) {
       return (
@@ -179,7 +134,7 @@ export default function EventPage() {
         </div>
       )
     }
-    
+
     // If the event is upcoming and preregistration is enabled
     if (!isLive && event.preregistrationEnabled) {
       return (
@@ -192,7 +147,7 @@ export default function EventPage() {
         </div>
       )
     }
-    
+
     // If the event is upcoming but preregistration is not enabled
     return (
       <div className="mb-6">
@@ -200,22 +155,23 @@ export default function EventPage() {
           <CardHeader>
             <CardTitle>Event Starting Soon</CardTitle>
             <CardDescription>
-              This event is scheduled to start on {new Date(event.scheduledStartTime).toLocaleString()}.
-              Check back then to watch the live stream.
+              This event is scheduled to start on{' '}
+              {new Date(event.scheduledStartTime).toLocaleString()}. Check back then to watch the
+              live stream.
             </CardDescription>
           </CardHeader>
         </Card>
       </div>
     )
   }
-  
+
   return (
     <div className="container mx-auto py-12">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
           <p className="text-gray-600 mb-4">{event.description}</p>
-          
+
           <div className="flex flex-wrap gap-4 mb-6">
             <LiveEventCountdown
               startTime={event.scheduledStartTime}
@@ -223,11 +179,10 @@ export default function EventPage() {
               className="flex-grow"
             />
           </div>
-          
+
           <Separator className="my-6" />
-          
-          {renderAccessControl()}
-          {renderEventContent()}
+
+          <EventAccessControl event={event}>{renderEventContent()}</EventAccessControl>
         </div>
       </div>
     </div>

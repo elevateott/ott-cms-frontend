@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast'
 import { clientLogger } from '@/utils/clientLogger'
 import PayPalButton from '@/components/payments/PayPalButton'
 import { API_ROUTES } from '@/constants/api'
+import TestModeBadge from '@/components/admin/TestModeBadge'
+import TestModeWarning from '@/components/admin/TestModeWarning'
 
 export default function TestPayPalPage() {
   const { toast } = useToast()
@@ -77,10 +79,19 @@ export default function TestPayPalPage() {
   const hasPayPalClientId = settings?.paypal?.hasClientId
   const hasPayPalClientSecret = settings?.paypal?.hasClientSecret
   const paypalEnvironment = settings?.paypal?.environment
+  const isPayPalTestMode = settings?.paypal?.testMode
+  const testModeGateways = settings?.testMode?.gateways || []
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Test PayPal Integration</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Test PayPal Integration</h1>
+        {isPayPalTestMode && <TestModeBadge gateway="paypal" />}
+      </div>
+
+      {testModeGateways.length > 0 && (
+        <TestModeWarning gateways={testModeGateways} className="mb-6" />
+      )}
 
       <Card className="mb-8">
         <CardHeader>
@@ -99,7 +110,14 @@ export default function TestPayPalPage() {
             </div>
             <div>
               <p className="font-semibold">Environment:</p>
-              <p>{paypalEnvironment || 'Not set'}</p>
+              <p>
+                {paypalEnvironment || 'Not set'}
+                {isPayPalTestMode && (
+                  <span className="ml-2 text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded">
+                    Test Mode
+                  </span>
+                )}
+              </p>
             </div>
             <div>
               <p className="font-semibold">Client ID:</p>

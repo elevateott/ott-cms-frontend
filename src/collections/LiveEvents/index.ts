@@ -9,6 +9,8 @@ import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHook
 import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
 import { enforceAccessControl } from '@/hooks/liveEvents/enforceAccessControl'
 import { handleSimulatedLive } from '@/hooks/mux/handleSimulatedLive'
+import { createPPVProduct } from '@/hooks/liveEvents/createPPVProduct'
+import { createRentalProduct } from '@/hooks/liveEvents/createRentalProduct'
 import {
   lexicalEditor,
   FixedToolbarFeature,
@@ -303,6 +305,21 @@ export const LiveEvents: CollectionConfig = {
       },
     },
     {
+      name: 'requiredPlans',
+      label: 'Plans That Unlock This Content',
+      type: 'relationship',
+      relationTo: 'subscription-plans',
+      hasMany: true,
+      admin: {
+        description:
+          'Only users subscribed to these plan(s) can access. Leave blank = open to all subscribers.',
+        condition: (data) => data?.accessType === 'subscription',
+        components: {
+          Field: '@/collections/LiveEvents/components/RequiredPlansField',
+        },
+      },
+    },
+    {
       name: 'ticketPrice',
       type: 'number',
       label: 'Ticket Price (in cents)',
@@ -310,6 +327,251 @@ export const LiveEvents: CollectionConfig = {
       admin: {
         description: 'Price for a one-time ticket to this event (in cents, e.g. 1000 = $10.00)',
         condition: (data) => data?.accessType === 'paid_ticket',
+      },
+    },
+    // Pay-Per-View Fields
+    {
+      name: 'ppvEnabled',
+      type: 'checkbox',
+      label: 'Enable Pay-Per-View',
+      defaultValue: false,
+      admin: {
+        description: 'Enable pay-per-view access for this event',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'ppvPricesByCurrency',
+      type: 'array',
+      label: 'PPV Prices by Currency',
+      admin: {
+        description: 'Define PPV prices for each supported currency',
+        condition: (data) => data?.ppvEnabled === true,
+      },
+      fields: [
+        {
+          name: 'currency',
+          type: 'select',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          required: true,
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          required: true,
+          min: 0,
+          admin: {
+            description: 'Price in cents (e.g., 499 = $4.99)',
+          },
+        },
+        {
+          name: 'stripePriceId',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Stripe Price ID (automatically generated)',
+          },
+        },
+      ],
+      validate: (value, { siblingData }) => {
+        if (siblingData?.ppvEnabled) {
+          // Check if array exists and has at least one entry
+          if (!value || value.length === 0) {
+            return 'At least one PPV price is required'
+          }
+
+          // Check for duplicate currencies
+          const currencies = value.map((price) => price.currency)
+          const uniqueCurrencies = [...new Set(currencies)]
+          if (currencies.length !== uniqueCurrencies.length) {
+            return 'Duplicate currencies are not allowed'
+          }
+        }
+        return true
+      },
+    },
+    {
+      name: 'ppvPrice',
+      type: 'number',
+      label: 'PPV Price (USD) - Legacy',
+      min: 0,
+      admin: {
+        description: 'Legacy price field - maintained for backward compatibility',
+        condition: (data) =>
+          data?.ppvEnabled === true &&
+          (!data.ppvPricesByCurrency || data.ppvPricesByCurrency.length === 0),
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // Set the price field based on the USD price in ppvPricesByCurrency
+            if (data.ppvPricesByCurrency && data.ppvPricesByCurrency.length > 0) {
+              const usdPrice = data.ppvPricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice) {
+                return usdPrice.amount
+              }
+            }
+            return value || 0
+          },
+        ],
+      },
+    },
+    {
+      name: 'ppvStripeProductId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Product ID for PPV (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.ppvEnabled === true,
+      },
+    },
+    {
+      name: 'ppvStripePriceId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Price ID for PPV (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.ppvEnabled === true,
+      },
+    },
+    // Rental Fields
+    {
+      name: 'rentalEnabled',
+      type: 'checkbox',
+      label: 'Enable Rental',
+      defaultValue: false,
+      admin: {
+        description: 'Enable rental access for this event',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'rentalPricesByCurrency',
+      type: 'array',
+      label: 'Rental Prices by Currency',
+      admin: {
+        description: 'Define rental prices for each supported currency',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+      fields: [
+        {
+          name: 'currency',
+          type: 'select',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          required: true,
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          required: true,
+          min: 0,
+          admin: {
+            description: 'Price in cents (e.g., 499 = $4.99)',
+          },
+        },
+        {
+          name: 'stripePriceId',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Stripe Price ID (automatically generated)',
+          },
+        },
+      ],
+      validate: (value, { siblingData }) => {
+        if (siblingData?.rentalEnabled) {
+          // Check if array exists and has at least one entry
+          if (!value || value.length === 0) {
+            return 'At least one rental price is required'
+          }
+
+          // Check for duplicate currencies
+          const currencies = value.map((price) => price.currency)
+          const uniqueCurrencies = [...new Set(currencies)]
+          if (currencies.length !== uniqueCurrencies.length) {
+            return 'Duplicate currencies are not allowed'
+          }
+        }
+        return true
+      },
+    },
+    {
+      name: 'rentalPrice',
+      type: 'number',
+      label: 'Rental Price (USD) - Legacy',
+      min: 0,
+      admin: {
+        description: 'Legacy price field - maintained for backward compatibility',
+        condition: (data) =>
+          data?.rentalEnabled === true &&
+          (!data.rentalPricesByCurrency || data.rentalPricesByCurrency.length === 0),
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // Set the price field based on the USD price in rentalPricesByCurrency
+            if (data.rentalPricesByCurrency && data.rentalPricesByCurrency.length > 0) {
+              const usdPrice = data.rentalPricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice) {
+                return usdPrice.amount
+              }
+            }
+            return value || 0
+          },
+        ],
+      },
+    },
+    {
+      name: 'rentalDurationHours',
+      type: 'number',
+      label: 'Rental Duration (in hours)',
+      defaultValue: 48,
+      min: 1,
+      admin: {
+        description: 'Common values: 48 = 2 days, 168 = 7 days',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+      validate: (value, { siblingData }) => {
+        if (siblingData?.rentalEnabled && (value === undefined || value <= 0)) {
+          return 'Rental duration is required and must be greater than 0'
+        }
+        return true
+      },
+    },
+    {
+      name: 'rentalStripeProductId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Product ID for Rental (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.rentalEnabled === true,
+      },
+    },
+    {
+      name: 'rentalStripePriceId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Price ID for Rental (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.rentalEnabled === true,
       },
     },
     {
@@ -536,8 +798,15 @@ export const LiveEvents: CollectionConfig = {
   hooks: {
     // Add logging hooks
     ...createCollectionLoggingHooks('live-events'),
-    // Add hooks to create and update Mux live stream
-    beforeChange: [handleExternalHlsUrl, handleSimulatedLive, createLiveStream, updateLiveStream],
+    // Add hooks to create and update Mux live stream and PPV products
+    beforeChange: [
+      handleExternalHlsUrl,
+      handleSimulatedLive,
+      createLiveStream,
+      updateLiveStream,
+      createPPVProduct,
+      createRentalProduct,
+    ],
     // Add hook to fetch the latest status from Mux and compute effectiveHlsUrl
     afterRead: [
       fetchLiveStreamStatus,

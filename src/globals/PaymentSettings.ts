@@ -1,6 +1,8 @@
 // src/globals/PaymentSettings.ts
 import type { GlobalConfig } from 'payload'
 import { authenticated } from '@/access/authenticated'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { SlateToLexicalFeature } from '@payloadcms/richtext-lexical/migrate'
 
 const PaymentSettings: GlobalConfig = {
   slug: 'payment-settings',
@@ -16,6 +18,12 @@ const PaymentSettings: GlobalConfig = {
     {
       name: 'instructions',
       type: 'richText',
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          SlateToLexicalFeature({ disableHooks: false }),
+        ],
+      }),
       admin: {
         description: 'Setup instructions for payment gateways',
       },
@@ -72,7 +80,7 @@ const PaymentSettings: GlobalConfig = {
         },
         {
           name: 'apiKey',
-          type: 'password',
+          type: 'text',
           label: 'Stripe API Key',
           admin: {
             description: 'Enter your Stripe API Key (starts with sk_)',
@@ -81,7 +89,7 @@ const PaymentSettings: GlobalConfig = {
         },
         {
           name: 'liveApiKey',
-          type: 'password',
+          type: 'text',
           label: 'Stripe Live API Key',
           admin: {
             description: 'Enter your Stripe Live API Key (starts with sk_live_)',
@@ -116,6 +124,19 @@ const PaymentSettings: GlobalConfig = {
           admin: {
             description: 'When enabled, all transactions will use the PayPal sandbox environment',
           },
+          hooks: {
+            afterChange: [
+              ({ value, siblingData }) => {
+                // Synchronize environment with testMode
+                if (value === true && siblingData.environment !== 'sandbox') {
+                  siblingData.environment = 'sandbox'
+                } else if (value === false && siblingData.environment !== 'live') {
+                  siblingData.environment = 'live'
+                }
+                return value
+              },
+            ],
+          },
         },
         {
           name: 'environment',
@@ -127,6 +148,20 @@ const PaymentSettings: GlobalConfig = {
           defaultValue: 'sandbox',
           admin: {
             description: 'Select the PayPal environment to use',
+            readOnly: true, // Make this read-only since it's controlled by testMode
+          },
+          hooks: {
+            afterChange: [
+              ({ value, siblingData }) => {
+                // Synchronize testMode with environment
+                if (value === 'sandbox' && siblingData.testMode !== true) {
+                  siblingData.testMode = true
+                } else if (value === 'live' && siblingData.testMode !== false) {
+                  siblingData.testMode = false
+                }
+                return value
+              },
+            ],
           },
         },
         {
@@ -139,7 +174,7 @@ const PaymentSettings: GlobalConfig = {
         },
         {
           name: 'clientSecret',
-          type: 'password',
+          type: 'text',
           label: 'PayPal Client Secret',
           admin: {
             description: 'Enter your PayPal Client Secret from the PayPal Developer Dashboard',
@@ -164,6 +199,62 @@ const PaymentSettings: GlobalConfig = {
       admin: {
         description: 'Select which payment methods to offer at checkout',
       },
+    },
+    {
+      name: 'currency',
+      type: 'group',
+      label: 'Currency Settings',
+      admin: {
+        description: 'Configure currency settings for your platform',
+      },
+      fields: [
+        {
+          name: 'defaultCurrency',
+          type: 'select',
+          label: 'Default Currency',
+          required: true,
+          defaultValue: 'usd',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          admin: {
+            description: 'The default currency to use when no specific currency is selected',
+          },
+        },
+        {
+          name: 'supportedCurrencies',
+          type: 'select',
+          label: 'Supported Currencies',
+          required: true,
+          hasMany: true,
+          defaultValue: ['usd'],
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          admin: {
+            description: 'Currencies that your platform supports for pricing',
+          },
+        },
+        {
+          name: 'detectUserCurrency',
+          type: 'checkbox',
+          label: 'Auto-Detect User Currency',
+          defaultValue: true,
+          admin: {
+            description: "Automatically detect and use the user's local currency when possible",
+          },
+        },
+      ],
     },
   ],
 }
