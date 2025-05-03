@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
-import { updateSubscriptionStatus } from '@/utils/subscribers'
+import { updateSubscriptionStatus, addPPVToSubscriber } from '@/utils/subscribers'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
 
 /**
@@ -115,6 +115,79 @@ export async function POST(request: Request) {
 
         // Update the subscriber's subscription status to past_due
         await updateSubscriptionStatus(payload, customerId, 'past_due')
+
+        break
+      }
+
+      case 'checkout.session.completed': {
+        const session = event.data.object
+
+        // Check if this is a PPV purchase
+        if (
+          session.mode === 'payment' &&
+          session.metadata?.type === 'ppv' &&
+          session.metadata?.eventId
+        ) {
+          const eventId = session.metadata.eventId
+          const customerEmail = session.customer_details?.email
+
+          if (!customerEmail) {
+            logger.error(
+              { context: 'stripe-webhook', eventType: event.type },
+              'Missing customer email for PPV purchase',
+            )
+            break
+          }
+
+          // Find the subscriber by email
+          const subscriberResult = await payload.find({
+            collection: 'subscribers',
+            where: {
+              email: {
+                equals: customerEmail,
+              },
+            },
+            limit: 1,
+          })
+
+          if (subscriberResult.docs.length === 0) {
+            // Create a new subscriber
+            const newSubscriber = await payload.create({
+              collection: 'subscribers',
+              data: {
+                email: customerEmail,
+                fullName: session.customer_details?.name || customerEmail,
+                paymentProvider: 'stripe',
+                paymentProviderCustomerId: session.customer,
+                purchasedPPV: [eventId],
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: newSubscriber.id,
+                eventId,
+              },
+              'Created new subscriber with PPV purchase',
+            )
+          } else {
+            // Add the PPV event to the existing subscriber
+            const subscriber = subscriberResult.docs[0]
+            await addPPVToSubscriber(payload, subscriber.id, eventId)
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                eventId,
+              },
+              'Added PPV purchase to existing subscriber',
+            )
+          }
+        }
 
         break
       }

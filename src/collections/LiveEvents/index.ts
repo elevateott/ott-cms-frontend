@@ -9,6 +9,7 @@ import { createCollectionLoggingHooks } from '@/hooks/logging/payloadLoggingHook
 import { handleExternalHlsUrl } from '@/hooks/handleExternalHlsUrl'
 import { enforceAccessControl } from '@/hooks/liveEvents/enforceAccessControl'
 import { handleSimulatedLive } from '@/hooks/mux/handleSimulatedLive'
+import { createPPVProduct } from '@/hooks/liveEvents/createPPVProduct'
 import {
   lexicalEditor,
   FixedToolbarFeature,
@@ -312,6 +313,53 @@ export const LiveEvents: CollectionConfig = {
         condition: (data) => data?.accessType === 'paid_ticket',
       },
     },
+    // Pay-Per-View Fields
+    {
+      name: 'ppvEnabled',
+      type: 'checkbox',
+      label: 'Enable Pay-Per-View',
+      defaultValue: false,
+      admin: {
+        description: 'Enable pay-per-view access for this event',
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'ppvPrice',
+      type: 'number',
+      label: 'PPV Price (USD)',
+      min: 0,
+      admin: {
+        description: 'Price for pay-per-view access (in cents, e.g. 499 = $4.99)',
+        condition: (data) => data?.ppvEnabled === true,
+      },
+      validate: (value, { siblingData }) => {
+        if (siblingData?.ppvEnabled && (value === undefined || value <= 0)) {
+          return 'PPV price is required and must be greater than 0'
+        }
+        return true
+      },
+    },
+    {
+      name: 'ppvStripeProductId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Product ID for PPV (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.ppvEnabled === true,
+      },
+    },
+    {
+      name: 'ppvStripePriceId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Price ID for PPV (automatically populated)',
+        readOnly: true,
+        position: 'sidebar',
+        condition: (data) => data?.ppvEnabled === true,
+      },
+    },
     {
       name: 'reminderMinutesBefore',
       type: 'number',
@@ -536,8 +584,14 @@ export const LiveEvents: CollectionConfig = {
   hooks: {
     // Add logging hooks
     ...createCollectionLoggingHooks('live-events'),
-    // Add hooks to create and update Mux live stream
-    beforeChange: [handleExternalHlsUrl, handleSimulatedLive, createLiveStream, updateLiveStream],
+    // Add hooks to create and update Mux live stream and PPV products
+    beforeChange: [
+      handleExternalHlsUrl,
+      handleSimulatedLive,
+      createLiveStream,
+      updateLiveStream,
+      createPPVProduct,
+    ],
     // Add hook to fetch the latest status from Mux and compute effectiveHlsUrl
     afterRead: [
       fetchLiveStreamStatus,

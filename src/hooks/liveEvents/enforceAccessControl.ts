@@ -4,7 +4,7 @@ import type { CollectionAfterReadHook } from 'payload'
 
 /**
  * Hook to enforce access control for live events
- * 
+ *
  * This hook is called after a live event document is read from the database.
  * It checks if the user has access to the live event based on the access type.
  * If not, it adds a canAccess: false flag to the document.
@@ -35,9 +35,9 @@ export const enforceAccessControl: CollectionAfterReadHook = async ({ doc, req }
     if (!user || !user.subscriptionActive) {
       logger.info(
         { context: 'enforceAccessControl' },
-        `Denying access to subscription-only live event ${doc.id} for unauthenticated or non-subscribed user`
+        `Denying access to subscription-only live event ${doc.id} for unauthenticated or non-subscribed user`,
       )
-      
+
       return {
         ...doc,
         canAccess: false,
@@ -61,9 +61,9 @@ export const enforceAccessControl: CollectionAfterReadHook = async ({ doc, req }
     if (!user) {
       logger.info(
         { context: 'enforceAccessControl' },
-        `Denying access to paid ticket live event ${doc.id} for unauthenticated user`
+        `Denying access to paid ticket live event ${doc.id} for unauthenticated user`,
       )
-      
+
       return {
         ...doc,
         canAccess: false,
@@ -78,9 +78,9 @@ export const enforceAccessControl: CollectionAfterReadHook = async ({ doc, req }
     if (!hasTicket) {
       logger.info(
         { context: 'enforceAccessControl' },
-        `Denying access to paid ticket live event ${doc.id} for user without a ticket`
+        `Denying access to paid ticket live event ${doc.id} for user without a ticket`,
       )
-      
+
       return {
         ...doc,
         canAccess: false,
@@ -96,12 +96,45 @@ export const enforceAccessControl: CollectionAfterReadHook = async ({ doc, req }
     }
   }
 
+  // Check for PPV enabled events
+  if (doc.ppvEnabled) {
+    // Get the subscriber ID from the request headers
+    const subscriberId = req.headers?.['x-subscriber-id']
+
+    // If no subscriber ID, deny access
+    if (!subscriberId) {
+      logger.info(
+        { context: 'enforceAccessControl' },
+        `Denying access to PPV live event ${doc.id} for unauthenticated user`,
+      )
+
+      return {
+        ...doc,
+        canAccess: false,
+        accessDeniedReason: 'login_required',
+        isPPV: true,
+        ppvPrice: doc.ppvPrice,
+      }
+    }
+
+    // Check if the subscriber has purchased this PPV event
+    // This will be checked by the frontend using the API
+    return {
+      ...doc,
+      canAccess: false, // Default to false, frontend will check
+      accessDeniedReason: 'ppv_required',
+      isPPV: true,
+      ppvPrice: doc.ppvPrice,
+      subscriberId,
+    }
+  }
+
   // Default to denying access for unknown access types
   logger.warn(
     { context: 'enforceAccessControl' },
-    `Unknown access type ${doc.accessType} for live event ${doc.id}`
+    `Unknown access type ${doc.accessType} for live event ${doc.id}`,
   )
-  
+
   return {
     ...doc,
     canAccess: false,
