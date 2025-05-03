@@ -4,6 +4,7 @@ import { resendAdapter } from '@payloadcms/email-resend'
 import StreamingSettings from './globals/streamingSettings.tsx'
 import OTTSettings from './globals/OTTSettings'
 import CloudIntegrations from './globals/CloudIntegrations'
+import CloudStorageSettings from './globals/CloudStorageSettings'
 import SiteSettings from './globals/SiteSettings'
 import EmailSettings from './globals/EmailSettings.tsx'
 import PaymentSettings from './globals/PaymentSettings'
@@ -216,6 +217,7 @@ export default buildConfig({
     StreamingSettings,
     OTTSettings,
     CloudIntegrations,
+    CloudStorageSettings,
     SiteSettings,
     EmailSettings,
     PaymentSettings,
