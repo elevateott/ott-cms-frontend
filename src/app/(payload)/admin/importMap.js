@@ -68,6 +68,7 @@ import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/
 import { RowLabel as RowLabel_1f6ff6ff633e3695d348f4f3c58f1466 } from '@/Footer/RowLabel'
 import { default as default_f99053d138b768035dd05a1db69cd2c5 } from '@/components/fields/SecureTextareaField'
 import { default as default_2d6c7f865f802140ae1911af4290a497 } from '@/components/admin/CloudIntegrationInstructions/CloudIntegrationInstructionsField'
+import { default as default_304f8f0a6ba3de327e5dc75715c6372d } from '@/components/admin/CloudStorageInstructions/CloudStorageInstructionsField'
 import { default as default_8a0791799582d23415102d4cab0cc777 } from '@/components/admin/ExampleUIField/SimpleNotice'
 import { default as default_dc6c54b11242958d9265dd48725c257c } from '@/components/admin/EmailSettings/ResendInstructions'
 import { default as default_9ad4cc788ef0fd19fb85cc06cea5e1b6 } from '@/components/admin/EmailSettings/SmtpPlaceholder'
@@ -160,6 +161,7 @@ export const importMap = {
   "@/Footer/RowLabel#RowLabel": RowLabel_1f6ff6ff633e3695d348f4f3c58f1466,
   "@/components/fields/SecureTextareaField#default": default_f99053d138b768035dd05a1db69cd2c5,
   "@/components/admin/CloudIntegrationInstructions/CloudIntegrationInstructionsField#default": default_2d6c7f865f802140ae1911af4290a497,
+  "@/components/admin/CloudStorageInstructions/CloudStorageInstructionsField#default": default_304f8f0a6ba3de327e5dc75715c6372d,
   "@/components/admin/ExampleUIField/SimpleNotice#default": default_8a0791799582d23415102d4cab0cc777,
   "@/components/admin/EmailSettings/ResendInstructions#default": default_dc6c54b11242958d9265dd48725c257c,
   "@/components/admin/EmailSettings/SmtpPlaceholder#default": default_9ad4cc788ef0fd19fb85cc06cea5e1b6,

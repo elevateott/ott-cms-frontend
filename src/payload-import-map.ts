@@ -8,4 +8,6 @@ export default {
   '@/components/admin/StripeConnectButton': () => import('./components/admin/StripeConnectButton'),
   '@/components/admin/PayPalVerifyButton': () => import('./components/admin/PayPalVerifyButton'),
   '@/components/fields/SecureTextField': () => import('./components/fields/SecureTextField'),
+  '@/components/admin/CloudStorageInstructions/CloudStorageInstructionsField': () =>
+    import('./components/admin/CloudStorageInstructions/CloudStorageInstructionsField'),
 }
