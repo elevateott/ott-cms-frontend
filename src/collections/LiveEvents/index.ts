@@ -305,6 +305,21 @@ export const LiveEvents: CollectionConfig = {
       },
     },
     {
+      name: 'requiredPlans',
+      label: 'Plans That Unlock This Content',
+      type: 'relationship',
+      relationTo: 'subscription-plans',
+      hasMany: true,
+      admin: {
+        description:
+          'Only users subscribed to these plan(s) can access. Leave blank = open to all subscribers.',
+        condition: (data) => data?.accessType === 'subscription',
+        components: {
+          Field: '@/collections/LiveEvents/components/RequiredPlansField',
+        },
+      },
+    },
+    {
       name: 'ticketPrice',
       type: 'number',
       label: 'Ticket Price (in cents)',

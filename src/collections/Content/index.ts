@@ -194,6 +194,32 @@ export const Content: CollectionConfig = {
       },
     },
     {
+      name: 'isFree',
+      type: 'checkbox',
+      label: 'Free Content',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'Make this content available to all users without subscription.',
+      },
+    },
+    {
+      name: 'requiredPlans',
+      label: 'Plans That Unlock This Content',
+      type: 'relationship',
+      relationTo: 'subscription-plans',
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Only users subscribed to these plan(s) can access. Leave blank = open to all subscribers.',
+        condition: (data) => data?.isFree !== true,
+        components: {
+          Field: '@/collections/Content/components/RequiredPlansField',
+        },
+      },
+    },
+    {
       name: 'publishAt',
       type: 'date',
       admin: {

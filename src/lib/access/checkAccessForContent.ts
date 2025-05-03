@@ -65,8 +65,35 @@ export async function checkAccessForContent({
     const isSubscribed =
       subscriber.subscriptionStatus === 'active' || subscriber.subscriptionStatus === 'trialing'
 
-    // If user has an active subscription, grant access
-    if (isSubscribed) return true
+    // If user has an active subscription, check for required plans
+    if (isSubscribed) {
+      // Extract required plan IDs
+      const requiredPlanIds = Array.isArray(content.requiredPlans)
+        ? content.requiredPlans.map((p) => (typeof p === 'string' ? p : p.id))
+        : []
+
+      // If no specific plans are required, grant access to all subscribers
+      if (requiredPlanIds.length === 0) {
+        return true
+      }
+
+      // Check if the subscriber has any of the required plans
+      const hasAllowedPlan = subscriber.activePlans?.some((planId: string) =>
+        requiredPlanIds.includes(planId),
+      )
+
+      // Grant access if the subscriber has one of the required plans
+      if (hasAllowedPlan) {
+        logger.info(
+          { userEmail, contentId, context: 'checkAccessForContent' },
+          'Granting access due to subscription with required plan',
+        )
+        return true
+      }
+
+      // If the user has an active subscription but not the required plan,
+      // continue checking other access methods (rental, etc.)
+    }
 
     // Check for valid rental
     if (subscriber.purchasedRentals?.includes(contentId)) {

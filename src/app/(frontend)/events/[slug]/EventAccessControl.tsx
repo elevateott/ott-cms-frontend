@@ -6,6 +6,7 @@ import { CheckoutOptions } from '@/components/checkout'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Loader2, Lock } from 'lucide-react'
 import { clientLogger } from '@/utils/clientLogger'
+import PlanRequirementMessage from '@/components/access/PlanRequirementMessage'
 
 interface EventAccessControlProps {
   event: {
@@ -19,20 +20,21 @@ interface EventAccessControlProps {
     rentalDurationHours?: number
     canAccess?: boolean
     accessDeniedReason?: string
+    requiredPlans?: string[] | { id: string; name?: string }[]
   }
   children: React.ReactNode
 }
 
 /**
  * Component to handle access control for live events
- * 
+ *
  * Shows the event content if the user has access, or checkout options if not
  */
 const EventAccessControl: React.FC<EventAccessControlProps> = ({ event, children }) => {
   const { isLoggedIn, subscriberId } = useAuth()
   const [hasAccess, setHasAccess] = useState<boolean | null>(null)
   const [isCheckingAccess, setIsCheckingAccess] = useState(false)
-  
+
   // Check if the user has access to the event
   useEffect(() => {
     // If the event is free, always grant access
@@ -40,18 +42,18 @@ const EventAccessControl: React.FC<EventAccessControlProps> = ({ event, children
       setHasAccess(true)
       return
     }
-    
+
     // If the user is not logged in, deny access
     if (!isLoggedIn || !subscriberId) {
       setHasAccess(false)
       return
     }
-    
+
     // Check access via API
     const checkAccess = async () => {
       try {
         setIsCheckingAccess(true)
-        
+
         const response = await fetch('/api/subscribers/check-access', {
           method: 'POST',
           headers: {
@@ -62,11 +64,11 @@ const EventAccessControl: React.FC<EventAccessControlProps> = ({ event, children
             eventId: event.id,
           }),
         })
-        
+
         if (!response.ok) {
           throw new Error('Failed to check access status')
         }
-        
+
         const { hasAccess } = await response.json()
         setHasAccess(hasAccess)
       } catch (err) {
@@ -77,10 +79,10 @@ const EventAccessControl: React.FC<EventAccessControlProps> = ({ event, children
         setIsCheckingAccess(false)
       }
     }
-    
+
     checkAccess()
   }, [event.id, event.accessType, isLoggedIn, subscriberId])
-  
+
   // Loading state
   if (isCheckingAccess || hasAccess === null) {
     return (
@@ -90,12 +92,12 @@ const EventAccessControl: React.FC<EventAccessControlProps> = ({ event, children
       </div>
     )
   }
-  
+
   // User has access - show the content
   if (hasAccess) {
     return <>{children}</>
   }
-  
+
   // User doesn't have access - show checkout options
   return (
     <div className="container mx-auto py-8">
@@ -106,7 +108,14 @@ const EventAccessControl: React.FC<EventAccessControlProps> = ({ event, children
           You don't have access to this event. Please choose an option below to gain access.
         </AlertDescription>
       </Alert>
-      
+
+      {/* Show plan requirements if this is a subscription event with required plans */}
+      {event.accessType === 'subscription' &&
+        event.requiredPlans &&
+        event.requiredPlans.length > 0 && (
+          <PlanRequirementMessage requiredPlans={event.requiredPlans} />
+        )}
+
       <CheckoutOptions eventId={event.id} />
     </div>
   )

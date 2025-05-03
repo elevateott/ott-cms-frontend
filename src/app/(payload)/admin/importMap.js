@@ -33,6 +33,7 @@ import { default as default_75412e40a17b9fc2b0e06c87153b4090 } from '@/collectio
 import { default as default_7ce40fb6ba33b8d505a0ac5d29cd35f6 } from '@/collections/VideoAssets/components/ExportButtonBar'
 import { default as default_4331b44e154ccd948d19f64759c580bd } from '@/collections/Content/components/PublishingStatusCell'
 import { default as default_f0813d1ffb5c8c3123a1e3bb3f524988 } from '@/collections/Content/components/TagsCell'
+import { default as default_eb14345f53a063ccd50201599880215f } from '@/collections/Content/components/RequiredPlansField'
 import { default as default_f7f51ca3d5041217fd3b2041f14340df } from '@/collections/Content/components/ScheduledPublishingField'
 import { default as default_63b621dd77e052b96270f257ad0acfed } from '@/collections/Content/components/ScheduledUnpublishingField'
 import { default as default_388c4887794a7c72d4a900d8b27fa304 } from '@/collections/Content/components/ManualPublishingNoteField'
@@ -43,6 +44,7 @@ import { default as default_4e734c8eb614822eb7d309a8c5affe16 } from '@/collectio
 import { default as default_2f4a68f01bdd871fbeb0520b1d8f2d42 } from '@/collections/Carousels/components/ItemRowLabel'
 import { default as default_3aa121b78bf6e47d097fe98bd49c4d16 } from '@/collections/Carousels/components/ItemCountCell'
 import { default as default_9ddcc54aec4d9dadb0ccaef94b434531 } from '@/admin/components/MultiCamBadgeCell'
+import { default as default_029728d7e477ebf899303ca41061055c } from '@/collections/LiveEvents/components/RequiredPlansField'
 import { default as default_cdff2a7adda7ae40093bbe7e73b5c039 } from '@/components/fields/SecureTextField'
 import { default as default_c788ea32f4a2ab4f86cf9865ce2714cf } from '@/admin/components/LiveStreamStatusCell'
 import { default as default_f910b583dded789953b5ef06b51d760c } from '@/admin/components/LiveStreamStatusBadge'
@@ -121,6 +123,7 @@ export const importMap = {
   "@/collections/VideoAssets/components/ExportButtonBar#default": default_7ce40fb6ba33b8d505a0ac5d29cd35f6,
   "@/collections/Content/components/PublishingStatusCell#default": default_4331b44e154ccd948d19f64759c580bd,
   "@/collections/Content/components/TagsCell#default": default_f0813d1ffb5c8c3123a1e3bb3f524988,
+  "@/collections/Content/components/RequiredPlansField#default": default_eb14345f53a063ccd50201599880215f,
   "@/collections/Content/components/ScheduledPublishingField#default": default_f7f51ca3d5041217fd3b2041f14340df,
   "@/collections/Content/components/ScheduledUnpublishingField#default": default_63b621dd77e052b96270f257ad0acfed,
   "@/collections/Content/components/ManualPublishingNoteField#default": default_388c4887794a7c72d4a900d8b27fa304,
@@ -131,6 +134,7 @@ export const importMap = {
   "@/collections/Carousels/components/ItemRowLabel#default": default_2f4a68f01bdd871fbeb0520b1d8f2d42,
   "@/collections/Carousels/components/ItemCountCell#default": default_3aa121b78bf6e47d097fe98bd49c4d16,
   "@/admin/components/MultiCamBadgeCell#default": default_9ddcc54aec4d9dadb0ccaef94b434531,
+  "@/collections/LiveEvents/components/RequiredPlansField#default": default_029728d7e477ebf899303ca41061055c,
   "@/components/fields/SecureTextField#default": default_cdff2a7adda7ae40093bbe7e73b5c039,
   "@/admin/components/LiveStreamStatusCell#default": default_c788ea32f4a2ab4f86cf9865ce2714cf,
   "@/admin/components/LiveStreamStatusBadge#default": default_f910b583dded789953b5ef06b51d760c,

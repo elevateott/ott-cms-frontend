@@ -93,11 +93,38 @@ export async function checkAccessForEvent({
     const isSubscribed =
       subscriber.subscriptionStatus === 'active' || subscriber.subscriptionStatus === 'trialing'
 
-    // If subscription required and user is subscribed, grant access
-    if (event.accessType === 'subscription' && isSubscribed) return true
+    // If subscription required, check if the user has the required plan(s)
+    if (event.accessType === 'subscription' && isSubscribed) {
+      // Extract required plan IDs
+      const requiredPlanIds = Array.isArray(event.requiredPlans)
+        ? event.requiredPlans.map((p) => (typeof p === 'string' ? p : p.id))
+        : []
 
-    // If user has an active subscription and the event doesn't require PPV, grant access
-    if (isSubscribed && !event.ppvEnabled) return true
+      // If no specific plans are required, grant access to all subscribers
+      if (requiredPlanIds.length === 0) {
+        return true
+      }
+
+      // Check if the subscriber has any of the required plans
+      const hasAllowedPlan = subscriber.activePlans?.some((planId: string) =>
+        requiredPlanIds.includes(planId),
+      )
+
+      // Grant access if the subscriber has one of the required plans
+      if (hasAllowedPlan) {
+        logger.info(
+          { userEmail, eventId, context: 'checkAccessForEvent' },
+          'Granting access due to subscription with required plan',
+        )
+        return true
+      }
+
+      // If the user has an active subscription but not the required plan,
+      // continue checking other access methods (PPV, rental, etc.)
+    }
+
+    // If user has an active subscription and the event doesn't require PPV or specific plans, grant access
+    if (isSubscribed && !event.ppvEnabled && !event.requiredPlans?.length) return true
 
     // Check for PPV purchase
     const hasPPV = event.ppvEnabled && subscriber.purchasedPPV?.some((id: string) => id === eventId)
