@@ -453,6 +453,79 @@ export const addEventRentalToSubscriber = async (
   }
 }
 
+/**
+ * Add a digital product to a subscriber
+ * @param payload Payload instance
+ * @param subscriberId Subscriber ID
+ * @param productId Digital product ID being purchased
+ */
+export const addProductToSubscriber = async (
+  payload: Payload,
+  subscriberId: string,
+  productId: string,
+) => {
+  try {
+    // Get current subscriber data
+    const subscriber = await payload.findByID({
+      collection: 'subscribers',
+      id: subscriberId,
+    })
+
+    // Update purchasedProducts array
+    let purchasedProducts = [...(subscriber.purchasedProducts || [])]
+    if (!purchasedProducts.includes(productId)) {
+      purchasedProducts.push(productId)
+    }
+
+    // Update the subscriber
+    const updatedSubscriber = await payload.update({
+      collection: 'subscribers',
+      id: subscriberId,
+      data: {
+        purchasedProducts,
+      },
+    })
+
+    return updatedSubscriber
+  } catch (error) {
+    logger.error(
+      { error, subscriberId, productId, context: 'addProductToSubscriber' },
+      'Error adding digital product to subscriber',
+    )
+    throw error
+  }
+}
+
+/**
+ * Check if a subscriber has purchased a digital product
+ * @param payload Payload instance
+ * @param subscriberId Subscriber ID
+ * @param productId Digital product ID to check access for
+ * @returns Boolean indicating whether the subscriber has purchased the product
+ */
+export const hasProductAccess = async (
+  payload: Payload,
+  subscriberId: string,
+  productId: string,
+) => {
+  try {
+    // Get subscriber data
+    const subscriber = await payload.findByID({
+      collection: 'subscribers',
+      id: subscriberId,
+    })
+
+    // Check if product is in purchasedProducts
+    return subscriber.purchasedProducts && subscriber.purchasedProducts.includes(productId)
+  } catch (error) {
+    logger.error(
+      { error, subscriberId, productId, context: 'hasProductAccess' },
+      'Error checking product access',
+    )
+    return false
+  }
+}
+
 export const hasEventAccess = async (payload: Payload, subscriberId: string, eventId: string) => {
   try {
     // Get subscriber data

@@ -32,7 +32,7 @@ export const Transactions: CollectionConfig = {
         field: 'type',
         label: 'Transaction Type',
         type: 'select',
-        options: ['subscription', 'ppv', 'rental'],
+        options: ['subscription', 'ppv', 'rental', 'product'],
       },
       {
         field: 'paymentProvider',
@@ -68,6 +68,7 @@ export const Transactions: CollectionConfig = {
         { label: 'Subscription', value: 'subscription' },
         { label: 'Pay-Per-View', value: 'ppv' },
         { label: 'Rental', value: 'rental' },
+        { label: 'Digital Product', value: 'product' },
       ],
       admin: {
         description: 'Type of transaction',
@@ -169,6 +170,15 @@ export const Transactions: CollectionConfig = {
       admin: {
         description: 'Related subscription plan',
         condition: (data) => data?.type === 'subscription',
+      },
+    },
+    {
+      name: 'product',
+      type: 'relationship',
+      relationTo: 'digital-products',
+      admin: {
+        description: 'Related digital product',
+        condition: (data) => data?.type === 'product',
       },
     },
     // Payment details

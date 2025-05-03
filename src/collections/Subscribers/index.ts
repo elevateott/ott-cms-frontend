@@ -104,6 +104,16 @@ export const Subscribers: CollectionConfig = {
         },
       },
     },
+    {
+      name: 'purchasedProductsCount',
+      type: 'text',
+      admin: {
+        hidden: true, // Hide in the edit form
+        components: {
+          Cell: '@/collections/Subscribers/components/PurchasedProductsCountCell',
+        },
+      },
+    },
     // Basic information
     {
       name: 'fullName',
@@ -279,6 +289,15 @@ export const Subscribers: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      name: 'purchasedProducts',
+      type: 'relationship',
+      relationTo: 'digital-products',
+      hasMany: true,
+      admin: {
+        description: 'One-time digital products purchased by this subscriber',
+      },
     },
     // Manual Access Overrides
     {

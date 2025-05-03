@@ -6,6 +6,7 @@ import {
   updateSubscriptionStatus,
   addPPVToSubscriber,
   addEventRentalToSubscriber,
+  addProductToSubscriber,
 } from '@/utils/subscribers'
 import { recordTransaction } from '@/utils/transactions'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
@@ -383,6 +384,127 @@ export async function POST(request: Request) {
                 durationHours,
               },
               'Added rental purchase to existing subscriber',
+            )
+          }
+        }
+
+        // Check if this is a digital product purchase
+        if (
+          session.mode === 'payment' &&
+          session.metadata?.type === 'product' &&
+          session.metadata?.productId
+        ) {
+          const productId = session.metadata.productId
+          const customerEmail = session.customer_details?.email
+
+          if (!customerEmail) {
+            logger.error(
+              { context: 'stripe-webhook', eventType: event.type },
+              'Missing customer email for digital product purchase',
+            )
+            break
+          }
+
+          // Find the subscriber by email
+          const subscriberResult = await payload.find({
+            collection: 'subscribers',
+            where: {
+              email: {
+                equals: customerEmail,
+              },
+            },
+            limit: 1,
+          })
+
+          if (subscriberResult.docs.length === 0) {
+            // Create a new subscriber
+            const newSubscriber = await payload.create({
+              collection: 'subscribers',
+              data: {
+                email: customerEmail,
+                fullName: session.customer_details?.name || customerEmail,
+                paymentProvider: 'stripe',
+                paymentProviderCustomerId: session.customer,
+                purchasedProducts: [productId],
+              },
+            })
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'product',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: newSubscriber.id,
+              subscriberId: newSubscriber.id,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+                productId,
+              },
+            })
+
+            // Increment the purchase count for the product
+            await payload.update({
+              collection: 'digital-products',
+              id: productId,
+              data: {
+                purchaseCount: { increment: 1 },
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: newSubscriber.id,
+                productId,
+              },
+              'Created new subscriber with digital product purchase',
+            )
+          } else {
+            // Add the product to the existing subscriber
+            const subscriber = subscriberResult.docs[0]
+            await addProductToSubscriber(payload, subscriber.id, productId)
+
+            // Record the transaction
+            const amount = session.amount_total || 0
+            await recordTransaction(payload, {
+              email: customerEmail,
+              type: 'product',
+              amount,
+              paymentProvider: 'stripe',
+              subscriber: subscriber.id,
+              subscriberId: subscriber.id,
+              transactionId: session.id,
+              paymentMethod: session.payment_method_types?.[0] || 'card',
+              metadata: {
+                sessionId: session.id,
+                customerId: session.customer,
+                productId,
+              },
+            })
+
+            // Increment the purchase count for the product
+            await payload.update({
+              collection: 'digital-products',
+              id: productId,
+              data: {
+                purchaseCount: { increment: 1 },
+              },
+            })
+
+            logger.info(
+              {
+                context: 'stripe-webhook',
+                eventType: event.type,
+                subscriberId: subscriber.id,
+                productId,
+              },
+              'Added digital product purchase to existing subscriber',
             )
           }
         }

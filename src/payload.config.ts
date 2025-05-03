@@ -42,6 +42,7 @@ import { Subscribers } from './collections/Subscribers'
 import { SubscriptionPlans } from './collections/SubscriptionPlans'
 import { DiscountCodes } from './collections/DiscountCodes'
 import { Transactions } from './collections/Transactions'
+import { DigitalProducts } from './collections/DigitalProducts'
 import { csvExportEndpoints } from './endpoints/csvExport'
 import { sendEventReminders } from './jobs/sendEventReminders'
 import { monitorDisconnectedStreams } from './jobs/monitorDisconnectedStreams'
@@ -204,6 +205,7 @@ export default buildConfig({
     SubscriptionPlans,
     DiscountCodes,
     Transactions,
+    DigitalProducts,
   ],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [
