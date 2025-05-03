@@ -150,6 +150,10 @@ export default buildConfig({
       providers: ['@/components/AdminEventProvider'],
       // Add notifications panel to the admin UI
       afterNavLinks: ['@/components/admin/NotificationsPanel'],
+      // Use our custom login component to prevent hydration mismatches
+      login: {
+        Container: '@/components/admin/CustomLogin',
+      },
       // No custom views at the global level
       // Custom components are configured at the collection level
     },
