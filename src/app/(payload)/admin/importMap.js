@@ -56,6 +56,7 @@ import { default as default_4b2844a430f33b3520c9fec178d08dff } from '@/collectio
 import { default as default_c4af1c1effa7405e266af9d6cf668218 } from '@/collections/Subscribers/components/PaymentProviderCell'
 import { default as default_68574fcb8a6204d51f9af85523f81467 } from '@/collections/Subscribers/components/StatusCell'
 import { default as default_90ef7556ca285abafcf615d2a76391d8 } from '@/collections/Subscribers/components/DateCell'
+import { default as default_8791bbbc958dcbf71a39e9a25bb41aaf } from '@/collections/Subscribers/components/ActiveSessionsField'
 import { default as default_e08afe55b81a45a9c729af998b534cf9 } from '@/collections/SubscriptionPlans/components/PlanStatusCell'
 import { default as default_b957c8bd1586ecf3ffd532b9748713af } from '@/collections/Transactions/components/TransactionTypeCell'
 import { default as default_f323153fa6618602c70970f93c5eba90 } from '@/collections/Transactions/components/TransactionAmountCell'
@@ -146,6 +147,7 @@ export const importMap = {
   "@/collections/Subscribers/components/PaymentProviderCell#default": default_c4af1c1effa7405e266af9d6cf668218,
   "@/collections/Subscribers/components/StatusCell#default": default_68574fcb8a6204d51f9af85523f81467,
   "@/collections/Subscribers/components/DateCell#default": default_90ef7556ca285abafcf615d2a76391d8,
+  "@/collections/Subscribers/components/ActiveSessionsField#default": default_8791bbbc958dcbf71a39e9a25bb41aaf,
   "@/collections/SubscriptionPlans/components/PlanStatusCell#default": default_e08afe55b81a45a9c729af998b534cf9,
   "@/collections/Transactions/components/TransactionTypeCell#default": default_b957c8bd1586ecf3ffd532b9748713af,
   "@/collections/Transactions/components/TransactionAmountCell#default": default_f323153fa6618602c70970f93c5eba90,

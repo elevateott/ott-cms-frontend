@@ -227,6 +227,16 @@ export const SubscriptionPlans: CollectionConfig = {
       ],
     },
     {
+      name: 'maxDevices',
+      type: 'number',
+      min: 1,
+      max: 10,
+      defaultValue: 2,
+      admin: {
+        description: 'Maximum number of devices allowed for this plan (overrides global default)',
+      },
+    },
+    {
       name: 'stripeProductId',
       type: 'text',
       admin: {

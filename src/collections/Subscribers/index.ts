@@ -359,6 +359,44 @@ export const Subscribers: CollectionConfig = {
         },
       ],
     },
+    // Device and Session Management
+    {
+      name: 'activeSessions',
+      type: 'array',
+      label: 'Logged In Devices / Sessions',
+      admin: {
+        description: 'Currently active login sessions for this subscriber',
+        readOnly: true,
+        components: {
+          Field: '@/collections/Subscribers/components/ActiveSessionsField',
+        },
+      },
+      fields: [
+        {
+          name: 'deviceId',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'ip',
+          type: 'text',
+        },
+        {
+          name: 'userAgent',
+          type: 'text',
+        },
+        {
+          name: 'lastActive',
+          type: 'date',
+          defaultValue: () => new Date().toISOString(),
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
+          },
+        },
+      ],
+    },
     // Additional information
     {
       name: 'user',

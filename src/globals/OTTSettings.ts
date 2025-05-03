@@ -74,6 +74,27 @@ const OTTSettings: GlobalConfig = {
             description: 'Allow users to rate videos',
           },
         },
+        {
+          name: 'enableDeviceLimiting',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: {
+            description:
+              'Limit the number of devices that can be logged in simultaneously per subscriber',
+          },
+        },
+        {
+          name: 'defaultMaxDevices',
+          type: 'number',
+          defaultValue: 2,
+          min: 1,
+          max: 10,
+          admin: {
+            description:
+              'Default maximum number of devices allowed per subscriber (can be overridden by subscription plan)',
+            condition: (_, siblingData) => siblingData?.enableDeviceLimiting,
+          },
+        },
       ],
     },
     {
