@@ -1,0 +1,5 @@
+email,fullName,subscriptionStatus,hasManualSubscription,notes,activePlans,purchasedPPV
+john.doe@example.com,John Doe,active,true,"Imported from legacy system",plan-id-1,
+jane.smith@example.com,Jane Smith,active,true,"VIP customer",plan-id-1;plan-id-2,
+test@example.com,Test User,trialing,false,"QA testing account",,event-id-1
+support@example.com,Support Team,active,true,"Internal team account",plan-id-1,

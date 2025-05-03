@@ -30,7 +30,8 @@ export const Subscribers: CollectionConfig = {
       'createdAt',
     ],
     group: 'Monetization',
-    description: 'Manage customer subscriptions, rentals, and purchases',
+    description:
+      'Manage customer subscriptions, rentals, and purchases. Subscribers can be created manually for migration, testing, or VIP access.',
     components: {
       // Add custom components to the edit view
       beforeFields: ['@/collections/Subscribers/components/SubscriberDetails'],
@@ -157,7 +158,8 @@ export const Subscribers: CollectionConfig = {
       ],
       defaultValue: 'none',
       admin: {
-        description: 'Current subscription status',
+        description:
+          'Set manually or via Stripe/PayPal webhook. For imported subscribers, set to "active" if they should have immediate access.',
         components: {
           Cell: '@/collections/Subscribers/components/StatusCell',
         },
@@ -183,7 +185,8 @@ export const Subscribers: CollectionConfig = {
       relationTo: 'subscription-plans',
       hasMany: true,
       admin: {
-        description: 'Active subscription plans',
+        description:
+          'Active subscription plans. Add plan(s) manually for imported subscribers or VIP access.',
       },
     },
     {
@@ -227,7 +230,8 @@ export const Subscribers: CollectionConfig = {
       relationTo: 'live-events',
       hasMany: true,
       admin: {
-        description: 'Pay-per-view live events purchased by this subscriber',
+        description:
+          'Pay-per-view live events purchased by this subscriber. Add manually for imported subscribers or to grant PPV access without payment.',
       },
     },
     {
@@ -236,7 +240,8 @@ export const Subscribers: CollectionConfig = {
       relationTo: 'live-events',
       hasMany: true,
       admin: {
-        description: 'Live events rented by this subscriber',
+        description:
+          'Live events rented by this subscriber. Add manually for imported subscribers or to grant rental access without payment.',
       },
     },
     {
@@ -282,7 +287,8 @@ export const Subscribers: CollectionConfig = {
       label: 'Manual Subscription Override',
       defaultValue: false,
       admin: {
-        description: 'Grants full subscriber access without billing provider',
+        description:
+          'Grants full subscription access without external billing. Use for imported subscribers, team members, or VIPs.',
         position: 'sidebar',
       },
     },
