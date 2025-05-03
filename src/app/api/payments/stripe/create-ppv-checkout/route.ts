@@ -3,6 +3,7 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
+import { getUserCurrency } from '@/utilities/currency'
 
 /**
  * POST /api/payments/stripe/create-ppv-checkout
@@ -24,7 +25,14 @@ export async function POST(req: Request) {
 
     // Get request body
     const body = await req.json()
-    const { eventId, successUrl, cancelUrl, customerEmail, discountCode } = body
+    const {
+      eventId,
+      successUrl,
+      cancelUrl,
+      customerEmail,
+      discountCode,
+      currency: requestCurrency,
+    } = body
 
     // Validate required fields
     if (!eventId) {
@@ -73,14 +81,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Check if event has Stripe price ID
-    if (!event.ppvStripePriceId) {
-      return NextResponse.json(
-        { error: 'Live event does not have a Stripe price ID' },
-        { status: 400 },
-      )
-    }
-
     // Initialize Stripe
     // Use dynamic import for ESM compatibility
     const Stripe = (await import('stripe')).default
@@ -88,12 +88,42 @@ export async function POST(req: Request) {
       settings.stripe.testMode ? settings.stripe.apiKey : settings.stripe.liveApiKey,
     )
 
+    // Determine which currency to use
+    let userCurrency = requestCurrency || settings.currency.defaultCurrency
+
+    // Find the appropriate price ID for the selected currency
+    let priceId = event.ppvStripePriceId // Default to legacy price ID (USD)
+
+    if (event.ppvPricesByCurrency && event.ppvPricesByCurrency.length > 0) {
+      // Find price for the requested currency
+      const priceForCurrency = event.ppvPricesByCurrency.find((p) => p.currency === userCurrency)
+
+      if (priceForCurrency && priceForCurrency.stripePriceId) {
+        priceId = priceForCurrency.stripePriceId
+      } else {
+        // If requested currency not found, fall back to USD
+        const usdPrice = event.ppvPricesByCurrency.find((p) => p.currency === 'usd')
+        if (usdPrice && usdPrice.stripePriceId) {
+          priceId = usdPrice.stripePriceId
+          userCurrency = 'usd'
+        }
+      }
+    }
+
+    // Check if we have a valid price ID
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Live event does not have a valid price ID for the selected currency' },
+        { status: 400 },
+      )
+    }
+
     // Create checkout session parameters
     const sessionParams: any = {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: event.ppvStripePriceId,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -103,6 +133,7 @@ export async function POST(req: Request) {
       metadata: {
         eventId,
         type: 'ppv',
+        currency: userCurrency,
       },
     }
 

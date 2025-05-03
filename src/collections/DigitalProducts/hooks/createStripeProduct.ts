@@ -22,7 +22,7 @@ export const createStripeProduct: CollectionAfterChangeHook = async ({ doc, oper
     if (!stripeSettings.enabled) {
       logger.warn(
         { context: 'createStripeProduct', productId: doc.id },
-        'Stripe is not enabled, skipping product creation'
+        'Stripe is not enabled, skipping product creation',
       )
       return doc
     }
@@ -31,7 +31,7 @@ export const createStripeProduct: CollectionAfterChangeHook = async ({ doc, oper
     // Use dynamic import for ESM compatibility
     const Stripe = (await import('stripe')).default
     const stripe = new Stripe(
-      stripeSettings.testMode ? stripeSettings.apiKey : stripeSettings.liveApiKey
+      stripeSettings.testMode ? stripeSettings.apiKey : stripeSettings.liveApiKey,
     )
 
     // Create a Stripe product
@@ -44,12 +44,55 @@ export const createStripeProduct: CollectionAfterChangeHook = async ({ doc, oper
       },
     })
 
-    // Create a Stripe price
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: Math.round(doc.price * 100), // Convert to cents
-      currency: 'usd',
-    })
+    // Get supported currencies from settings
+    const supportedCurrencies = settings.currency.supportedCurrencies || ['usd']
+
+    // Determine which currencies to create prices for
+    let pricesToCreate = []
+
+    // If we have pricesByCurrency, use those
+    if (doc.pricesByCurrency && doc.pricesByCurrency.length > 0) {
+      pricesToCreate = doc.pricesByCurrency.filter((p) => supportedCurrencies.includes(p.currency))
+    }
+    // Otherwise, use the legacy price field (USD only)
+    else if (doc.price !== undefined) {
+      pricesToCreate = [{ currency: 'usd', amount: Math.round(doc.price * 100) }] // Convert to cents
+    }
+
+    // Ensure we have at least one price
+    if (pricesToCreate.length === 0) {
+      throw new Error('No valid prices provided')
+    }
+
+    // Create prices for each currency
+    const updatedPrices = []
+    let usdPriceId = null
+
+    for (const priceData of pricesToCreate) {
+      // Create a Stripe price
+      const price = await stripe.prices.create({
+        product: product.id,
+        unit_amount: priceData.amount,
+        currency: priceData.currency,
+        metadata: {
+          source: 'ott-cms',
+          currency: priceData.currency,
+          type: 'digital-product',
+        },
+      })
+
+      // Store the price ID
+      updatedPrices.push({
+        currency: priceData.currency,
+        amount: priceData.amount,
+        stripePriceId: price.id,
+      })
+
+      // Store the USD price ID for backward compatibility
+      if (priceData.currency === 'usd') {
+        usdPriceId = price.id
+      }
+    }
 
     // Update the digital product with Stripe IDs
     const updatedDoc = await req.payload.update({
@@ -57,7 +100,8 @@ export const createStripeProduct: CollectionAfterChangeHook = async ({ doc, oper
       id: doc.id,
       data: {
         stripeProductId: product.id,
-        stripePriceId: price.id,
+        stripePriceId: usdPriceId || updatedPrices[0]?.stripePriceId, // For backward compatibility
+        pricesByCurrency: updatedPrices,
       },
     })
 
@@ -68,14 +112,14 @@ export const createStripeProduct: CollectionAfterChangeHook = async ({ doc, oper
         stripeProductId: product.id,
         stripePriceId: price.id,
       },
-      'Created Stripe product and price for digital product'
+      'Created Stripe product and price for digital product',
     )
 
     return updatedDoc
   } catch (error) {
     logger.error(
       { error, context: 'createStripeProduct', productId: doc.id },
-      'Error creating Stripe product and price'
+      'Error creating Stripe product and price',
     )
     return doc
   }

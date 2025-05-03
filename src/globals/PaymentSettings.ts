@@ -200,6 +200,62 @@ const PaymentSettings: GlobalConfig = {
         description: 'Select which payment methods to offer at checkout',
       },
     },
+    {
+      name: 'currency',
+      type: 'group',
+      label: 'Currency Settings',
+      admin: {
+        description: 'Configure currency settings for your platform',
+      },
+      fields: [
+        {
+          name: 'defaultCurrency',
+          type: 'select',
+          label: 'Default Currency',
+          required: true,
+          defaultValue: 'usd',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          admin: {
+            description: 'The default currency to use when no specific currency is selected',
+          },
+        },
+        {
+          name: 'supportedCurrencies',
+          type: 'select',
+          label: 'Supported Currencies',
+          required: true,
+          hasMany: true,
+          defaultValue: ['usd'],
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          admin: {
+            description: 'Currencies that your platform supports for pricing',
+          },
+        },
+        {
+          name: 'detectUserCurrency',
+          type: 'checkbox',
+          label: 'Auto-Detect User Currency',
+          defaultValue: true,
+          admin: {
+            description: "Automatically detect and use the user's local currency when possible",
+          },
+        },
+      ],
+    },
   ],
 }
 

@@ -25,10 +25,17 @@ export interface PayPalSettings {
   connected: boolean
 }
 
+export interface CurrencySettings {
+  defaultCurrency: string
+  supportedCurrencies: string[]
+  detectUserCurrency: boolean
+}
+
 export interface PaymentSettings {
   stripe: StripeSettings
   paypal: PayPalSettings
   activePaymentMethods: string[]
+  currency: CurrencySettings
 }
 
 export const getPaymentSettings = async (): Promise<PaymentSettings> => {
@@ -57,6 +64,11 @@ export const getPaymentSettings = async (): Promise<PaymentSettings> => {
         connected: settings?.paypal?.connected || false,
       },
       activePaymentMethods: settings?.activePaymentMethods || [],
+      currency: {
+        defaultCurrency: settings?.currency?.defaultCurrency || 'usd',
+        supportedCurrencies: settings?.currency?.supportedCurrencies || ['usd'],
+        detectUserCurrency: settings?.currency?.detectUserCurrency ?? true,
+      },
     }
   } catch (error) {
     logger.error(error, 'Failed to get payment settings')
@@ -79,6 +91,11 @@ export const getPaymentSettings = async (): Promise<PaymentSettings> => {
         connected: false,
       },
       activePaymentMethods: [],
+      currency: {
+        defaultCurrency: 'usd',
+        supportedCurrencies: ['usd'],
+        detectUserCurrency: true,
+      },
     }
   }
 }

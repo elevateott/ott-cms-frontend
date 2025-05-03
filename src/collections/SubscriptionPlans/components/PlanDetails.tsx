@@ -16,6 +16,7 @@ const PlanDetails: React.FC = () => {
     name,
     description,
     price,
+    pricesByCurrency,
     interval,
     trialPeriodDays,
     isActive,
@@ -27,7 +28,24 @@ const PlanDetails: React.FC = () => {
     version,
   } = document
 
-  // Format price from cents to dollars
+  // Format price from cents to dollars with currency symbol
+  const formatPriceWithCurrency = (amount: number, currency: string) => {
+    if (!amount) return 'N/A'
+
+    const currencySymbols: Record<string, string> = {
+      usd: '$',
+      eur: '€',
+      gbp: '£',
+      cad: 'C$',
+      aud: 'A$',
+      jpy: '¥',
+    }
+
+    const symbol = currencySymbols[currency.toLowerCase()] || currency.toUpperCase()
+    return `${symbol}${(amount / 100).toFixed(2)}`
+  }
+
+  // Legacy price format
   const formattedPrice = price ? `$${(price / 100).toFixed(2)}` : 'N/A'
 
   // Format interval
@@ -107,8 +125,22 @@ const PlanDetails: React.FC = () => {
             </div>
           )}
           <div style={{ marginBottom: '12px' }}>
-            <div style={{ fontWeight: 'bold' }}>Price</div>
-            <div>{formattedPrice}</div>
+            <div style={{ fontWeight: 'bold' }}>Prices</div>
+            {pricesByCurrency && pricesByCurrency.length > 0 ? (
+              <div>
+                {pricesByCurrency.map((price, index) => (
+                  <div
+                    key={index}
+                    style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '200px' }}
+                  >
+                    <span>{price.currency.toUpperCase()}</span>
+                    <span>{formatPriceWithCurrency(price.amount, price.currency)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div>{formattedPrice} (USD)</div>
+            )}
           </div>
           <div style={{ marginBottom: '12px' }}>
             <div style={{ fontWeight: 'bold' }}>Billing Interval</div>

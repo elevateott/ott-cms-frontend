@@ -23,7 +23,7 @@ export const SubscriptionPlans: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'price', 'interval', 'isActive', 'createdAt'],
+    defaultColumns: ['name', 'interval', 'isActive', 'createdAt'],
     group: 'Monetization',
     description: 'Subscription plans available for purchase',
     components: {
@@ -53,28 +53,93 @@ export const SubscriptionPlans: CollectionConfig = {
     },
     ...slugField(),
     {
-      name: 'price',
-      type: 'number',
+      name: 'pricesByCurrency',
+      type: 'array',
+      label: 'Prices by Currency',
       required: true,
-      min: 0,
       admin: {
-        description: 'Price in cents (e.g., 1000 = $10.00)',
+        description: 'Define prices for each supported currency',
       },
+      fields: [
+        {
+          name: 'currency',
+          type: 'select',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          required: true,
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          required: true,
+          min: 0,
+          admin: {
+            description: 'Price in cents (e.g., 1000 = $10.00)',
+          },
+        },
+        {
+          name: 'stripePriceId',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Stripe Price ID (automatically generated)',
+          },
+        },
+      ],
       hooks: {
         beforeValidate: [
-          async ({ value, data, operation, originalDoc, req }) => {
+          async ({ value, operation, originalDoc, req }) => {
             // Only validate on update
             if (operation === 'update') {
-              // Check if price is being changed
-              if (originalDoc && originalDoc.price !== value) {
+              // Check if prices are being changed
+              if (
+                originalDoc &&
+                JSON.stringify(originalDoc.pricesByCurrency) !== JSON.stringify(value)
+              ) {
                 // Check if plan has subscribers
                 const hasSubscribers = await hasPlanSubscribers(req.payload, originalDoc.id)
                 if (hasSubscribers) {
-                  throw new Error('Cannot change price for a plan that has active subscribers')
+                  throw new Error('Cannot change prices for a plan that has active subscribers')
                 }
               }
             }
+
+            // Ensure no duplicate currencies
+            const currencies = value.map((price) => price.currency)
+            const uniqueCurrencies = [...new Set(currencies)]
+            if (currencies.length !== uniqueCurrencies.length) {
+              throw new Error('Duplicate currencies are not allowed')
+            }
+
             return value
+          },
+        ],
+      },
+    },
+    {
+      name: 'price',
+      type: 'number',
+      admin: {
+        hidden: true,
+        description: 'Legacy price field (USD) - maintained for backward compatibility',
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // Set the price field based on the USD price in pricesByCurrency
+            if (data.pricesByCurrency && data.pricesByCurrency.length > 0) {
+              const usdPrice = data.pricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice) {
+                return usdPrice.amount
+              }
+            }
+            return value || 0
           },
         ],
       },
@@ -250,10 +315,24 @@ export const SubscriptionPlans: CollectionConfig = {
       name: 'stripePriceId',
       type: 'text',
       admin: {
-        description: 'Stripe Price ID (automatically generated)',
+        description: 'Default Stripe Price ID (USD) - maintained for backward compatibility',
         readOnly: true,
         position: 'sidebar',
         condition: (data) => data?.paymentProvider !== 'paypal',
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // If we have pricesByCurrency, use the USD price ID
+            if (data.pricesByCurrency && data.pricesByCurrency.length > 0) {
+              const usdPrice = data.pricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice && usdPrice.stripePriceId) {
+                return usdPrice.stripePriceId
+              }
+            }
+            return value
+          },
+        ],
       },
     },
     {
@@ -351,7 +430,7 @@ export const SubscriptionPlans: CollectionConfig = {
               const stripeResult = await createStripePlan({
                 name: data.name,
                 description: data.description,
-                price: data.price,
+                pricesByCurrency: data.pricesByCurrency,
                 interval: data.interval,
                 trialDays: data.trialPeriodDays,
                 setupFeeAmount: data.setupFeeAmount,
@@ -360,17 +439,27 @@ export const SubscriptionPlans: CollectionConfig = {
               // Store Stripe IDs
               data.stripeProductId = stripeResult.productId
               data.stripePriceId = stripeResult.priceId
+
+              // Update pricesByCurrency with Stripe price IDs
+              if (stripeResult.pricesByCurrency && stripeResult.pricesByCurrency.length > 0) {
+                data.pricesByCurrency = stripeResult.pricesByCurrency
+              }
+
               if (stripeResult.setupFeeId) {
                 data.stripeSetupFeeId = stripeResult.setupFeeId
               }
             }
 
-            // Create PayPal plan if not Stripe only
+            // Create PayPal plan if not Stripe only (using USD price for now)
             if (data.paymentProvider !== 'stripe') {
+              // Find USD price in pricesByCurrency
+              const usdPrice =
+                data.pricesByCurrency?.find((p) => p.currency === 'usd')?.amount || data.price
+
               const paypalResult = await createPayPalPlan({
                 name: data.name,
                 description: data.description,
-                price: data.price,
+                price: usdPrice,
                 interval: data.interval,
                 trialDays: data.trialPeriodDays,
                 setupFeeAmount: data.setupFeeAmount,

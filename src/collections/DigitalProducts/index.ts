@@ -19,7 +19,7 @@ export const DigitalProducts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'price', 'purchaseCount', 'createdAt'],
+    defaultColumns: ['name', 'purchaseCount', 'createdAt'],
     group: 'Monetization',
     description: 'One-time digital products like eBooks, downloads, and courses',
   },
@@ -35,13 +35,81 @@ export const DigitalProducts: CollectionConfig = {
       type: 'textarea',
     },
     {
+      name: 'pricesByCurrency',
+      type: 'array',
+      label: 'Prices by Currency',
+      required: true,
+      admin: {
+        description: 'Define prices for each supported currency',
+      },
+      fields: [
+        {
+          name: 'currency',
+          type: 'select',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          required: true,
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          required: true,
+          min: 0,
+          admin: {
+            description: 'Price in cents (e.g., 999 = $9.99)',
+            step: 1,
+          },
+        },
+        {
+          name: 'stripePriceId',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Stripe Price ID (automatically generated)',
+          },
+        },
+      ],
+      validate: (value) => {
+        if (!value || value.length === 0) {
+          return 'At least one price is required'
+        }
+
+        // Check for duplicate currencies
+        const currencies = value.map((price) => price.currency)
+        const uniqueCurrencies = [...new Set(currencies)]
+        if (currencies.length !== uniqueCurrencies.length) {
+          return 'Duplicate currencies are not allowed'
+        }
+
+        return true
+      },
+    },
+    {
       name: 'price',
       type: 'number',
-      required: true,
-      min: 0,
       admin: {
-        description: 'Price in USD (e.g., 9.99)',
-        step: 0.01,
+        description: 'Legacy price field in USD cents - maintained for backward compatibility',
+        hidden: true,
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // Set the price field based on the USD price in pricesByCurrency
+            if (data.pricesByCurrency && data.pricesByCurrency.length > 0) {
+              const usdPrice = data.pricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice) {
+                return usdPrice.amount
+              }
+            }
+            return value || 0
+          },
+        ],
       },
     },
     {

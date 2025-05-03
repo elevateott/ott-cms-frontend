@@ -3,6 +3,7 @@ import { getPayloadHMR } from '@payloadcms/next/utilities'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
+import { getUserCurrency } from '@/utilities/currency'
 
 /**
  * POST /api/payments/stripe/create-checkout
@@ -24,7 +25,14 @@ export async function POST(req: Request) {
 
     // Get request body
     const body = await req.json()
-    const { planId, successUrl, cancelUrl, customerEmail, discountCode } = body
+    const {
+      planId,
+      successUrl,
+      cancelUrl,
+      customerEmail,
+      discountCode,
+      currency: requestCurrency,
+    } = body
 
     // Validate required fields
     if (!planId) {
@@ -70,14 +78,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Subscription plan is not active' }, { status: 400 })
     }
 
-    // Check if plan has Stripe IDs
-    if (!plan.stripePriceId) {
-      return NextResponse.json(
-        { error: 'Subscription plan does not have Stripe price ID' },
-        { status: 400 },
-      )
-    }
-
     // Initialize Stripe
     // Use dynamic import for ESM compatibility
     const Stripe = (await import('stripe')).default
@@ -85,12 +85,42 @@ export async function POST(req: Request) {
       settings.stripe.testMode ? settings.stripe.apiKey : settings.stripe.liveApiKey,
     )
 
+    // Determine which currency to use
+    let userCurrency = requestCurrency || settings.currency.defaultCurrency
+
+    // Find the appropriate price ID for the selected currency
+    let priceId = plan.stripePriceId // Default to legacy price ID (USD)
+
+    if (plan.pricesByCurrency && plan.pricesByCurrency.length > 0) {
+      // Find price for the requested currency
+      const priceForCurrency = plan.pricesByCurrency.find((p) => p.currency === userCurrency)
+
+      if (priceForCurrency && priceForCurrency.stripePriceId) {
+        priceId = priceForCurrency.stripePriceId
+      } else {
+        // If requested currency not found, fall back to USD
+        const usdPrice = plan.pricesByCurrency.find((p) => p.currency === 'usd')
+        if (usdPrice && usdPrice.stripePriceId) {
+          priceId = usdPrice.stripePriceId
+          userCurrency = 'usd'
+        }
+      }
+    }
+
+    // Check if we have a valid price ID
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Subscription plan does not have a valid price ID for the selected currency' },
+        { status: 400 },
+      )
+    }
+
     // Create checkout session parameters
     const sessionParams: any = {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: plan.stripePriceId,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -100,6 +130,7 @@ export async function POST(req: Request) {
       metadata: {
         planId,
         type: 'subscription',
+        currency: userCurrency,
       },
     }
 

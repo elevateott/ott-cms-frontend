@@ -341,19 +341,86 @@ export const LiveEvents: CollectionConfig = {
       },
     },
     {
-      name: 'ppvPrice',
-      type: 'number',
-      label: 'PPV Price (USD)',
-      min: 0,
+      name: 'ppvPricesByCurrency',
+      type: 'array',
+      label: 'PPV Prices by Currency',
       admin: {
-        description: 'Price for pay-per-view access (in cents, e.g. 499 = $4.99)',
+        description: 'Define PPV prices for each supported currency',
         condition: (data) => data?.ppvEnabled === true,
       },
+      fields: [
+        {
+          name: 'currency',
+          type: 'select',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          required: true,
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          required: true,
+          min: 0,
+          admin: {
+            description: 'Price in cents (e.g., 499 = $4.99)',
+          },
+        },
+        {
+          name: 'stripePriceId',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Stripe Price ID (automatically generated)',
+          },
+        },
+      ],
       validate: (value, { siblingData }) => {
-        if (siblingData?.ppvEnabled && (value === undefined || value <= 0)) {
-          return 'PPV price is required and must be greater than 0'
+        if (siblingData?.ppvEnabled) {
+          // Check if array exists and has at least one entry
+          if (!value || value.length === 0) {
+            return 'At least one PPV price is required'
+          }
+
+          // Check for duplicate currencies
+          const currencies = value.map((price) => price.currency)
+          const uniqueCurrencies = [...new Set(currencies)]
+          if (currencies.length !== uniqueCurrencies.length) {
+            return 'Duplicate currencies are not allowed'
+          }
         }
         return true
+      },
+    },
+    {
+      name: 'ppvPrice',
+      type: 'number',
+      label: 'PPV Price (USD) - Legacy',
+      min: 0,
+      admin: {
+        description: 'Legacy price field - maintained for backward compatibility',
+        condition: (data) =>
+          data?.ppvEnabled === true &&
+          (!data.ppvPricesByCurrency || data.ppvPricesByCurrency.length === 0),
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // Set the price field based on the USD price in ppvPricesByCurrency
+            if (data.ppvPricesByCurrency && data.ppvPricesByCurrency.length > 0) {
+              const usdPrice = data.ppvPricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice) {
+                return usdPrice.amount
+              }
+            }
+            return value || 0
+          },
+        ],
       },
     },
     {
@@ -388,19 +455,86 @@ export const LiveEvents: CollectionConfig = {
       },
     },
     {
-      name: 'rentalPrice',
-      type: 'number',
-      label: 'Rental Price (USD)',
-      min: 0,
+      name: 'rentalPricesByCurrency',
+      type: 'array',
+      label: 'Rental Prices by Currency',
       admin: {
-        description: 'Price for rental access (in cents, e.g. 499 = $4.99)',
+        description: 'Define rental prices for each supported currency',
         condition: (data) => data?.rentalEnabled === true,
       },
+      fields: [
+        {
+          name: 'currency',
+          type: 'select',
+          options: [
+            { label: 'USD ($)', value: 'usd' },
+            { label: 'EUR (€)', value: 'eur' },
+            { label: 'GBP (£)', value: 'gbp' },
+            { label: 'CAD (C$)', value: 'cad' },
+            { label: 'AUD (A$)', value: 'aud' },
+            { label: 'JPY (¥)', value: 'jpy' },
+          ],
+          required: true,
+        },
+        {
+          name: 'amount',
+          type: 'number',
+          required: true,
+          min: 0,
+          admin: {
+            description: 'Price in cents (e.g., 499 = $4.99)',
+          },
+        },
+        {
+          name: 'stripePriceId',
+          type: 'text',
+          admin: {
+            readOnly: true,
+            description: 'Stripe Price ID (automatically generated)',
+          },
+        },
+      ],
       validate: (value, { siblingData }) => {
-        if (siblingData?.rentalEnabled && (value === undefined || value <= 0)) {
-          return 'Rental price is required and must be greater than 0'
+        if (siblingData?.rentalEnabled) {
+          // Check if array exists and has at least one entry
+          if (!value || value.length === 0) {
+            return 'At least one rental price is required'
+          }
+
+          // Check for duplicate currencies
+          const currencies = value.map((price) => price.currency)
+          const uniqueCurrencies = [...new Set(currencies)]
+          if (currencies.length !== uniqueCurrencies.length) {
+            return 'Duplicate currencies are not allowed'
+          }
         }
         return true
+      },
+    },
+    {
+      name: 'rentalPrice',
+      type: 'number',
+      label: 'Rental Price (USD) - Legacy',
+      min: 0,
+      admin: {
+        description: 'Legacy price field - maintained for backward compatibility',
+        condition: (data) =>
+          data?.rentalEnabled === true &&
+          (!data.rentalPricesByCurrency || data.rentalPricesByCurrency.length === 0),
+      },
+      hooks: {
+        beforeChange: [
+          ({ value, data }) => {
+            // Set the price field based on the USD price in rentalPricesByCurrency
+            if (data.rentalPricesByCurrency && data.rentalPricesByCurrency.length > 0) {
+              const usdPrice = data.rentalPricesByCurrency.find((p) => p.currency === 'usd')
+              if (usdPrice) {
+                return usdPrice.amount
+              }
+            }
+            return value || 0
+          },
+        ],
       },
     },
     {
