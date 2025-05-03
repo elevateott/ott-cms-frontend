@@ -14,6 +14,82 @@ export const generateSubscriberToken = (): string => {
 }
 
 /**
+ * Find a subscriber by user ID
+ * @param payload Payload instance
+ * @param userId User ID to find subscriber for
+ * @returns The subscriber record or null if not found
+ */
+export const findSubscriberByUserId = async (payload: Payload, userId: string) => {
+  try {
+    // Get the user
+    const user = await payload.findByID({
+      collection: 'users',
+      id: userId,
+    })
+
+    if (!user || !user.email) {
+      return null
+    }
+
+    // Find subscriber by email
+    const subscriberResult = await payload.find({
+      collection: 'subscribers',
+      where: {
+        email: {
+          equals: user.email,
+        },
+      },
+      limit: 1,
+    })
+
+    if (subscriberResult.docs.length === 0) {
+      return null
+    }
+
+    return subscriberResult.docs[0]
+  } catch (error) {
+    logger.error(
+      { error, userId, context: 'findSubscriberByUserId' },
+      'Error finding subscriber by user ID',
+    )
+    return null
+  }
+}
+
+/**
+ * Find a subscriber by email
+ * @param payload Payload instance
+ * @param email Email to find subscriber for
+ * @returns The subscriber record or null if not found
+ */
+export const findSubscriberByEmail = async (payload: Payload, email: string) => {
+  try {
+    // Find subscriber by email
+    const subscriberResult = await payload.find({
+      collection: 'subscribers',
+      where: {
+        email: {
+          equals: email,
+        },
+      },
+      limit: 1,
+    })
+
+    if (subscriberResult.docs.length === 0) {
+      return null
+    }
+
+    return subscriberResult.docs[0]
+  } catch (error) {
+    logger.error(
+      { error, email, context: 'findSubscriberByEmail' },
+      'Error finding subscriber by email',
+    )
+    return null
+  }
+}
+
+/**
  * Find or create a subscriber record
  * @param payload Payload instance
  * @param email Subscriber email
