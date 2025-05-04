@@ -9,7 +9,7 @@ const OTTSettings: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
   },
   fields: [
     {

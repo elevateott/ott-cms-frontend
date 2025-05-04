@@ -10,7 +10,7 @@ export const CloudStorageSettings: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
     description: 'Configure cloud storage provider for media uploads (excluding videos)',
   },
   fields: [
@@ -30,7 +30,8 @@ export const CloudStorageSettings: GlobalConfig = {
       label: 'Enable Cloud Storage',
       defaultValue: false,
       admin: {
-        description: 'When enabled, media uploads will use the selected cloud storage provider instead of local storage',
+        description:
+          'When enabled, media uploads will use the selected cloud storage provider instead of local storage',
       },
     },
     {
@@ -141,7 +142,8 @@ export const CloudStorageSettings: GlobalConfig = {
           type: 'text',
           label: 'Custom Endpoint',
           admin: {
-            description: 'Optional custom endpoint for S3-compatible services like DigitalOcean Spaces',
+            description:
+              'Optional custom endpoint for S3-compatible services like DigitalOcean Spaces',
           },
         },
         {
@@ -150,7 +152,8 @@ export const CloudStorageSettings: GlobalConfig = {
           label: 'Force Path Style',
           defaultValue: false,
           admin: {
-            description: 'Use path-style URLs for S3 objects (required for some S3-compatible services)',
+            description:
+              'Use path-style URLs for S3 objects (required for some S3-compatible services)',
           },
         },
       ],

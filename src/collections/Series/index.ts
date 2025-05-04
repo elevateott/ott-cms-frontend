@@ -20,7 +20,7 @@ export const Series: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'tags', 'isFeatured', 'isFree', 'price', 'createdAt'],
-    group: 'Media',
+    group: 'Content Library',
   },
   defaultPopulate: {
     title: true,

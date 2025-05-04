@@ -30,7 +30,7 @@ export const Subscribers: CollectionConfig = {
       'purchasedAddOnsCount',
       'createdAt',
     ],
-    group: 'Monetization',
+    group: 'People',
     description:
       'Manage customer subscriptions, rentals, and purchases. Subscribers can be created manually for migration, testing, or VIP access.',
     components: {

@@ -12,7 +12,7 @@ export const Filters: CollectionConfig = {
   admin: {
     useAsTitle: 'label',
     defaultColumns: ['label', 'type', 'value', 'order'],
-    group: 'Content',
+    group: 'Content Library',
   },
   access: {
     read: () => true,

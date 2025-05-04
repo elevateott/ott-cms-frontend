@@ -9,7 +9,7 @@ const EmailSettings: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
     description:
       'Configure email service provider settings for notifications and transactional emails',
   },

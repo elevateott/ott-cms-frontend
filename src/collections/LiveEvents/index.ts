@@ -42,7 +42,7 @@ export const LiveEvents: CollectionConfig = {
       'status',
       'createdAt',
     ],
-    group: 'Media',
+    group: 'Live Events',
     components: {
       // Use a string path to the component in the admin directory
       BeforeList: '@/admin/components/LiveStreamStatusLegend',

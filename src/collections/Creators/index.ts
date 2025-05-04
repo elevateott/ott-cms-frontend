@@ -20,7 +20,7 @@ export const Creators: CollectionConfig = {
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'publicProfile', 'createdAt'],
-    group: 'Content',
+    group: 'People',
   },
   defaultPopulate: {
     name: true,

@@ -11,7 +11,7 @@ export const Content: CollectionConfig = {
   slug: 'content',
   labels: {
     singular: 'Content',
-    plural: 'Content Library',
+    plural: 'Content',
   },
   defaultSort: ['-createdAt'],
   access: {
@@ -32,7 +32,7 @@ export const Content: CollectionConfig = {
       'unpublishAt',
       'createdAt',
     ],
-    group: 'Content',
+    group: 'Content Library',
     components: {
       // Add our export button before the list view
       beforeList: ['@/collections/Content/components/ExportButtonBar'],

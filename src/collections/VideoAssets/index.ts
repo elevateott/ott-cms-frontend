@@ -35,7 +35,7 @@ export const VideoAssets: CollectionConfig = {
       'actions',
       'quickActions',
     ],
-    group: 'Content',
+    group: 'Asset Library',
     components: {
       // Add our custom components before the default list view
       beforeList: [

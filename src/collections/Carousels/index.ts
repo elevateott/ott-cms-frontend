@@ -21,7 +21,7 @@ export const Carousels: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'itemCount', 'isActive', 'order', 'createdAt'],
-    group: 'Content',
+    group: 'Content Library',
   },
   fields: [
     {

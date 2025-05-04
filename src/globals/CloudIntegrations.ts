@@ -9,7 +9,7 @@ const CloudIntegrations: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
     description: 'Configure cloud storage integration settings for video uploads',
   },
   fields: [
