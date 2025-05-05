@@ -322,6 +322,10 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
   const [globalDRMConfigId, setGlobalDRMConfigId] = useState('')
   const [_isLoadingSettings, setIsLoadingSettings] = useState(true)
 
+  // Mux credentials state
+  const [hasMuxCredentials, setHasMuxCredentials] = useState(false)
+  const [missingMuxCredentials, setMissingMuxCredentials] = useState<string[]>([])
+
   // Fetch global streaming settings
   useEffect(() => {
     const fetchStreamingSettings = async () => {
@@ -355,16 +359,34 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
           setDrmConfigId(muxSettings.defaultDRMConfigurationId || '')
         }
 
+        // Check for Mux credentials
+        const apiCredentials = muxSettings.apiCredentials || {}
+        const missing: string[] = []
+
+        // Check for required credentials
+        if (!apiCredentials.tokenId) missing.push('tokenId')
+        if (!apiCredentials.tokenSecret) missing.push('tokenSecret')
+        if (!apiCredentials.webhookSecret) missing.push('webhookSecret')
+
+        // Set state based on credential check
+        setHasMuxCredentials(missing.length === 0)
+        setMissingMuxCredentials(missing)
+
         clientLogger.info('Streaming settings loaded', 'videoVideoAdmin', {
           streamingSourceTypes: sourceTypes,
           globalDRMEnabled: muxSettings.enableDRMByDefault,
           globalDRMConfigId: muxSettings.defaultDRMConfigurationId,
+          hasMuxCredentials: missing.length === 0,
+          missingCredentials: missing,
         })
       } catch (error) {
         clientLogger.error(
           error instanceof Error ? error : 'Error fetching streaming settings',
           'videoVideoAdmin',
         )
+        // Set default values for error state
+        setHasMuxCredentials(false)
+        setMissingMuxCredentials(['tokenId', 'tokenSecret', 'webhookSecret'])
       } finally {
         setIsLoadingSettings(false)
       }
@@ -522,99 +544,145 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
             {/* Mux Uploader - shown when sourceType is 'mux' */}
             {(sourceType === 'mux' || streamingSourceTypes === 'Mux') && (
               <>
-                {/* Load preload script with highest priority */}
-                <Script
-                  id="mux-uploader-preload-admin"
-                  strategy="afterInteractive"
-                  src="/mux-uploader-preload.js"
-                  onLoad={() => {
-                    clientLogger.info(
-                      'Mux Uploader preload script loaded in VideoAdmin',
-                      'videoVideoAdmin',
-                    )
-                  }}
-                />
-                <MuxVideoUploader
-                  endpoint={async (file?: File) => {
-                    if (!file) return '' // Return empty string if no file provided
-
-                    try {
-                      // Determine if DRM should be enabled based on override settings
-                      const shouldUseDRM = overrideDRM ? useDRM : globalDRMEnabled
-                      const drmConfigurationId = overrideDRM ? drmConfigId : globalDRMConfigId
-
-                      // Validate DRM configuration
-                      if (shouldUseDRM && !drmConfigurationId) {
-                        clientLogger.warn(
-                          'DRM enabled but no configuration ID provided',
+                {/* Check if required Mux credentials are missing */}
+                {missingMuxCredentials.length > 0 &&
+                missingMuxCredentials.some(
+                  (cred) =>
+                    cred === 'tokenId' || cred === 'tokenSecret' || cred === 'webhookSecret',
+                ) ? (
+                  <div className="p-6 border-2 border-dashed border-yellow-400 rounded-lg bg-yellow-50">
+                    <div className="flex items-start space-x-3">
+                      <AlertTriangle className="h-6 w-6 text-yellow-500 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-medium text-yellow-800">
+                          Mux Configuration Required
+                        </h3>
+                        <p className="text-yellow-700">
+                          To use Mux video uploads, you need to configure your Mux API credentials
+                          in the global settings.
+                        </p>
+                        <div className="bg-white p-3 rounded border border-yellow-200 text-sm">
+                          <p className="font-medium text-gray-700 mb-1">Missing credentials:</p>
+                          <ul className="list-disc list-inside space-y-1 text-gray-600">
+                            {missingMuxCredentials.includes('tokenId') && <li>Mux API Token ID</li>}
+                            {missingMuxCredentials.includes('tokenSecret') && (
+                              <li>Mux API Token Secret</li>
+                            )}
+                            {missingMuxCredentials.includes('webhookSecret') && (
+                              <li>Mux Webhook Secret</li>
+                            )}
+                          </ul>
+                        </div>
+                        <div className="pt-2">
+                          <p className="text-sm text-gray-600">
+                            Go to{' '}
+                            <span className="font-mono bg-gray-100 px-1 py-0.5 rounded">
+                              Settings → Streaming Settings
+                            </span>{' '}
+                            in the admin panel to configure these credentials.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Load preload script with highest priority */}
+                    <Script
+                      id="mux-uploader-preload-admin"
+                      strategy="afterInteractive"
+                      src="/mux-uploader-preload.js"
+                      onLoad={() => {
+                        clientLogger.info(
+                          'Mux Uploader preload script loaded in VideoAdmin',
                           'videoVideoAdmin',
                         )
-                        throw new Error(
-                          'DRM is enabled but no DRM Configuration ID is provided. Please enter a DRM Configuration ID or disable DRM.',
-                        )
-                      }
+                      }}
+                    />
+                    <MuxVideoUploader
+                      endpoint={async (file?: File) => {
+                        if (!file) return '' // Return empty string if no file provided
 
-                      clientLogger.info(
-                        'Creating Mux upload with DRM settings',
-                        'videoVideoAdmin',
-                        {
-                          overrideDRM,
-                          useDRM: shouldUseDRM,
-                          drmConfigId: drmConfigurationId,
-                          globalDRMEnabled,
-                          globalDRMConfigId,
-                        },
-                      )
+                        try {
+                          // Determine if DRM should be enabled based on override settings
+                          const shouldUseDRM = overrideDRM ? useDRM : globalDRMEnabled
+                          const drmConfigurationId = overrideDRM ? drmConfigId : globalDRMConfigId
 
-                      // Set a timeout for the fetch request
-                      const controller = new AbortController()
-                      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+                          // Validate DRM configuration
+                          if (shouldUseDRM && !drmConfigurationId) {
+                            clientLogger.warn(
+                              'DRM enabled but no configuration ID provided',
+                              'videoVideoAdmin',
+                            )
+                            throw new Error(
+                              'DRM is enabled but no DRM Configuration ID is provided. Please enter a DRM Configuration ID or disable DRM.',
+                            )
+                          }
 
-                      try {
-                        const response = await fetch('/api/mux/direct-upload', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            filename: file.name,
-                            enableDRM: shouldUseDRM,
-                            drmConfigurationId: shouldUseDRM ? drmConfigurationId : undefined,
-                            overrideDRM: overrideDRM,
-                          }),
-                          signal: controller.signal,
-                        })
-
-                        // Clear the timeout since the request completed
-                        clearTimeout(timeoutId)
-
-                        if (!response.ok) {
-                          const errorData = await response.json()
-                          throw new Error(
-                            errorData.error || `Server responded with status ${response.status}`,
+                          clientLogger.info(
+                            'Creating Mux upload with DRM settings',
+                            'videoVideoAdmin',
+                            {
+                              overrideDRM,
+                              useDRM: shouldUseDRM,
+                              drmConfigId: drmConfigurationId,
+                              globalDRMEnabled,
+                              globalDRMConfigId,
+                            },
                           )
-                        }
 
-                        const result = await response.json()
+                          // Set a timeout for the fetch request
+                          const controller = new AbortController()
+                          const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
 
-                        if (!result.data?.url) {
-                          throw new Error('Invalid upload URL response')
-                        }
+                          try {
+                            const response = await fetch('/api/mux/direct-upload', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                filename: file.name,
+                                enableDRM: shouldUseDRM,
+                                drmConfigurationId: shouldUseDRM ? drmConfigurationId : undefined,
+                                overrideDRM: overrideDRM,
+                              }),
+                              signal: controller.signal,
+                            })
 
-                        return result.data.url // Return the URL string directly
-                      } catch (fetchError) {
-                        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-                          throw new Error('Request timed out. Please try again.')
+                            // Clear the timeout since the request completed
+                            clearTimeout(timeoutId)
+
+                            if (!response.ok) {
+                              const errorData = await response.json()
+                              throw new Error(
+                                errorData.error ||
+                                  `Server responded with status ${response.status}`,
+                              )
+                            }
+
+                            const result = await response.json()
+
+                            if (!result.data?.url) {
+                              throw new Error('Invalid upload URL response')
+                            }
+
+                            return result.data.url // Return the URL string directly
+                          } catch (fetchError) {
+                            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                              throw new Error('Request timed out. Please try again.')
+                            }
+                            throw fetchError
+                          }
+                        } catch (error) {
+                          clientLogger.error('Error creating Mux upload', 'videoVideoAdmin', {
+                            error: error instanceof Error ? error.message : 'Unknown error',
+                          })
+                          throw error
                         }
-                        throw fetchError
-                      }
-                    } catch (error) {
-                      clientLogger.error('Error creating Mux upload', 'videoVideoAdmin', {
-                        error: error instanceof Error ? error.message : 'Unknown error',
-                      })
-                      throw error
-                    }
-                  }}
-                  onUploadingStateChange={setIsUploading}
-                />
+                      }}
+                      onUploadingStateChange={setIsUploading}
+                    />
+                  </>
+                )}
               </>
             )}
 
