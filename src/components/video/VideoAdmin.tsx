@@ -71,7 +71,7 @@ const DeleteAllVideos: React.FC = () => {
 
       const result = await response.json()
       setSuccess(true)
-      clientLogger.info('All video assets deleted successfully:', result, 'videoVideoAdmin')
+      clientLogger.info('All video assets deleted successfully:', result)
 
       // Show success toast
       toast({
@@ -380,7 +380,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
 
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Video Management</h1>
+        <h1 className="text-2xl font-bold">Add New Video</h1>
         <div className="flex space-x-2">
           <DeleteAllVideos />
           <DeleteAllMuxVideos />
