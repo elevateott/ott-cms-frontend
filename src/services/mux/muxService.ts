@@ -1155,68 +1155,54 @@ export class MuxService implements IMuxService {
     totalCount: number
   }> {
     try {
-      // Maximum recursion depth to prevent infinite loops
-      const MAX_RECURSION_DEPTH = 20
-
-      // Check if we've reached the maximum recursion depth
-      if (recursionDepth >= MAX_RECURSION_DEPTH) {
-        logger.info(
-          { context: 'muxService' },
-          `Maximum recursion depth (${MAX_RECURSION_DEPTH}) reached. Stopping to prevent infinite loops.`,
-        )
-        return {
-          success: true,
-          count: previousResults?.successCount || 0,
-          failedCount: previousResults?.failureCount || 0,
-          totalCount: previousResults?.totalCount || 0,
-        }
-      }
-
       // Initialize results if this is the first call
-      const currentResults = previousResults || {
+      const updatedResults = previousResults || {
         successCount: 0,
         failureCount: 0,
         totalCount: 0,
       }
 
-      logger.info(
-        { context: 'muxService' },
-        `Starting deletion of all Mux assets... (recursion depth: ${recursionDepth})`,
-      )
-      logger.info(
-        { context: 'muxService' },
-        `Current totals: ${currentResults.successCount} deleted, ${currentResults.failureCount} failed, ${currentResults.totalCount} processed`,
-      )
-
-      // Get all assets from Mux with pagination
-      logger.info({ context: 'muxService' }, 'Fetching Mux assets...')
-      const assets = await this.getAllAssets()
-      logger.info({ context: 'muxService' }, `Fetch complete. Found ${assets.length} Mux assets.`)
-
-      if (assets.length === 0) {
-        logger.info({ context: 'muxService' }, 'No more Mux assets found to delete')
+      // Prevent infinite recursion
+      if (recursionDepth > 10) {
+        logger.warn(
+          { context: 'muxService' },
+          'Maximum recursion depth reached when deleting all Mux assets',
+        )
         return {
           success: true,
-          count: currentResults.successCount,
-          failedCount: currentResults.failureCount,
-          totalCount: currentResults.totalCount,
+          count: updatedResults.successCount,
+          failedCount: updatedResults.failureCount,
+          totalCount: updatedResults.totalCount,
         }
       }
 
-      // Delete this batch of assets
-      const batchResults = await this.deleteBatchOfAssets(assets)
+      // Get all assets
+      logger.info({ context: 'muxService' }, 'Fetching all Mux assets for deletion')
+      const assets = await this.getAllAssets()
+      logger.info({ context: 'muxService' }, `Found ${assets.length} Mux assets to delete`)
 
-      // Update the running totals
-      const updatedResults = {
-        successCount: currentResults.successCount + batchResults.successCount,
-        failureCount: currentResults.failureCount + batchResults.failureCount,
-        totalCount: currentResults.totalCount + batchResults.totalCount,
+      // Update total count on first run
+      if (recursionDepth === 0) {
+        updatedResults.totalCount = assets.length
       }
 
-      logger.info(
-        { context: 'muxService' },
-        `Running totals: ${updatedResults.successCount} deleted, ${updatedResults.failureCount} failed, ${updatedResults.totalCount} processed`,
-      )
+      // If no assets found, return current results
+      if (assets.length === 0) {
+        return {
+          success: true,
+          count: updatedResults.successCount,
+          failedCount: updatedResults.failureCount,
+          totalCount: updatedResults.totalCount,
+        }
+      }
+
+      // Delete assets in batches
+      logger.info({ context: 'muxService' }, `Deleting batch of ${assets.length} Mux assets`)
+      const batchResults = await this.deleteBatchOfAssets(assets)
+
+      // Update results
+      updatedResults.successCount += batchResults.successCount
+      updatedResults.failureCount += batchResults.failureCount
 
       // Check if we're making progress before recursing
       if (assets.length > 0 && batchResults.successCount > 0) {
@@ -1229,7 +1215,7 @@ export class MuxService implements IMuxService {
         return this.deleteAllMuxAssets(updatedResults, recursionDepth + 1)
       } else if (assets.length > 0 && batchResults.successCount === 0) {
         // We found assets but couldn't delete any - avoid infinite recursion
-        logger.info(
+        logger.warn(
           { context: 'muxService' },
           'Warning: Found assets but could not delete any. Stopping to avoid infinite recursion.',
         )
@@ -1250,7 +1236,9 @@ export class MuxService implements IMuxService {
       }
     } catch (error) {
       logger.error({ context: 'muxService' }, 'Error deleting all Mux assets:', error)
-      throw new Error('Failed to delete all Mux assets')
+      throw new Error(
+        `Failed to delete all Mux assets: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 

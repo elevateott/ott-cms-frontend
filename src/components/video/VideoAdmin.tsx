@@ -187,14 +187,23 @@ const DeleteAllMuxVideos: React.FC = () => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to delete Mux videos')
+        let errorMessage = `Failed to delete Mux videos: ${response.status}`
+        try {
+          const errorData = await response.json()
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message
+          }
+        } catch (jsonError) {
+          // If we can't parse the JSON, just use the default error message
+          clientLogger.error('Error parsing error response JSON:', String(jsonError))
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
       setSuccess(true)
       setProgress({ current: result.count, total: result.totalCount })
-      clientLogger.info('All Mux videos deleted successfully:', result, 'videoVideoAdmin')
+      clientLogger.info('All Mux videos deleted successfully:', result)
 
       // Show success toast with detailed information
       toast({
@@ -208,8 +217,8 @@ const DeleteAllMuxVideos: React.FC = () => {
         setIsOpen(false)
       }, 1500)
     } catch (err) {
-      clientLogger.error('Error deleting Mux videos:', err, 'videoVideoAdmin')
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+      clientLogger.error('Error deleting Mux videos:', String(err))
       setError(errorMessage)
 
       // Show error toast
@@ -311,7 +320,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
   )
   const [globalDRMEnabled, setGlobalDRMEnabled] = useState(false)
   const [globalDRMConfigId, setGlobalDRMConfigId] = useState('')
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true)
+  const [_isLoadingSettings, setIsLoadingSettings] = useState(true)
 
   // Fetch global streaming settings
   useEffect(() => {
@@ -362,7 +371,7 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
     }
 
     fetchStreamingSettings()
-  }, [])
+  }, [overrideDRM])
 
   // Set loading to false after a short delay
   useEffect(() => {
@@ -546,7 +555,8 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
                       }
 
                       clientLogger.info(
-                        'Creating Mux upload with DRM settings:',
+                        'Creating Mux upload with DRM settings',
+                        'videoVideoAdmin',
                         {
                           overrideDRM,
                           useDRM: shouldUseDRM,
@@ -554,7 +564,6 @@ export const VideoAdmin: React.FC<VideoAdminProps> = ({ className, ...props }) =
                           globalDRMEnabled,
                           globalDRMConfigId,
                         },
-                        'videoVideoAdmin',
                       )
 
                       // Set a timeout for the fetch request
