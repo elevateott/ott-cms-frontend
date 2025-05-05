@@ -10,11 +10,7 @@ import { Alert, AlertTitle } from '../ui/alert'
 import { useToast } from '@/hooks/use-toast'
 
 // Import icons from lucide-react
-import {
-  Cloud as DropboxIcon,
-  FileBox as GoogleDriveIcon,
-  Database as OneDriveIcon,
-} from 'lucide-react'
+import { Cloud as DropboxIcon, FileBox as GoogleDriveIcon } from 'lucide-react'
 
 // Define interfaces for the cloud providers
 interface DropboxOptions {
@@ -34,24 +30,10 @@ interface DropboxFile {
   isDir: boolean
 }
 
-interface GoogleDriveFile {
-  id: string
-  name: string
-  mimeType: string
-  downloadUrl?: string
-}
-
-interface OneDriveFile {
-  name: string
-  size: number
-  '@microsoft.graph.downloadUrl': string
-}
-
 interface CloudIntegrationSettings {
   dropboxAppKey: string | null
   googleApiKey: string | null
   googleClientId: string | null
-  onedriveClientId: string | null
 }
 
 interface CloudProviderButtonsProps {
@@ -92,9 +74,6 @@ declare global {
         PickerBuilder: new () => any
       }
     }
-    OneDrive?: {
-      open: (options: any) => void
-    }
   }
 }
 
@@ -102,10 +81,10 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   onFileSelected,
   disabled,
 }) => {
-  const { toast } = useToast()
+  // We'll use the toast hook for future notifications if needed
+  const { toast: _ } = useToast()
   const [dropboxLoaded, setDropboxLoaded] = useState(false)
   const [googleDriveLoaded, setGoogleDriveLoaded] = useState(false)
-  const [oneDriveLoaded, setOneDriveLoaded] = useState(false)
   const [settings, setSettings] = useState<CloudIntegrationSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -211,34 +190,39 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
         success: (files) => {
           if (files && files.length > 0) {
             const file = files[0]
-            clientLogger.info('File selected from Dropbox', 'CloudProviderButtons', {
-              fileName: file.name,
-            })
+            if (file && file.name) {
+              clientLogger.info('File selected from Dropbox', 'CloudProviderButtons', {
+                fileName: file.name,
+              })
 
-            // Check if direct link is available
-            if (file.link) {
-              // Download the file from Dropbox
-              downloadFileFromUrl(file.link, file.name)
-                .then((fileObj) => {
-                  onFileSelected(fileObj)
-                })
-                .catch((error) => {
-                  clientLogger.error(
-                    'Error downloading file from Dropbox',
-                    'CloudProviderButtons',
-                    {
-                      error,
-                    },
-                  )
-                  alert(
-                    'Error downloading file from Dropbox. Please try again or use another upload method.',
-                  )
-                })
+              // Check if direct link is available
+              if (file.link) {
+                // Download the file from Dropbox
+                downloadFileFromUrl(file.link, file.name)
+                  .then((fileObj) => {
+                    onFileSelected(fileObj)
+                  })
+                  .catch((error) => {
+                    clientLogger.error(
+                      'Error downloading file from Dropbox',
+                      'CloudProviderButtons',
+                      {
+                        error,
+                      },
+                    )
+                    alert(
+                      'Error downloading file from Dropbox. Please try again or use another upload method.',
+                    )
+                  })
+              } else {
+                clientLogger.error('File does not have a direct link', 'CloudProviderButtons')
+                alert(
+                  'This file cannot be downloaded directly. Please try another file or upload method.',
+                )
+              }
             } else {
-              clientLogger.error('File does not have a direct link', 'CloudProviderButtons')
-              alert(
-                'This file cannot be downloaded directly. Please try another file or upload method.',
-              )
+              clientLogger.error('Invalid file object from Dropbox', 'CloudProviderButtons')
+              alert('Invalid file selected. Please try again or use another upload method.')
             }
           }
         },
@@ -338,118 +322,6 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
       })
     } catch (error) {
       clientLogger.error('Error loading Google Picker API', 'CloudProviderButtons', { error })
-    }
-  }
-
-  // OneDrive integration
-  const handleOneDriveSelect = () => {
-    if (!window.OneDrive) {
-      clientLogger.error('OneDrive SDK not loaded', 'CloudProviderButtons', {
-        error: new Error('OneDrive SDK not available'),
-      })
-      return
-    }
-
-    // Check if client ID is available from settings
-    const clientId = settings?.onedriveClientId
-    if (!clientId) {
-      clientLogger.error('OneDrive client ID not configured', 'CloudProviderButtons', {
-        error: new Error('Missing configuration'),
-      })
-      return
-    }
-
-    // Wrap the entire operation in a try-catch to handle any unexpected errors
-    try {
-      clientLogger.info('Initializing OneDrive picker', 'CloudProviderButtons', { clientId })
-
-      // Define the options for the OneDrive picker
-      const options = {
-        clientId: clientId,
-        action: 'download',
-        multiSelect: false,
-        advanced: { filter: '.mp4,.mov,.avi,.webm,.mkv' },
-        success: (response: any) => {
-          try {
-            clientLogger.info('OneDrive selection successful', 'CloudProviderButtons', { response })
-
-            // Validate the response
-            if (
-              !response ||
-              !response.value ||
-              !Array.isArray(response.value) ||
-              response.value.length === 0
-            ) {
-              clientLogger.error('Invalid response from OneDrive', 'CloudProviderButtons', {
-                response,
-              })
-              alert(
-                'Invalid response from OneDrive. Please try again or use another upload method.',
-              )
-              return
-            }
-
-            const file = response.value[0]
-            clientLogger.info('File selected from OneDrive', 'CloudProviderButtons', {
-              fileName: file.name,
-              fileSize: file.size,
-            })
-
-            // Check if download URL is available
-            if (file['@microsoft.graph.downloadUrl']) {
-              // Download the file from OneDrive
-              downloadFileFromUrl(file['@microsoft.graph.downloadUrl'], file.name)
-                .then((fileObj) => {
-                  onFileSelected(fileObj)
-                })
-                .catch((error) => {
-                  clientLogger.error(
-                    'Error downloading file from OneDrive',
-                    'CloudProviderButtons',
-                    {
-                      error,
-                    },
-                  )
-                  alert(
-                    'Error downloading file from OneDrive. Please try again or use another upload method.',
-                  )
-                })
-            } else {
-              clientLogger.error('File does not have a download URL', 'CloudProviderButtons', {
-                file,
-              })
-              alert(
-                'This file cannot be downloaded directly. Please try another file or upload method.',
-              )
-            }
-          } catch (error) {
-            clientLogger.error('Error processing OneDrive response', 'CloudProviderButtons', {
-              error,
-              response,
-            })
-            alert(
-              'Error processing the selected file. Please try again or use another upload method.',
-            )
-          }
-        },
-        cancel: () => {
-          clientLogger.info('OneDrive selection cancelled', 'CloudProviderButtons')
-        },
-        error: (error: any) => {
-          clientLogger.error('Error selecting file from OneDrive', 'CloudProviderButtons', {
-            error,
-          })
-          alert('Error selecting file from OneDrive. Please try again later.')
-        },
-      }
-
-      // Call the OneDrive picker with the options
-      clientLogger.info('Opening OneDrive picker', 'CloudProviderButtons')
-      window.OneDrive.open(options)
-      clientLogger.info('OneDrive picker opened successfully', 'CloudProviderButtons')
-    } catch (error) {
-      clientLogger.error('Error initializing OneDrive picker', 'CloudProviderButtons', { error })
-      alert('There was an error initializing the OneDrive picker. Please try again later.')
     }
   }
 
@@ -664,44 +536,6 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
         }}
       />
 
-      {/* Always load OneDrive SDK */}
-      <Script
-        id="onedrive-sdk"
-        src="https://js.live.net/v7.2/OneDrive.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          clientLogger.info('OneDrive SDK loaded successfully', 'CloudProviderButtons')
-          // Verify that the OneDrive object is actually available
-          if (typeof window !== 'undefined' && window.OneDrive) {
-            clientLogger.info('OneDrive object is available', 'CloudProviderButtons')
-            setOneDriveLoaded(true)
-          } else {
-            clientLogger.error(
-              'OneDrive object not available after script load',
-              'CloudProviderButtons',
-            )
-            // Try again after a short delay
-            setTimeout(() => {
-              if (typeof window !== 'undefined' && window.OneDrive) {
-                clientLogger.info(
-                  'OneDrive object is now available after delay',
-                  'CloudProviderButtons',
-                )
-                setOneDriveLoaded(true)
-              } else {
-                clientLogger.error(
-                  'OneDrive object still not available after delay',
-                  'CloudProviderButtons',
-                )
-              }
-            }, 1000)
-          }
-        }}
-        onError={(e) => {
-          clientLogger.error('Failed to load OneDrive SDK', 'CloudProviderButtons', { error: e })
-        }}
-      />
-
       {/* Cloud Provider Buttons */}
       <div className="flex flex-wrap gap-4">
         <Button
@@ -716,26 +550,17 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
         <Button
           onClick={handleGoogleDriveSelect}
           disabled={
-            disabled || !settings?.googleApiKey || !settings?.googleClientId || !googleLoaded
+            disabled || !settings?.googleApiKey || !settings?.googleClientId || !googleDriveLoaded
           }
           variant="outline"
         >
           <GoogleDriveIcon className="mr-2 h-4 w-4" />
           Choose from Google Drive
         </Button>
-
-        <Button
-          onClick={handleOneDriveSelect}
-          disabled={disabled || !settings?.onedriveClientId || !oneDriveLoaded}
-          variant="outline"
-        >
-          <OneDriveIcon className="mr-2 h-4 w-4" />
-          Choose from OneDrive
-        </Button>
       </div>
 
       {/* Configuration message - only show if no integrations are configured */}
-      {!settings?.dropboxAppKey && !settings?.googleApiKey && !settings?.onedriveClientId && (
+      {!settings?.dropboxAppKey && !settings?.googleApiKey && (
         <Alert variant="default" className="mt-4 border-blue-200 bg-blue-50">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertTitle className="text-blue-700 font-medium">

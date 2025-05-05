@@ -50,15 +50,6 @@ const CloudIntegrations: GlobalConfig = {
           'OAuth client ID for Google Drive integration. Create in the Google Cloud Console.',
       },
     },
-    {
-      name: 'onedriveClientId',
-      label: 'OneDrive Client ID',
-      type: 'text',
-      admin: {
-        description:
-          'Application (client) ID for OneDrive integration. Create in the Microsoft Azure Portal.',
-      },
-    },
   ],
 }
 
