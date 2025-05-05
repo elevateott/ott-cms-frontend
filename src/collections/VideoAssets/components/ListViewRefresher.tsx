@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useEventBusMulti } from '@/hooks/useEventBus'
 import { eventBus } from '@/services/events/eventEmitter'
 import { EVENTS } from '@/constants/events'
+import { ChevronDown, ChevronUp, RefreshCw, X } from 'lucide-react'
 
 // Create a context-specific logger
 const logger = clientLogger.createContextLogger('ListViewRefresher')
@@ -21,13 +22,59 @@ const logger = clientLogger.createContextLogger('ListViewRefresher')
 
 const POLL_INTERVAL = 10000 // 10 seconds
 
+// Define interface for event logs
+interface EventLog {
+  id: string
+  type: string
+  data: unknown
+  timestamp: string
+  source: string
+}
+
 const ListViewRefresher: React.FC = () => {
   logger.debug('ListViewRefresher component initializing')
   const router = useRouter()
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [refreshCount, setRefreshCount] = useState(0)
+  const [events, setEvents] = useState<EventLog[]>([])
+  const [isExpanded, setIsExpanded] = useState(false)
   // Track polling interval
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Generate a unique ID for events
+  const generateId = useCallback(() => {
+    return typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+  }, [])
+
+  // Add event to the log
+  const addEvent = useCallback(
+    (type: string, data: unknown, source: string = 'client') => {
+      const eventId = generateId()
+      logger.info(`📝 Received event: ${type}`, {
+        eventId,
+        eventType: type,
+        eventData: data,
+        source,
+      })
+
+      setEvents((prev) => {
+        const newEvents = [
+          {
+            id: eventId,
+            type,
+            data,
+            timestamp: new Date().toISOString(),
+            source,
+          },
+          ...prev.slice(0, 49), // Keep last 50 events
+        ]
+        return newEvents
+      })
+    },
+    [generateId],
+  )
 
   // Add lifecycle logging
   useEffect(() => {
@@ -165,22 +212,26 @@ const ListViewRefresher: React.FC = () => {
 
   // Use useEventBusMulti to handle all events
   useEventBusMulti({
-    [EVENTS.VIDEO_CREATED]: () => {
+    [EVENTS.VIDEO_CREATED]: (data) => {
       logger.info('Received VIDEO_CREATED event')
+      addEvent(EVENTS.VIDEO_CREATED, data, 'client')
       startPolling()
       debouncedRefresh('VIDEO_CREATED')
     },
-    [EVENTS.VIDEO_UPLOAD_COMPLETED]: () => {
+    [EVENTS.VIDEO_UPLOAD_COMPLETED]: (data) => {
       logger.info('Received VIDEO_UPLOAD_COMPLETED event')
+      addEvent(EVENTS.VIDEO_UPLOAD_COMPLETED, data, 'client')
       startPolling()
     },
-    [EVENTS.VIDEO_STATUS_READY]: () => {
+    [EVENTS.VIDEO_STATUS_READY]: (data) => {
       logger.info('Received VIDEO_STATUS_READY event')
+      addEvent(EVENTS.VIDEO_STATUS_READY, data, 'client')
       stopPolling('video-ready')
       debouncedRefresh(EVENTS.VIDEO_STATUS_READY)
     },
     [EVENTS.VIDEO_UPDATED]: (data) => {
       logger.info('Received VIDEO_UPDATED event', { data })
+      addEvent(EVENTS.VIDEO_UPDATED, data, 'client')
       if (data?.isStatusChange) {
         logger.debug('Status change detected, refreshing list')
         debouncedRefresh('VIDEO_UPDATED')
@@ -188,20 +239,24 @@ const ListViewRefresher: React.FC = () => {
         logger.debug('Non-status update, no refresh needed')
       }
     },
-    [EVENTS.VIDEO_STATUS_UPDATED]: () => {
+    [EVENTS.VIDEO_STATUS_UPDATED]: (data) => {
       logger.info('Received VIDEO_STATUS_UPDATED event')
+      addEvent(EVENTS.VIDEO_STATUS_UPDATED, data, 'client')
       debouncedRefresh(EVENTS.VIDEO_STATUS_UPDATED)
     },
-    [EVENTS.VIDEO_UPLOAD_STARTED]: () => {
+    [EVENTS.VIDEO_UPLOAD_STARTED]: (data) => {
       logger.info('Received VIDEO_UPLOAD_STARTED event')
+      addEvent(EVENTS.VIDEO_UPLOAD_STARTED, data, 'client')
       debouncedRefresh(EVENTS.VIDEO_UPLOAD_STARTED)
     },
-    [EVENTS.VIDEO_UPLOAD_ERROR]: () => {
+    [EVENTS.VIDEO_UPLOAD_ERROR]: (data) => {
       logger.info('Received VIDEO_UPLOAD_ERROR event')
+      addEvent(EVENTS.VIDEO_UPLOAD_ERROR, data, 'client')
       debouncedRefresh(EVENTS.VIDEO_UPLOAD_ERROR)
     },
-    RELOAD_PAGE: () => {
+    RELOAD_PAGE: (data) => {
       logger.info('Received RELOAD_PAGE event')
+      addEvent('RELOAD_PAGE', data, 'client')
       debouncedRefresh('RELOAD_PAGE')
     },
   })
@@ -241,6 +296,7 @@ const ListViewRefresher: React.FC = () => {
           connectionId: data.connectionId,
           timestamp: data.timestamp,
         })
+        addEvent('connected', data, 'sse')
       } catch (err) {
         logger.error('❌ ListViewRefresher: Error parsing connected event data', { error: err })
       }
@@ -263,6 +319,9 @@ const ListViewRefresher: React.FC = () => {
             timestamp: new Date().toISOString(),
             source: data.source || 'unknown',
           })
+
+          // Add event to log
+          addEvent(eventName, data, 'sse')
 
           // Handle different event types
           switch (eventName) {
@@ -321,7 +380,7 @@ const ListViewRefresher: React.FC = () => {
       eventSource.close()
       logger.info('🔓 ListViewRefresher: SSE connection closed')
     }
-  }, [debouncedRefresh, startPolling, stopPolling])
+  }, [debouncedRefresh, startPolling, stopPolling, addEvent])
 
   // Handle manual refresh
   const handleManualRefresh = useCallback(() => {
@@ -336,22 +395,78 @@ const ListViewRefresher: React.FC = () => {
     isPolling: pollingRef.current !== null,
   })
 
+  // Toggle expanded view
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded((prev) => !prev)
+  }, [])
+
+  // Clear events
+  const handleClearEvents = useCallback(() => {
+    setEvents([])
+  }, [])
+
   return (
-    <div className="fixed bottom-4 right-4 bg-green-100 p-2 rounded-md shadow-md z-50 text-xs">
-      <div className="font-medium text-green-800">List View Refresher Active</div>
-      {lastRefreshed && (
-        <div className="text-green-600">Last refreshed: {lastRefreshed.toLocaleTimeString()}</div>
-      )}
-      <div className="text-green-600">Events: {refreshCount}</div>
-      <div className="text-green-600">
-        Status: {pollingRef.current ? 'Polling active' : 'Waiting for events'}
+    <div
+      className={`fixed bottom-4 right-4 bg-green-100 rounded-md shadow-md z-50 text-xs ${isExpanded ? 'w-96 max-h-96' : ''}`}
+    >
+      <div className="p-2 bg-green-600 text-white flex justify-between items-center rounded-t-md">
+        <div className="font-medium">List View Refresher</div>
+        <div className="flex space-x-2">
+          {isExpanded && (
+            <button
+              onClick={handleClearEvents}
+              className="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded"
+              title="Clear event log"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+          <button
+            onClick={handleToggleExpand}
+            className="text-xs"
+            title={isExpanded ? 'Minimize' : 'Expand'}
+          >
+            {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+          </button>
+        </div>
       </div>
-      <button
-        onClick={handleManualRefresh}
-        className="mt-1 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-      >
-        Refresh Now
-      </button>
+
+      <div className="p-2">
+        {lastRefreshed && (
+          <div className="text-green-600">Last refreshed: {lastRefreshed.toLocaleTimeString()}</div>
+        )}
+        <div className="text-green-600">Events: {refreshCount}</div>
+        <div className="text-green-600">
+          Status: {pollingRef.current ? 'Polling active' : 'Waiting for events'}
+        </div>
+        <button
+          onClick={handleManualRefresh}
+          className="mt-1 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-1"
+        >
+          <RefreshCw className="h-3 w-3" /> Refresh Now
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="border-t border-green-200 mt-2 max-h-64 overflow-y-auto p-2">
+          <div className="font-medium text-green-800 mb-1">Recent Events:</div>
+          {events.length === 0 ? (
+            <div className="text-center text-gray-500 mt-2">No events captured yet</div>
+          ) : (
+            events.map((event) => (
+              <div key={event.id} className="mb-2 p-1 border-b border-green-100">
+                <div className="font-bold text-xs">{event.type}</div>
+                <div className="text-xs text-gray-500">
+                  {new Date(event.timestamp).toLocaleTimeString()} ({event.source})
+                </div>
+                <pre className="text-xs mt-1 bg-green-50 p-1 rounded overflow-x-auto">
+                  {JSON.stringify(event.data, null, 2)}
+                </pre>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   )
 }
