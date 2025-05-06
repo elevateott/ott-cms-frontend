@@ -52,9 +52,8 @@ export const VideoAssets: CollectionConfig = {
         '@/collections/VideoAssets/components/VideoManagement',
         '@/components/EventMonitor',
         '@/collections/VideoAssets/components/ListViewRefresher',
-        '@/collections/VideoAssets/components/ExportButtonBar',
       ],
-      // Custom row component not supported in this version of Payload
+      beforeListTable: ['@/collections/VideoAssets/components/ExportButtonBar'],
     },
   },
   fields: [

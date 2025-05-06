@@ -21,16 +21,31 @@ const ExportButton: React.FC<ExportButtonProps> = ({
   const handleExport = async () => {
     try {
       setIsExporting(true)
-      
-      // Open the export endpoint in a new tab
-      window.open(`/api/export/${collection}`, '_blank')
-    } catch (error) {
-      clientLogger.error('Error exporting data:', error, 'ExportButton')
-    } finally {
-      // Add a small delay to show the loading state
+
+      // Create a hidden iframe to handle the download
+      // This approach works better than window.open for file downloads
+      const iframe = document.createElement('iframe')
+      iframe.style.display = 'none'
+      document.body.appendChild(iframe)
+
+      // Set the iframe source to the export endpoint
+      iframe.src = `/api/export/${collection}`
+
+      // Log the export attempt
+      clientLogger.info(`Exporting ${collection} to CSV`, 'ExportButton', { collection })
+
+      // Remove the iframe after a delay
       setTimeout(() => {
+        if (iframe && iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe)
+        }
         setIsExporting(false)
-      }, 1000)
+      }, 2000)
+    } catch (error) {
+      clientLogger.error('Error exporting data:', 'ExportButton', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      setIsExporting(false)
     }
   }
 
@@ -40,7 +55,7 @@ const ExportButton: React.FC<ExportButtonProps> = ({
       size="sm"
       onClick={handleExport}
       disabled={isExporting}
-      className={className}
+      className={`px-3 py-1 ${className}`}
     >
       <Download className="h-4 w-4 mr-2" />
       {isExporting ? 'Exporting...' : label}

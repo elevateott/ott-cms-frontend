@@ -44,8 +44,7 @@ export const Content: CollectionConfig = {
     ],
     group: 'Content Library',
     components: {
-      // Add our export button before the list view
-      beforeList: ['@/collections/Content/components/ExportButtonBar'],
+      beforeListTable: ['@/collections/Content/components/ExportButtonBar'],
     },
   },
   defaultPopulate: {
