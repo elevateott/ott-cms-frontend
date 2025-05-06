@@ -9,6 +9,16 @@ import { updateContentStatus } from '@/hooks/content/updateContentStatus'
 
 export const Content: CollectionConfig = {
   slug: 'content',
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 100,
+      },
+      schedulePublish: true,
+      validate: false,
+    },
+    maxPerDoc: 100,
+  },
   labels: {
     singular: 'Content',
     plural: 'Content',

@@ -10,6 +10,16 @@ import { updateSubtitleTracks } from '@/hooks/videoAssets/updateSubtitleTracks'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 100,
+      },
+      schedulePublish: true,
+      validate: false,
+    },
+    maxPerDoc: 100,
+  },
   labels: {
     singular: 'Video Asset',
     plural: 'Video Assets',
