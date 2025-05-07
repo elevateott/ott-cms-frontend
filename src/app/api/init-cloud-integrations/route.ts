@@ -43,7 +43,6 @@ export async function POST() {
         slug: 'cloud-integrations',
         data: {
           dropboxAppKey: '',
-          googleApiKey: '',
           googleClientId: '',
         },
       })

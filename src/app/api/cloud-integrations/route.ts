@@ -7,6 +7,7 @@ import { getCloudIntegrations } from '@/utilities/getCloudIntegrations'
  *
  * Returns cloud integration settings from global configuration
  * Uses the updated getCloudIntegrations utility that properly initializes Payload
+ * Fails gracefully if settings are not configured
  */
 export async function GET() {
   try {
@@ -15,12 +16,62 @@ export async function GET() {
       'Received request for cloud integration settings',
     )
 
-    // Use the utility function to get cloud integration settings
-    const cloudIntegrations = await getCloudIntegrations()
+    try {
+      // Try to get settings from Payload CMS
+      const cloudIntegrations = await getCloudIntegrations()
 
-    logger.info({ context: 'cloudIntegrationsAPI' }, 'Returning cloud integration settings')
-    return NextResponse.json(cloudIntegrations)
+      // Check if we have any valid settings
+      const hasDropboxKey =
+        !!cloudIntegrations?.dropboxAppKey && cloudIntegrations.dropboxAppKey !== ''
+      const hasGoogleClientId =
+        !!cloudIntegrations?.googleClientId && cloudIntegrations.googleClientId !== ''
+
+      if (!hasDropboxKey && !hasGoogleClientId) {
+        logger.warn(
+          { context: 'cloudIntegrationsAPI' },
+          'Cloud integration settings exist but no API keys are configured',
+        )
+
+        return NextResponse.json(
+          {
+            dropboxAppKey: null,
+            googleClientId: null,
+            error: 'Cloud integration settings are not configured',
+            details:
+              'Please go to the Admin Dashboard > Settings > Cloud Integrations and add your API keys',
+          },
+          { status: 200 },
+        )
+      }
+
+      logger.info(
+        { context: 'cloudIntegrationsAPI' },
+        'Returning cloud integration settings from Payload CMS',
+      )
+      return NextResponse.json(cloudIntegrations)
+    } catch (payloadError) {
+      // If Payload CMS fails, return a helpful error message
+      logger.warn(
+        {
+          context: 'cloudIntegrationsAPI',
+          error: payloadError instanceof Error ? payloadError.message : 'Unknown error',
+        },
+        'Failed to get settings from Payload CMS',
+      )
+
+      return NextResponse.json(
+        {
+          dropboxAppKey: null,
+          googleClientId: null,
+          error: 'Cloud integration settings are not configured',
+          details:
+            'Please ensure the cloud-integrations global exists in Payload CMS and add your API keys',
+        },
+        { status: 200 },
+      )
+    }
   } catch (error) {
+    // This is the outer catch block for any other errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
     logger.error(
@@ -35,7 +86,6 @@ export async function GET() {
     return NextResponse.json(
       {
         dropboxAppKey: null,
-        googleApiKey: null,
         googleClientId: null,
         error: `Failed to fetch cloud integration settings: ${errorMessage}`,
         details: 'Please ensure the cloud-integrations global exists in Payload CMS',

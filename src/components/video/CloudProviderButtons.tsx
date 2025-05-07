@@ -1,335 +1,300 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { clientLogger } from '@/utils/clientLogger'
-import DropboxIcon from '@/components/icons/DropboxIcon'
-import { useToast } from '@/hooks/use-toast'
+import { DropboxButton } from '@/components/buttons/DropboxButton'
+import { GoogleDriveButton } from '@/components/buttons/GoogleDriveButton'
 import { Loader2 } from 'lucide-react'
-
-// Define interfaces for the cloud providers
-interface DropboxOptions {
-  success: (files: DropboxFile[]) => void
-  cancel?: () => void
-  linkType: string
-  multiselect: boolean
-  extensions: string[]
-  folderselect: boolean
-  sizeLimit?: number
-}
-
-interface DropboxFile {
-  name: string
-  link: string
-  bytes: number
-  icon: string
-  thumbnailLink?: string
-  isDir: boolean
-}
 
 interface CloudProviderButtonsProps {
   onFileSelected: (file: File) => void
   disabled?: boolean
 }
 
-// Declare global types for the cloud provider SDKs
-declare global {
-  interface Window {
-    Dropbox?: {
-      choose: (options: DropboxOptions) => void
-    }
-  }
-}
-
 // Interface for the response from the API
 interface CloudIntegrationsResponse {
   dropboxAppKey?: string
-  googleApiKey?: string
   googleClientId?: string
   error?: string
+  details?: string
 }
-
-// Maximum file size for uploads (5 GB)
-const MAX_FILE_SIZE_BYTES = 5368709120 // 5 GB
 
 const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   onFileSelected,
   disabled,
 }) => {
   const [dropboxAppKey, setDropboxAppKey] = useState<string | null>(null)
+  const [googleClientId, setGoogleClientId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(true)
+  const [responseData, setResponseData] = useState<CloudIntegrationsResponse | null>(null)
 
   // Fetch cloud integration settings
   useEffect(() => {
     const fetchSettings = async () => {
+      setIsLoading(true)
+      console.log('Fetching cloud integration settings...')
+      console.log('Initial state - isLoading:', true)
+      console.log('Initial state - dropboxAppKey:', dropboxAppKey)
+      console.log('Initial state - googleClientId:', googleClientId)
+      console.log('Initial state - error:', error)
       try {
         clientLogger.info('Fetching cloud integration settings', 'CloudProviderButtons')
 
-        // Fetch from the general cloud-integrations endpoint
+        // Use the cloud-integrations API endpoint
+        console.log('Fetching from cloud-integrations API endpoint...')
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+
+        console.log('About to call fetch...')
         const response = await fetch('/api/cloud-integrations', {
           // Add cache control headers to ensure we get fresh data
           headers: {
             'Cache-Control': 'no-cache',
             Pragma: 'no-cache',
           },
+          // signal: controller.signal, // Keep this commented out as requested
         })
+        console.log('Fetch completed with status:', response.status)
+
+        clearTimeout(timeoutId)
 
         if (!response.ok) {
           throw new Error(`Failed to fetch cloud integration settings: ${response.statusText}`)
         }
 
-        const data = (await response.json()) as CloudIntegrationsResponse
+        console.log('About to parse response JSON...')
+        const responseText = await response.text()
+        console.log('Response text:', responseText)
+
+        let data: CloudIntegrationsResponse
+        try {
+          data = JSON.parse(responseText) as CloudIntegrationsResponse
+          console.log('Successfully parsed JSON response')
+        } catch (parseError) {
+          console.error('Error parsing JSON response:', parseError)
+          throw new Error(`Failed to parse JSON response: ${String(parseError)}`)
+        }
+
+        // Store the full response data
+        setResponseData(data)
+
+        // Log the raw data for debugging
+        console.log('Cloud integration settings raw data:', data)
 
         clientLogger.info(
           'Cloud integration settings fetched successfully',
           'CloudProviderButtons',
           {
             hasDropboxAppKey: !!data.dropboxAppKey,
-            hasGoogleApiKey: !!data.googleApiKey,
+            dropboxAppKey: data.dropboxAppKey,
             hasGoogleClientId: !!data.googleClientId,
+            googleClientId: data.googleClientId,
+            rawData: JSON.stringify(data),
           },
         )
 
+        // Check if there's an error in the response
+        if (data.error) {
+          setError(data.error)
+          setDropboxAppKey(null)
+          setGoogleClientId(null)
+          clientLogger.warn(
+            'Error in cloud integration settings response',
+            'CloudProviderButtons',
+            {
+              error: data.error,
+              details: data.details || 'No details provided',
+            },
+          )
+          return
+        }
+
+        // Set Dropbox credentials if available
         if (data.dropboxAppKey) {
           setDropboxAppKey(data.dropboxAppKey)
           clientLogger.info('Dropbox key is configured and available', 'CloudProviderButtons')
         } else {
-          // If no key is available, set error state
           setDropboxAppKey(null)
-          setError(
-            'Dropbox integration is not configured. Please add a Dropbox App Key in the Cloud Integration settings.',
-          )
           clientLogger.warn(
             'No Dropbox key found in cloud-integrations global',
             'CloudProviderButtons',
           )
         }
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
-          error: errorMsg,
-        })
 
-        // Set error state without using any fallback
+        // Set Google Drive credentials if available
+        if (data.googleClientId) {
+          setGoogleClientId(data.googleClientId)
+          clientLogger.info(
+            'Google Drive credentials are configured and available',
+            'CloudProviderButtons',
+          )
+        } else {
+          setGoogleClientId(null)
+          clientLogger.warn(
+            'Google Drive credentials not found in cloud-integrations global',
+            'CloudProviderButtons',
+          )
+        }
+
+        // Set error state if no integrations are configured
+        if (!data.dropboxAppKey && !data.googleClientId) {
+          setError(
+            'Cloud integrations are not configured. Please add API keys in the Cloud Integration settings.',
+          )
+        }
+      } catch (error) {
+        // Check if this is an abort error (timeout)
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          console.error(
+            'Fetch timeout: Cloud integration settings request timed out after 5 seconds',
+          )
+          clientLogger.error('Fetch timeout', 'CloudProviderButtons', {
+            error: 'Request timed out after 5 seconds',
+          })
+
+          // No fallback needed, just log the error
+          console.log('Request timed out, no fallback available')
+
+          setError('Request timed out. Please try again or check your network connection.')
+        } else {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+          console.error('Error fetching cloud integration settings:', errorMsg)
+          clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
+            error: errorMsg,
+          })
+
+          // No fallback needed, just log the error
+          console.log('Cloud integration settings API failed, no fallback available')
+
+          // If all else fails, set error state
+          setError(`Error connecting to cloud integration settings: ${errorMsg}`)
+        }
+
+        // Clear the keys in case of error
         setDropboxAppKey(null)
-        setError(`Error connecting to cloud integration settings: ${errorMsg}`)
+        setGoogleClientId(null)
+      } finally {
+        console.log('Fetch completed, setting isLoading to false')
+        console.log('Final state before setting isLoading to false:')
+        console.log('- dropboxAppKey:', dropboxAppKey)
+        console.log('- googleClientId:', googleClientId)
+        console.log('- error:', error)
+        setIsLoading(false)
+
+        // Log the state after a short delay to see if it's updated correctly
+        setTimeout(() => {
+          console.log('State after timeout:')
+          console.log('- isLoading:', isLoading)
+          console.log('- dropboxAppKey:', dropboxAppKey)
+          console.log('- googleClientId:', googleClientId)
+          console.log('- error:', error)
+        }, 100)
       }
     }
 
     fetchSettings()
-  }, [])
 
-  // Determine if the button should be disabled
-  const dropboxDisabled = disabled || !dropboxAppKey || uploading
+    // We're intentionally only running this effect once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Show error message if there was an error fetching settings
   const errorMessage = error ? (
-    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-      <p className="font-medium">Dropbox Integration Not Configured</p>
-      <p>{error}</p>
-      <p className="mt-1">
-        Please go to the Admin Dashboard &gt; Settings &gt; Cloud Integrations and add your Dropbox
-        App Key.
+    <div
+      className={`mb-4 p-4 rounded-md text-sm ${
+        error.includes('test values') ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'
+      }`}
+    >
+      <p
+        className={`font-medium mb-1 ${
+          error.includes('test values') ? 'text-yellow-800' : 'text-red-800'
+        }`}
+      >
+        {error.includes('test values') ? 'Using Test Values' : 'Cloud Integrations Not Configured'}
       </p>
-      <p className="mt-1">
-        <strong>Note:</strong> You need to create the cloud-integrations global in Payload CMS.
-      </p>
+      <p className="mb-2">{error}</p>
+      {responseData?.details && <p className="mb-2">{responseData.details}</p>}
+      {!responseData?.details && !error.includes('test values') && (
+        <p className="mt-1">
+          Please go to the Admin Dashboard &gt; Settings &gt; Cloud Integrations and add your API
+          keys.
+        </p>
+      )}
+      <div className="flex mt-3">
+        <a
+          href="/admin/globals/cloud-integrations"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 hover:text-blue-800 underline"
+        >
+          Go to Cloud Integrations Settings →
+        </a>
+      </div>
+      <div className="mt-3 text-xs text-gray-500">
+        <p>
+          If the Cloud Integrations settings page doesn't exist yet, you may need to create it
+          first.
+        </p>
+        <p>Go to Admin Dashboard &gt; Settings and look for the Cloud Integrations option.</p>
+      </div>
     </div>
   ) : null
+
+  // Log the state right before rendering
+  console.log('Rendering CloudProviderButtons with state:')
+  console.log('- isLoading:', isLoading)
+  console.log('- dropboxAppKey:', dropboxAppKey)
+  console.log('- googleClientId:', googleClientId)
+  console.log('- error:', error)
+  console.log('- responseData:', responseData)
+  console.log('- errorMessage:', errorMessage ? 'Error message exists' : 'No error message')
 
   return (
     <div className="space-y-4">
       {/* Show error message if there was an error */}
       {errorMessage}
 
+      {/* Debug info */}
+      <div className="text-xs text-gray-500 mb-2">
+        <div>isLoading: {isLoading ? 'true' : 'false'}</div>
+        <div>dropboxAppKey: {dropboxAppKey ? 'set' : 'null'}</div>
+        <div>googleClientId: {googleClientId ? 'set' : 'null'}</div>
+        <div>error: {error ? 'set' : 'null'}</div>
+        <div>responseData: {responseData ? 'set' : 'null'}</div>
+        {responseData?.details && <div>details: {responseData.details}</div>}
+      </div>
+
       {/* Cloud Provider Buttons */}
       <div className="flex flex-wrap gap-4">
-        {/* Dropbox button */}
-        <Button
-          onClick={async () => {
-            if (!dropboxAppKey || uploading) return
+        {isLoading ? (
+          <div className="flex items-center space-x-2 h-10 px-4 py-2 border border-input rounded-md">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Loading cloud providers...</span>
+          </div>
+        ) : (
+          <>
+            {/* Dropbox button */}
+            {dropboxAppKey && (
+              <DropboxButton
+                appKey={dropboxAppKey}
+                onFileSelected={onFileSelected}
+                disabled={disabled}
+              />
+            )}
 
-            setUploading(true)
+            {/* Google Drive button */}
+            {googleClientId && (
+              <GoogleDriveButton
+                clientId={googleClientId}
+                onFileSelected={onFileSelected}
+                disabled={disabled}
+              />
+            )}
 
-            try {
-              clientLogger.info('Dropbox button clicked', 'CloudProviderButtons')
-
-              // Create a script element for Dropbox
-              const script = document.createElement('script')
-              script.id = 'dropboxjs'
-              script.type = 'text/javascript'
-              script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
-              script.setAttribute('data-app-key', dropboxAppKey)
-
-              // Wait for the script to load
-              await new Promise<void>((resolve, reject) => {
-                script.onload = () => resolve()
-                script.onerror = () => reject(new Error('Failed to load Dropbox SDK'))
-                document.body.appendChild(script)
-              })
-
-              // Make sure Dropbox is available
-              if (!window.Dropbox) {
-                throw new Error('Dropbox SDK not available after loading')
-              }
-
-              // Choose files from Dropbox
-              const files = await new Promise<DropboxFile[]>((resolve, reject) => {
-                window.Dropbox?.choose({
-                  success: (files) => {
-                    if (files && files.length > 0) {
-                      clientLogger.info('Files selected from Dropbox', 'CloudProviderButtons', {
-                        fileCount: files.length,
-                      })
-                      resolve(files)
-                    } else {
-                      reject(new Error('No files selected from Dropbox'))
-                    }
-                  },
-                  cancel: () => {
-                    reject(new Error('Dropbox selection cancelled'))
-                  },
-                  linkType: 'preview',
-                  multiselect: true,
-                  extensions: ['.mp4', '.mov', '.avi', '.webm', '.mkv'],
-                  folderselect: true,
-                  sizeLimit: MAX_FILE_SIZE_BYTES,
-                })
-              })
-
-              // Process each file
-              for (const file of files) {
-                // Show toast for upload start
-                toast({
-                  title: 'Uploading to Mux...',
-                  description: file.name,
-                })
-
-                try {
-                  clientLogger.info('Creating Mux asset from Dropbox URL', 'CloudProviderButtons', {
-                    fileName: file.name,
-                    fileLink: file.link.substring(0, 50) + '...', // Truncate for logging
-                  })
-
-                  // Call our API endpoint to create a Mux asset from the URL
-                  const response = await fetch('/api/mux/create-from-url', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      url: file.link,
-                      filename: file.name,
-                    }),
-                  })
-
-                  if (!response.ok) {
-                    let errorMessage = response.statusText
-                    try {
-                      const errorData = await response.json()
-                      errorMessage = errorData.error || response.statusText
-                    } catch (_parseError) {
-                      // If we can't parse the response as JSON, use the status text
-                      clientLogger.error('Error parsing error response', 'CloudProviderButtons', {
-                        status: response.status,
-                        statusText: response.statusText,
-                      })
-                    }
-                    throw new Error(`Failed to create Mux asset: ${errorMessage}`)
-                  }
-
-                  let result
-                  try {
-                    result = await response.json()
-                  } catch (_parseError) {
-                    clientLogger.error('Error parsing success response', 'CloudProviderButtons', {
-                      error: 'Failed to parse JSON response',
-                    })
-                    throw new Error('Failed to parse response from server')
-                  }
-
-                  clientLogger.info('Mux asset created successfully', 'CloudProviderButtons', {
-                    assetId: result.data.asset.id,
-                    playbackId: result.data.asset.playbackId,
-                    status: result.data.asset.status,
-                  })
-
-                  // Create a File object to maintain compatibility with the existing code
-                  const fileObj = new File(
-                    [new Blob([''], { type: 'application/octet-stream' })],
-                    file.name,
-                    { type: 'video/mp4' },
-                  )
-
-                  // Add custom properties to the file object
-                  Object.defineProperties(fileObj, {
-                    muxAssetId: { value: result.data.asset.id, writable: true },
-                    muxPlaybackId: { value: result.data.asset.playbackId, writable: true },
-                    muxStatus: { value: result.data.asset.status, writable: true },
-                    fromUrl: { value: true, writable: true },
-                  })
-
-                  // Pass the file to the parent component
-                  onFileSelected(fileObj)
-
-                  // Show success toast
-                  toast({
-                    title: 'Upload successful',
-                    description: file.name,
-                  })
-                } catch (err) {
-                  const errMsg = err instanceof Error ? err.message : 'Unknown error'
-
-                  // Show error toast
-                  toast({
-                    title: 'Upload failed',
-                    description: `${file.name}: ${errMsg}`,
-                    variant: 'destructive',
-                  })
-
-                  clientLogger.error('Error processing file from Dropbox', 'CloudProviderButtons', {
-                    error: errMsg,
-                    fileName: file.name,
-                  })
-                }
-              }
-            } catch (error) {
-              const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-
-              // Don't show error for cancelled selection
-              if (errorMsg !== 'Dropbox selection cancelled') {
-                clientLogger.error('Error in Dropbox upload process', 'CloudProviderButtons', {
-                  error: errorMsg,
-                  stack: error instanceof Error ? error.stack : 'No stack trace',
-                })
-
-                toast({
-                  title: 'Error',
-                  description: errorMsg,
-                  variant: 'destructive',
-                })
-              } else {
-                clientLogger.info('Dropbox selection cancelled', 'CloudProviderButtons')
-              }
-            } finally {
-              setUploading(false)
-            }
-          }}
-          id="dropbox-button"
-          disabled={dropboxDisabled}
-          variant="outline"
-          title={
-            !dropboxAppKey
-              ? 'Dropbox integration is not configured'
-              : 'Choose video files from Dropbox'
-          }
-        >
-          {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          <DropboxIcon className={uploading ? 'hidden' : 'mr-2 h-4 w-4'} />
-          Choose from Dropbox
-        </Button>
+            {/* Add more cloud provider buttons here in the future */}
+          </>
+        )}
       </div>
     </div>
   )

@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface CloudIntegrationSettings {
   dropboxAppKey: string | null
-  googleApiKey: string | null
   googleClientId: string | null
   onedriveClientId: string | null
   error?: string
@@ -15,6 +15,7 @@ interface CloudIntegrationSettings {
 export default function TestCloudIntegrationsPage() {
   const [settings, setSettings] = useState<CloudIntegrationSettings | null>(null)
   const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [logs, setLogs] = useState<string[]>([])
 
@@ -22,38 +23,72 @@ export default function TestCloudIntegrationsPage() {
     setLogs((prev) => [...prev, `${new Date().toISOString()}: ${message}`])
   }
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        setLoading(true)
-        addLog('Fetching cloud integration settings...')
+  const fetchSettings = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      addLog('Fetching cloud integration settings...')
 
-        const response = await fetch('/api/cloud-integrations', {
-          headers: {
-            'Cache-Control': 'no-cache',
-            Pragma: 'no-cache',
-          },
-        })
+      const response = await fetch('/api/cloud-integrations', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      })
 
-        addLog(`Response status: ${response.status}`)
+      addLog(`Response status: ${response.status}`)
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch cloud integration settings: ${response.status}`)
-        }
-
-        const data = await response.json()
-        addLog(`Received data: ${JSON.stringify(data, null, 2)}`)
-
-        setSettings(data)
-      } catch (error) {
-        console.error('Error fetching cloud integration settings:', error)
-        addLog(`Error: ${error instanceof Error ? error.message : String(error)}`)
-        setError(error instanceof Error ? error.message : 'An unknown error occurred')
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch cloud integration settings: ${response.status}`)
       }
-    }
 
+      const data = await response.json()
+      addLog(`Received data: ${JSON.stringify(data, null, 2)}`)
+
+      setSettings(data)
+    } catch (error) {
+      console.error('Error fetching cloud integration settings:', error)
+      addLog(`Error: ${error instanceof Error ? error.message : String(error)}`)
+      setError(error instanceof Error ? error.message : 'An unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const createCloudIntegrationsGlobal = async () => {
+    try {
+      setCreating(true)
+      setError(null)
+      addLog('Creating cloud-integrations global...')
+
+      const response = await fetch('/api/test-cloud-integrations')
+
+      addLog(`Response status: ${response.status}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to create cloud-integrations global: ${response.status}`)
+      }
+
+      const data = await response.json()
+      addLog(`Received data: ${JSON.stringify(data, null, 2)}`)
+
+      if (data.success) {
+        addLog('Cloud-integrations global created or found successfully')
+        // Refresh settings
+        await fetchSettings()
+      } else {
+        throw new Error(data.message || 'Failed to create cloud-integrations global')
+      }
+    } catch (error) {
+      console.error('Error creating cloud-integrations global:', error)
+      addLog(`Error: ${error instanceof Error ? error.message : String(error)}`)
+      setError(error instanceof Error ? error.message : 'An unknown error occurred')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  useEffect(() => {
     fetchSettings()
   }, [])
 
@@ -97,6 +132,40 @@ export default function TestCloudIntegrationsPage() {
           ) : (
             logs.map((log, index) => <div key={index}>{log}</div>)
           )}
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Actions</h2>
+        <div className="flex flex-wrap gap-4">
+          <Button onClick={fetchSettings} disabled={loading} variant="outline">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Settings
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={createCloudIntegrationsGlobal}
+            disabled={loading || creating}
+            variant="default"
+          >
+            {creating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>Create Cloud Integrations Global</>
+            )}
+          </Button>
         </div>
       </div>
 

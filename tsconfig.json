@@ -46,7 +46,7 @@
     "redirects.js",
     "next.config.js",
     "next-sitemap.config.cjs"
-, "src/collections/Videos/components/VideoList.tsx.bak", "src/components/video/MuxUploaderWithList.tsx.bak", "src/collections/Videos/components/VideoAdmin.tsx.bak", "src/components/video/VideoAdmin.tsx.bak", "src/collections/Videos/components/DefaultListViewRefresher.tsx.bak", "src/components/EventBridge/index.tsx.bak", "src/services/events/EventService.ts.bak", "src/services/eventService.ts.bak", "src/services/events/eventEmitter.ts.bak", "src/payload/index.ts"  ],
+, "src/collections/Videos/components/VideoList.tsx.bak", "src/components/video/MuxUploaderWithList.tsx.bak", "src/collections/Videos/components/VideoAdmin.tsx.bak", "src/components/video/VideoAdmin.tsx.bak", "src/collections/Videos/components/DefaultListViewRefresher.tsx.bak", "src/components/EventBridge/index.tsx.bak", "src/services/events/EventService.ts.bak", "src/services/eventService.ts.bak", "src/services/events/eventEmitter.ts.bak", "src/payload/index.ts", "src/components/video/DirectDropboxButton.tsx.bak"  ],
   "exclude": [
     "node_modules",
     "**/@payloadcms/storage-*/**/*"
