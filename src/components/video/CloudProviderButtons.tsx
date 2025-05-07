@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { clientLogger } from '@/utils/clientLogger'
 import DropboxIcon from '@/components/icons/DropboxIcon'
+import { useToast } from '@/hooks/use-toast'
+import { Loader2 } from 'lucide-react'
 
 // Define interfaces for the cloud providers
 interface DropboxOptions {
@@ -56,6 +58,8 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 }) => {
   const [dropboxAppKey, setDropboxAppKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const { toast } = useToast()
 
   // Fetch cloud integration settings
   useEffect(() => {
@@ -118,7 +122,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   }, [])
 
   // Determine if the button should be disabled
-  const dropboxDisabled = disabled || !dropboxAppKey
+  const dropboxDisabled = disabled || !dropboxAppKey || uploading
 
   // Show error message if there was an error fetching settings
   const errorMessage = error ? (
@@ -145,12 +149,9 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
         {/* Dropbox button */}
         <Button
           onClick={async () => {
-            if (!dropboxAppKey) {
-              alert(
-                'Dropbox integration is not configured. Please add a Dropbox App Key in the Cloud Integration settings.',
-              )
-              return
-            }
+            if (!dropboxAppKey || uploading) return
+
+            setUploading(true)
 
             try {
               clientLogger.info('Dropbox button clicked', 'CloudProviderButtons')
@@ -174,104 +175,126 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
                 throw new Error('Dropbox SDK not available after loading')
               }
 
-              // Choose a file from Dropbox
-              const dropboxFile = await new Promise<{ name: string; link: string }>(
-                (resolve, reject) => {
-                  window.Dropbox?.choose({
-                    success: (files: Array<{ name: string; link: string; bytes?: number }>) => {
-                      if (files && files.length > 0) {
-                        const file = files[0]
-                        if (file && file.name && file.link) {
-                          clientLogger.info('File selected from Dropbox', 'CloudProviderButtons', {
-                            fileName: file.name,
-                            fileSize: file.bytes || 0,
-                          })
-                          resolve(file)
-                        } else {
-                          reject(new Error('Invalid file object from Dropbox'))
-                        }
-                      } else {
-                        reject(new Error('No files selected from Dropbox'))
-                      }
-                    },
-                    cancel: () => {
-                      reject(new Error('Dropbox selection cancelled'))
-                    },
-                    linkType: 'preview',
-                    multiselect: true,
-                    extensions: ['.mp4', '.mov', '.avi', '.webm', '.mkv'],
-                    folderselect: true,
-                    sizeLimit: MAX_FILE_SIZE_BYTES,
-                  })
-                },
-              )
-
-              // Instead of downloading the file, create a Mux asset directly from the URL
-              clientLogger.info('Creating Mux asset from Dropbox URL', 'CloudProviderButtons', {
-                fileName: dropboxFile.name,
-                fileLink: dropboxFile.link.substring(0, 50) + '...', // Truncate for logging
+              // Choose files from Dropbox
+              const files = await new Promise<DropboxFile[]>((resolve, reject) => {
+                window.Dropbox?.choose({
+                  success: (files) => {
+                    if (files && files.length > 0) {
+                      clientLogger.info('Files selected from Dropbox', 'CloudProviderButtons', {
+                        fileCount: files.length,
+                      })
+                      resolve(files)
+                    } else {
+                      reject(new Error('No files selected from Dropbox'))
+                    }
+                  },
+                  cancel: () => {
+                    reject(new Error('Dropbox selection cancelled'))
+                  },
+                  linkType: 'preview',
+                  multiselect: true,
+                  extensions: ['.mp4', '.mov', '.avi', '.webm', '.mkv'],
+                  folderselect: true,
+                  sizeLimit: MAX_FILE_SIZE_BYTES,
+                })
               })
 
-              // Call our new API endpoint to create a Mux asset from the URL
-              const response = await fetch('/api/mux/create-from-url', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  url: dropboxFile.link,
-                  filename: dropboxFile.name,
-                }),
-              })
+              // Process each file
+              for (const file of files) {
+                // Show toast for upload start
+                toast({
+                  title: 'Uploading to Mux...',
+                  description: file.name,
+                })
 
-              if (!response.ok) {
-                let errorMessage = response.statusText
                 try {
-                  const errorData = await response.json()
-                  errorMessage = errorData.error || response.statusText
-                } catch (_parseError) {
-                  // If we can't parse the response as JSON, use the status text
-                  clientLogger.error('Error parsing error response', 'CloudProviderButtons', {
-                    status: response.status,
-                    statusText: response.statusText,
+                  clientLogger.info('Creating Mux asset from Dropbox URL', 'CloudProviderButtons', {
+                    fileName: file.name,
+                    fileLink: file.link.substring(0, 50) + '...', // Truncate for logging
+                  })
+
+                  // Call our API endpoint to create a Mux asset from the URL
+                  const response = await fetch('/api/mux/create-from-url', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      url: file.link,
+                      filename: file.name,
+                    }),
+                  })
+
+                  if (!response.ok) {
+                    let errorMessage = response.statusText
+                    try {
+                      const errorData = await response.json()
+                      errorMessage = errorData.error || response.statusText
+                    } catch (_parseError) {
+                      // If we can't parse the response as JSON, use the status text
+                      clientLogger.error('Error parsing error response', 'CloudProviderButtons', {
+                        status: response.status,
+                        statusText: response.statusText,
+                      })
+                    }
+                    throw new Error(`Failed to create Mux asset: ${errorMessage}`)
+                  }
+
+                  let result
+                  try {
+                    result = await response.json()
+                  } catch (_parseError) {
+                    clientLogger.error('Error parsing success response', 'CloudProviderButtons', {
+                      error: 'Failed to parse JSON response',
+                    })
+                    throw new Error('Failed to parse response from server')
+                  }
+
+                  clientLogger.info('Mux asset created successfully', 'CloudProviderButtons', {
+                    assetId: result.data.asset.id,
+                    playbackId: result.data.asset.playbackId,
+                    status: result.data.asset.status,
+                  })
+
+                  // Create a File object to maintain compatibility with the existing code
+                  const fileObj = new File(
+                    [new Blob([''], { type: 'application/octet-stream' })],
+                    file.name,
+                    { type: 'video/mp4' },
+                  )
+
+                  // Add custom properties to the file object
+                  Object.defineProperties(fileObj, {
+                    muxAssetId: { value: result.data.asset.id, writable: true },
+                    muxPlaybackId: { value: result.data.asset.playbackId, writable: true },
+                    muxStatus: { value: result.data.asset.status, writable: true },
+                    fromUrl: { value: true, writable: true },
+                  })
+
+                  // Pass the file to the parent component
+                  onFileSelected(fileObj)
+
+                  // Show success toast
+                  toast({
+                    title: 'Upload successful',
+                    description: file.name,
+                  })
+                } catch (err) {
+                  const errMsg = err instanceof Error ? err.message : 'Unknown error'
+
+                  // Show error toast
+                  toast({
+                    title: 'Upload failed',
+                    description: `${file.name}: ${errMsg}`,
+                    variant: 'destructive',
+                  })
+
+                  clientLogger.error('Error processing file from Dropbox', 'CloudProviderButtons', {
+                    error: errMsg,
+                    fileName: file.name,
                   })
                 }
-                throw new Error(`Failed to create Mux asset: ${errorMessage}`)
               }
-
-              let result
-              try {
-                result = await response.json()
-              } catch (_parseError) {
-                clientLogger.error('Error parsing success response', 'CloudProviderButtons', {
-                  error: 'Failed to parse JSON response',
-                })
-                throw new Error('Failed to parse response from server')
-              }
-
-              clientLogger.info('Mux asset created successfully', 'CloudProviderButtons', {
-                assetId: result.data.asset.id,
-                playbackId: result.data.asset.playbackId,
-                status: result.data.asset.status,
-              })
-
-              // Create a File object to maintain compatibility with the existing code
-              const fileObj = new File(
-                [new Blob([''], { type: 'application/octet-stream' })],
-                dropboxFile.name,
-                { type: 'video/mp4' },
-              )
-
-              // Add custom properties to the file object
-              Object.defineProperties(fileObj, {
-                muxAssetId: { value: result.data.asset.id, writable: true },
-                muxPlaybackId: { value: result.data.asset.playbackId, writable: true },
-                muxStatus: { value: result.data.asset.status, writable: true },
-                fromUrl: { value: true, writable: true },
-              })
-
-              // Pass the file to the parent component
-              onFileSelected(fileObj)
             } catch (error) {
               const errorMsg = error instanceof Error ? error.message : 'Unknown error'
 
@@ -281,10 +304,17 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
                   error: errorMsg,
                   stack: error instanceof Error ? error.stack : 'No stack trace',
                 })
-                alert('Error downloading file from Dropbox: ' + errorMsg)
+
+                toast({
+                  title: 'Error',
+                  description: errorMsg,
+                  variant: 'destructive',
+                })
               } else {
                 clientLogger.info('Dropbox selection cancelled', 'CloudProviderButtons')
               }
+            } finally {
+              setUploading(false)
             }
           }}
           id="dropbox-button"
@@ -293,10 +323,11 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
           title={
             !dropboxAppKey
               ? 'Dropbox integration is not configured'
-              : 'Choose a video file from Dropbox'
+              : 'Choose video files from Dropbox'
           }
         >
-          <DropboxIcon className="mr-2 h-4 w-4" />
+          {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <DropboxIcon className={uploading ? 'hidden' : 'mr-2 h-4 w-4'} />
           Choose from Dropbox
         </Button>
       </div>
