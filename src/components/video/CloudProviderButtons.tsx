@@ -12,6 +12,8 @@ interface DropboxOptions {
   linkType: string
   multiselect: boolean
   extensions: string[]
+  folderselect: boolean
+  sizeLimit?: number
 }
 
 interface DropboxFile {
@@ -38,12 +40,15 @@ declare global {
 }
 
 // Interface for the response from the API
-interface DropboxKeyResponse {
-  dropboxAppKey: string
+interface CloudIntegrationsResponse {
+  dropboxAppKey?: string
+  googleApiKey?: string
+  googleClientId?: string
+  error?: string
 }
 
-// Default fallback app key for development
-const FALLBACK_APP_KEY = 'o8wxu9m9b3o2m8d'
+// Maximum file size for uploads (5 GB)
+const MAX_FILE_SIZE_BYTES = 5368709120 // 5 GB
 
 const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   onFileSelected,
@@ -51,7 +56,6 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 }) => {
   const [dropboxAppKey, setDropboxAppKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [usingFallback, setUsingFallback] = useState(false)
 
   // Fetch cloud integration settings
   useEffect(() => {
@@ -59,37 +63,54 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
       try {
         clientLogger.info('Fetching cloud integration settings', 'CloudProviderButtons')
 
-        // Fetch from the Dropbox-specific endpoint for faster loading
-        const response = await fetch('/api/cloud-integrations/dropbox-key')
+        // Fetch from the general cloud-integrations endpoint
+        const response = await fetch('/api/cloud-integrations', {
+          // Add cache control headers to ensure we get fresh data
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+        })
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch Dropbox key: ${response.statusText}`)
+          throw new Error(`Failed to fetch cloud integration settings: ${response.statusText}`)
         }
 
-        const data = (await response.json()) as DropboxKeyResponse
+        const data = (await response.json()) as CloudIntegrationsResponse
 
-        clientLogger.info('Dropbox key fetched successfully', 'CloudProviderButtons', {
-          hasDropboxAppKey: !!data.dropboxAppKey,
-        })
+        clientLogger.info(
+          'Cloud integration settings fetched successfully',
+          'CloudProviderButtons',
+          {
+            hasDropboxAppKey: !!data.dropboxAppKey,
+            hasGoogleApiKey: !!data.googleApiKey,
+            hasGoogleClientId: !!data.googleClientId,
+          },
+        )
 
         if (data.dropboxAppKey) {
           setDropboxAppKey(data.dropboxAppKey)
+          clientLogger.info('Dropbox key is configured and available', 'CloudProviderButtons')
         } else {
-          // If no key is available, use the fallback
-          setDropboxAppKey(FALLBACK_APP_KEY)
-          setUsingFallback(true)
-          clientLogger.warn('No Dropbox key found, using fallback', 'CloudProviderButtons')
+          // If no key is available, set error state
+          setDropboxAppKey(null)
+          setError(
+            'Dropbox integration is not configured. Please add a Dropbox App Key in the Cloud Integration settings.',
+          )
+          clientLogger.warn(
+            'No Dropbox key found in cloud-integrations global',
+            'CloudProviderButtons',
+          )
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        clientLogger.error('Error fetching Dropbox key', 'CloudProviderButtons', {
+        clientLogger.error('Error fetching cloud integration settings', 'CloudProviderButtons', {
           error: errorMsg,
         })
-        setError(errorMsg)
 
-        // Use fallback key in case of error
-        setDropboxAppKey(FALLBACK_APP_KEY)
-        setUsingFallback(true)
+        // Set error state without using any fallback
+        setDropboxAppKey(null)
+        setError(`Error connecting to cloud integration settings: ${errorMsg}`)
       }
     }
 
@@ -102,18 +123,15 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   // Show error message if there was an error fetching settings
   const errorMessage = error ? (
     <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-      <p className="font-medium">Error loading cloud integration settings</p>
+      <p className="font-medium">Dropbox Integration Not Configured</p>
       <p>{error}</p>
-      <p className="mt-1">Cloud provider buttons may not work correctly.</p>
-    </div>
-  ) : usingFallback ? (
-    <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 rounded-md text-sm">
-      <p className="font-medium">Using development Dropbox app key</p>
-      <p>
-        Could not connect to the cloud integration settings API. Using a fallback app key for
-        development purposes.
+      <p className="mt-1">
+        Please go to the Admin Dashboard &gt; Settings &gt; Cloud Integrations and add your Dropbox
+        App Key.
       </p>
-      <p className="mt-1">This is a temporary solution until the API is working.</p>
+      <p className="mt-1">
+        <strong>Note:</strong> You need to create the cloud-integrations global in Payload CMS.
+      </p>
     </div>
   ) : null
 
@@ -179,9 +197,11 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
                     cancel: () => {
                       reject(new Error('Dropbox selection cancelled'))
                     },
-                    linkType: 'direct',
-                    multiselect: false,
+                    linkType: 'preview',
+                    multiselect: true,
                     extensions: ['.mp4', '.mov', '.avi', '.webm', '.mkv'],
+                    folderselect: true,
+                    sizeLimit: MAX_FILE_SIZE_BYTES,
                   })
                 },
               )
