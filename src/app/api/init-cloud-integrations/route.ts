@@ -38,13 +38,13 @@ export async function POST() {
         'Cloud integrations global does not exist, creating it',
       )
 
-      // Create the global with default values
+      // Create the global with default values (using empty strings instead of null)
       const result = await payload.updateGlobal({
         slug: 'cloud-integrations',
         data: {
-          dropboxAppKey: null,
-          googleApiKey: null,
-          googleClientId: null,
+          dropboxAppKey: '',
+          googleApiKey: '',
+          googleClientId: '',
         },
       })
 

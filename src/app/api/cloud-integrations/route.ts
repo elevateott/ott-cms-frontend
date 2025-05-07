@@ -1,42 +1,19 @@
 import { NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
+import { getCloudIntegrations } from '@/utilities/getCloudIntegrations'
 
 export async function GET() {
   try {
-    const payload = await getPayload({ config: configPromise })
+    logger.info(
+      { context: 'cloudIntegrationsAPI' },
+      'Received request for cloud integration settings',
+    )
 
-    // First check if the cloud-integrations global exists
-    const cloudIntegrations = await payload
-      .findGlobal({
-        slug: 'cloud-integrations',
-      })
-      .catch(() => null)
-
-    // Return default settings if the global doesn't exist
-    if (!cloudIntegrations) {
-      logger.info(
-        { context: 'cloudIntegrationsAPI' },
-        'Cloud integrations global not found, returning defaults',
-      )
-      return NextResponse.json({
-        dropboxAppKey: null,
-        googleApiKey: null,
-        googleClientId: null,
-        message: 'Cloud integrations settings not found - using defaults',
-      })
-    }
-
-    // Return the settings
-    const clientSettings = {
-      dropboxAppKey: cloudIntegrations.dropboxAppKey || null,
-      googleApiKey: cloudIntegrations.googleApiKey || null,
-      googleClientId: cloudIntegrations.googleClientId || null,
-    }
+    // Use the utility function to get cloud integration settings
+    const cloudIntegrations = await getCloudIntegrations()
 
     logger.info({ context: 'cloudIntegrationsAPI' }, 'Returning cloud integration settings')
-    return NextResponse.json(clientSettings)
+    return NextResponse.json(cloudIntegrations)
   } catch (error) {
     logger.error(
       { context: 'cloudIntegrationsAPI', error },
