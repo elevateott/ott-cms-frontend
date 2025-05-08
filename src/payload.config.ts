@@ -267,6 +267,8 @@ export default buildConfig({
     ],
   },
   onInit: async (payload) => {
+    console.log('Initializing Payload...')
+
     // Update the email adapter with the actual configuration
     try {
       const adapter = await createEmailAdapter()
