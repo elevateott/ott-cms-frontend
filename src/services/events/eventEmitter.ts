@@ -13,7 +13,9 @@ import { logger } from '@/utils/logger'
 // Create the event bus with a higher limit of listeners
 const eventBusInstance = new EventEmitter()
 // Set a higher limit for listeners (default is 10)
-eventBusInstance.setMaxListeners(50)
+if (typeof eventBusInstance.setMaxListeners === 'function') {
+  eventBusInstance.setMaxListeners(50)
+}
 
 // Log the current number of listeners for debugging
 const logListenerCount = () => {
@@ -51,17 +53,19 @@ class ConnectionManager {
     return ConnectionManager.instance
   }
 
-  // Start the interval to clean up stale connections
+  // Start the cleanup interval
   private startCleanupInterval(): void {
-    // Run cleanup every 30 minutes
-    this.cleanupInterval = setInterval(
-      () => {
-        this.cleanupStaleConnections()
-      },
-      30 * 60 * 1000,
-    )
+    // Only start if we're in a Node.js environment (not in the browser)
+    if (typeof window === 'undefined' && !this.cleanupInterval) {
+      logger.info(
+        { context: 'eventsService' },
+        'Started connection cleanup interval'
+      )
 
-    logger.info({ context: 'eventsService' }, 'Started connection cleanup interval')
+      this.cleanupInterval = setInterval(() => {
+        this.cleanupStaleConnections()
+      }, 15 * 60 * 1000) // Check every 15 minutes
+    }
   }
 
   // Clean up connections that have been open for too long
@@ -182,7 +186,7 @@ class ConnectionManager {
 
     logger.info(
       { context: 'eventsService' },
-      `🔍 DEBUG [EventEmitter] Sending event to ${this.clients.size} clients:`,
+      `Sending event to ${this.clients.size} clients:`,
       {
         originalEvent: event,
         standardizedEvent,
@@ -193,7 +197,7 @@ class ConnectionManager {
     if (this.clients.size === 0) {
       logger.warn(
         { context: 'eventsService' },
-        `🔍 DEBUG [EventEmitter] No clients connected to receive event: ${standardizedEvent}`,
+        `No clients connected to receive event: ${standardizedEvent}`,
       )
       return
     }
@@ -202,18 +206,19 @@ class ConnectionManager {
       try {
         logger.info(
           { context: 'eventsService' },
-          `🔍 DEBUG [EventEmitter] Sending event ${standardizedEvent} to client ${id}`,
+          `Sending event ${standardizedEvent} to client ${id}`,
         )
+        // Ensure data is never undefined before stringifying
+        const safeData = data ?? {}
         controller.enqueue(
-          encoder.encode(`event: ${standardizedEvent}\ndata: ${JSON.stringify(data)}\n\n`),
+          encoder.encode(`event: ${standardizedEvent}\ndata: ${JSON.stringify(safeData)}\n\n`),
         )
       } catch (error) {
         logger.error(
           { context: 'eventsService' },
-          `🔍 DEBUG [EventEmitter] Error sending event ${standardizedEvent} to client ${id}:`,
+          `Error sending event ${standardizedEvent} to client ${id}:`,
           error,
         )
-        logError(error, `EventEmitter.sendEventToClients(${id})`)
         this.removeClient(id)
       }
     })
@@ -247,12 +252,12 @@ export const connectionManager = ConnectionManager.getInstance()
 export function sendEventToClients(event: string, data: unknown): void {
   logger.info(
     { context: 'eventsService' },
-    `🔍 DEBUG [EventEmitter] sendEventToClients called with event: ${event}, data:`,
+    `sendEventToClients called with event: ${event}, data:`,
     data,
   )
   logger.info(
     { context: 'eventsService' },
-    `🔍 DEBUG [EventEmitter] Current client count: ${connectionManager.getClientCount()}`,
+    `Current client count: ${connectionManager.getClientCount()}`,
   )
   connectionManager.sendEventToClients(event, data)
 }
@@ -261,7 +266,7 @@ export function sendEventToClients(event: string, data: unknown): void {
 export function emitVideoCreated(id: string): void {
   logger.info(
     { context: 'eventsService' },
-    `🔍 DEBUG [EventEmitter] emitVideoCreated called for video ${id}`,
+    `emitVideoCreated called for video ${id}`,
   )
   sendEventToClients(EVENTS.VIDEO_CREATED, { id })
 }
@@ -269,11 +274,14 @@ export function emitVideoCreated(id: string): void {
 export function emitVideoUpdated(id: string, isStatusChange: boolean = false): void {
   logger.info(
     { context: 'eventsService' },
-    `🔍 DEBUG [EventEmitter] emitVideoUpdated called for video ${id}`,
+    `emitVideoUpdated called for video ${id}`,
   )
   logger.info(
     { context: 'eventsService' },
-    `🔍 DEBUG [EventEmitter] isStatusChange: ${isStatusChange}`,
+    `isStatusChange: ${isStatusChange}`,
   )
   sendEventToClients(EVENTS.VIDEO_UPDATED, { id, isStatusChange })
 }
+
+
+

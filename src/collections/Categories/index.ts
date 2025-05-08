@@ -17,7 +17,7 @@ export const Categories: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'showInCatalog', 'featuredCategory', 'order'],
-    group: 'Content',
+    group: 'Content Library',
   },
   defaultPopulate: {
     title: true,

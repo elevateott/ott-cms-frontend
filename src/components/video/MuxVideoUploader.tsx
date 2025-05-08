@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useLocalStorage } from '@/hooks/useLocalStorage'
 import MuxUploader from '@mux/mux-uploader-react'
 import { MuxUploaderDrop, MuxUploaderFileSelect } from '@mux/mux-uploader-react'
@@ -154,18 +154,13 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
     [],
   )
   const [uploaderKey, setUploaderKey] = useState<number>(0)
-  const [isUploaderReady, setIsUploaderReady] = useState<boolean>(false)
+  // Set isUploaderReady to true by default to enable the Dropbox button immediately
+  const [isUploaderReady] = useState<boolean>(true)
   const [isUploading, setIsUploading] = useState<boolean>(false)
-  const muxUploaderRef = useRef<any>(null)
 
-  // Effect to set the uploader ready state after a short delay
+  // Log that the uploader is ready immediately
   useEffect(() => {
-    // Set a timeout to show the uploader after a short delay
-    const timer = setTimeout(() => {
-      setIsUploaderReady(true)
-    }, 1000) // 1 second delay
-
-    return () => clearTimeout(timer)
+    clientLogger.info('MuxVideoUploader is ready immediately', 'MuxVideoUploader')
   }, [])
 
   // Create a wrapper for the endpoint function with retry capability
@@ -517,11 +512,59 @@ const MuxVideoUploader: React.FC<MuxVideoUploaderProps> = ({
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
+        // Check if this is a file created directly from a URL
+        fromUrl: (file as any).fromUrl || false,
+        muxAssetId: (file as any).muxAssetId,
       })
 
       // Set uploading state to true
       setIsUploading(true)
 
+      // Check if this is a file that was already uploaded to Mux directly from a URL
+      if ((file as any).fromUrl && (file as any).muxAssetId && (file as any).muxPlaybackId) {
+        clientLogger.info('File was already uploaded to Mux from URL', 'MuxVideoUploader', {
+          muxAssetId: (file as any).muxAssetId,
+          muxPlaybackId: (file as any).muxPlaybackId,
+          muxStatus: (file as any).muxStatus,
+        })
+
+        // Create a new video entry with the existing Mux asset information
+        const newVideo = ensureValidVideo({
+          id: Date.now().toString(),
+          filename: file.name,
+          title: file.name.split('.').slice(0, -1).join('.'), // Remove extension
+          status: 'complete', // Already complete since it was created directly in Mux
+          progress: 100,
+          createdAt: Date.now(),
+          assetId: (file as any).muxAssetId,
+          playbackId: (file as any).muxPlaybackId,
+        })
+
+        // Add to uploaded videos
+        setUploadedVideos((prev) => [...prev, newVideo])
+
+        // Emit client-side event for upload completed
+        eventBus.emit(EVENTS.VIDEO_UPLOAD_COMPLETED, {
+          assetId: (file as any).muxAssetId,
+          playbackId: (file as any).muxPlaybackId,
+          timestamp: Date.now(),
+          source: 'client',
+        })
+
+        if (onUploadComplete) {
+          onUploadComplete({
+            assetId: (file as any).muxAssetId,
+            playbackId: (file as any).muxPlaybackId,
+          })
+        }
+
+        // Set uploading state to false
+        setIsUploading(false)
+
+        return
+      }
+
+      // If not from URL, proceed with the normal upload process
       // Create a new video entry
       const newVideo = ensureValidVideo({
         id: Date.now().toString(),

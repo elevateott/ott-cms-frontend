@@ -9,9 +9,19 @@ import { updateContentStatus } from '@/hooks/content/updateContentStatus'
 
 export const Content: CollectionConfig = {
   slug: 'content',
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 100,
+      },
+      schedulePublish: true,
+      validate: false,
+    },
+    maxPerDoc: 100,
+  },
   labels: {
     singular: 'Content',
-    plural: 'Content Library',
+    plural: 'Content',
   },
   defaultSort: ['-createdAt'],
   access: {
@@ -32,10 +42,9 @@ export const Content: CollectionConfig = {
       'unpublishAt',
       'createdAt',
     ],
-    group: 'Content',
+    group: 'Content Library',
     components: {
-      // Add our export button before the list view
-      beforeList: ['@/collections/Content/components/ExportButtonBar'],
+      beforeListTable: ['@/collections/Content/components/ExportButtonBar'],
     },
   },
   defaultPopulate: {

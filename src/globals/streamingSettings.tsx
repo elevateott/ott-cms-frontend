@@ -1,5 +1,7 @@
 // src/globals/streamingSettings.tsx
+import React from 'react'
 import type { GlobalConfig } from 'payload'
+import type { FieldValidate } from '@/utils/fieldValidate'
 import { authenticated } from '@/access/authenticated'
 
 const StreamingSettings: GlobalConfig = {
@@ -9,7 +11,7 @@ const StreamingSettings: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
   },
   fields: [
     {
@@ -52,8 +54,46 @@ const StreamingSettings: GlobalConfig = {
             { label: 'Signed', value: 'signed' },
           ],
           defaultValue: 'public',
+          validate: (value, { siblingData }) => {
+            if (value === 'signed') {
+              const credentials = siblingData?.apiCredentials as {
+                signingKeyId?: string
+                signingKeyPrivateKey?: string
+              }
+
+              const { signingKeyId, signingKeyPrivateKey } = credentials || {}
+
+              if (!signingKeyId && !signingKeyPrivateKey) {
+                return 'When using Signed Playback Policy, both Signing Key ID and Private Key are required.'
+              }
+
+              if (!signingKeyId) {
+                return 'Signing Key ID is required when using Signed Playback Policy.'
+              }
+
+              if (!signingKeyPrivateKey) {
+                return 'Signing Key Private Key is required when using Signed Playback Policy.'
+              }
+            }
+
+            return true
+          },
           admin: {
-            description: 'Default playback policy for new Mux videos',
+            description:
+              'Default playback policy for new Mux videos. Note: Selecting "Signed" requires both Signing Key ID and Signing Key Private Key to be configured.',
+            components: {
+              afterInput: [
+                () => {
+                  return (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                      <strong>Important:</strong> When using Signed Playback Policy, you must
+                      provide both Signing Key ID and Signing Key Private Key below. These are
+                      required for signed playback to work properly.
+                    </div>
+                  )
+                },
+              ],
+            },
           },
         },
         {
@@ -105,9 +145,21 @@ const StreamingSettings: GlobalConfig = {
               label: 'Mux Signing Key ID',
               required: false,
               admin: {
-                description: 'Mux Signing Key ID (for signed playback)',
+                description: 'Mux Signing Key ID (required for signed playback)',
                 components: {
                   Field: '@/components/fields/SecureTextField',
+                  afterInput: [
+                    (({ value, data }) => {
+                      if (data?.muxSettings?.defaultPlaybackPolicy === 'signed' && !value) {
+                        return (
+                          <div className="mt-1 text-red-500 text-xs">
+                            Required when using Signed Playback Policy
+                          </div>
+                        )
+                      }
+                      return null
+                    }) as any,
+                  ],
                 },
               },
             },
@@ -117,9 +169,22 @@ const StreamingSettings: GlobalConfig = {
               label: 'Mux Signing Key Private Key',
               required: false,
               admin: {
-                description: 'Private key used for signing playback URLs (in PEM format)',
+                description:
+                  'Private key used for signing playback URLs (in PEM format, required for signed playback)',
                 components: {
                   Field: '@/components/fields/SecureTextareaField',
+                  afterInput: [
+                    ({ value, data }) => {
+                      if (data?.muxSettings?.defaultPlaybackPolicy === 'signed' && !value) {
+                        return (
+                          <div className="mt-1 text-red-500 text-xs">
+                            Required when using Signed Playback Policy
+                          </div>
+                        )
+                      }
+                      return null
+                    },
+                  ],
                 },
               },
             },

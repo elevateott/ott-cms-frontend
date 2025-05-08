@@ -204,7 +204,7 @@ const QuickActionsCell: React.FC<QuickActionsCellProps> = ({ rowData }) => {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleMoveToCollection}>
               <FolderPlus className="mr-2 h-4 w-4" />
-              <span>Move to Collection</span>
+              <span>Create Content from Video</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCopyLink}>
               <Copy className="mr-2 h-4 w-4" />

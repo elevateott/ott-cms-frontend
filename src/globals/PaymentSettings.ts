@@ -11,7 +11,7 @@ const PaymentSettings: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
     description: 'Configure payment gateway settings for Stripe and PayPal integration',
   },
   fields: [

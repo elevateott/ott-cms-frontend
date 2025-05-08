@@ -5,15 +5,12 @@ import { logger } from '@/utils/logger'
 
 /**
  * POST /api/init-cloud-integrations
- * 
+ *
  * Initialize the cloud-integrations global if it doesn't exist
  */
 export async function POST() {
   try {
-    logger.info(
-      { context: 'initCloudIntegrationsAPI' },
-      'Initializing cloud-integrations global'
-    )
+    logger.info({ context: 'initCloudIntegrationsAPI' }, 'Initializing cloud-integrations global')
 
     const payload = await getPayload({ config: configPromise })
 
@@ -26,7 +23,7 @@ export async function POST() {
       logger.info(
         { context: 'initCloudIntegrationsAPI' },
         'Cloud integrations global already exists',
-        existingGlobal
+        existingGlobal,
       )
 
       return NextResponse.json({
@@ -38,24 +35,22 @@ export async function POST() {
       // Global doesn't exist, create it
       logger.info(
         { context: 'initCloudIntegrationsAPI' },
-        'Cloud integrations global does not exist, creating it'
+        'Cloud integrations global does not exist, creating it',
       )
 
-      // Create the global with default values
+      // Create the global with default values (using empty strings instead of null)
       const result = await payload.updateGlobal({
         slug: 'cloud-integrations',
         data: {
-          dropboxAppKey: null,
-          googleApiKey: null,
-          googleClientId: null,
-          onedriveClientId: null,
+          dropboxAppKey: '',
+          googleClientId: '',
         },
       })
 
       logger.info(
         { context: 'initCloudIntegrationsAPI' },
         'Cloud integrations global created successfully',
-        result
+        result,
       )
 
       return NextResponse.json({
@@ -67,7 +62,7 @@ export async function POST() {
   } catch (error) {
     logger.error(
       { context: 'initCloudIntegrationsAPI', error },
-      'Error initializing cloud integrations global'
+      'Error initializing cloud integrations global',
     )
 
     return NextResponse.json(
@@ -76,7 +71,7 @@ export async function POST() {
         message: 'Error initializing cloud integrations global',
         error: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

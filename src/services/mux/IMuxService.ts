@@ -14,6 +14,7 @@ export interface IMuxService {
     url: string
   }>
   getAsset(assetId: string): Promise<MuxAsset | null>
+  getAssetByUploadId(uploadId: string): Promise<MuxAsset | null>
   getAllAssets(limit?: number): Promise<MuxAsset[]>
   deleteAsset(assetId: string): Promise<boolean>
   updateAsset(assetId: string, data: any): Promise<any>

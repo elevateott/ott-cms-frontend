@@ -20,7 +20,7 @@ export const Recordings: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'liveEvent', 'duration', 'createdAt'],
-    group: 'Media',
+    group: 'Live Events',
   },
   fields: [
     {

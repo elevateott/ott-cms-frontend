@@ -1,12 +1,12 @@
 // storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { resendAdapter } from '@payloadcms/email-resend'
-import StreamingSettings from './globals/streamingSettings.tsx'
+import StreamingSettings from './globals/streamingSettings'
 import OTTSettings from './globals/OTTSettings'
 import CloudIntegrations from './globals/CloudIntegrations'
 import CloudStorageSettings from './globals/CloudStorageSettings'
 import SiteSettings from './globals/SiteSettings'
-import EmailSettings from './globals/EmailSettings.tsx'
+import EmailSettings from './globals/EmailSettings'
 import PaymentSettings from './globals/PaymentSettings'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 
@@ -111,7 +111,7 @@ const createEmailAdapter = async () => {
 }
 
 // Initialize with a dummy adapter, will be replaced after initialization
-let emailAdapter = () => ({
+const emailAdapter = () => ({
   name: 'initializing',
   defaultFromName: 'OTT CMS',
   defaultFromAddress: 'no-reply@example.com',
@@ -271,6 +271,8 @@ export default buildConfig({
     ],
   },
   onInit: async (payload) => {
+    console.log('Initializing Payload...')
+
     // Update the email adapter with the actual configuration
     try {
       const adapter = await createEmailAdapter()

@@ -10,6 +10,16 @@ import { updateSubtitleTracks } from '@/hooks/videoAssets/updateSubtitleTracks'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 100,
+      },
+      schedulePublish: true,
+      validate: false,
+    },
+    maxPerDoc: 100,
+  },
   labels: {
     singular: 'Video Asset',
     plural: 'Video Assets',
@@ -35,16 +45,15 @@ export const VideoAssets: CollectionConfig = {
       'actions',
       'quickActions',
     ],
-    group: 'Content',
+    group: 'Asset Library',
     components: {
       // Add our custom components before the default list view
       beforeList: [
         '@/collections/VideoAssets/components/VideoManagement',
         '@/components/EventMonitor',
         '@/collections/VideoAssets/components/ListViewRefresher',
-        '@/collections/VideoAssets/components/ExportButtonBar',
       ],
-      // Custom row component not supported in this version of Payload
+      beforeListTable: ['@/collections/VideoAssets/components/ExportButtonBar'],
     },
   },
   fields: [

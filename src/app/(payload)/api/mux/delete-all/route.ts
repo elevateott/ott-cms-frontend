@@ -28,17 +28,33 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Initialize the Mux service
-    const muxService = createMuxService()
+    const muxService = await createMuxService()
 
-    // Delete all Mux videos
-    const result = await muxService.deleteAllMuxAssets()
+    // Delete all Mux videos with better error handling
+    try {
+      const result = await muxService.deleteAllMuxAssets()
 
-    return createApiResponse({
-      message: `Successfully deleted ${result.count} Mux videos`,
-      ...result,
-    })
+      return createApiResponse({
+        message: `Successfully deleted ${result.count} Mux videos`,
+        ...result,
+      })
+    } catch (muxError) {
+      // Log the specific Mux error
+      logError(muxError, 'DeleteAllMuxVideosAPI.muxService.deleteAllMuxAssets')
+      throw new Error(
+        `Failed to delete Mux videos: ${muxError instanceof Error ? muxError.message : String(muxError)}`,
+      )
+    }
   } catch (error) {
+    // Log the full error details
     logError(error, 'DeleteAllMuxVideosAPI')
-    return createErrorResponse('Failed to delete Mux videos', 500)
+
+    // Create a more detailed error response
+    const errorMessage =
+      error instanceof Error
+        ? `Failed to delete Mux videos: ${error.message}`
+        : 'Failed to delete Mux videos: Unknown error'
+
+    return createErrorResponse(errorMessage, 500)
   }
 }

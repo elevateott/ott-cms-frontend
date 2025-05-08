@@ -156,7 +156,7 @@ const sendToServer = async (logData: ClientLogData): Promise<void> => {
 // Queue for batching logs
 let logQueue: ClientLogData[] = []
 let sendTimeout: NodeJS.Timeout | null = null
-const BATCH_INTERVAL = 1000 // 1 second
+const BATCH_INTERVAL = 10000 // 10 seconds
 
 // Function to send queued logs
 const sendQueuedLogs = () => {

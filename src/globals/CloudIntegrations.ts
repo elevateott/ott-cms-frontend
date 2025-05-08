@@ -9,7 +9,7 @@ const CloudIntegrations: GlobalConfig = {
     update: authenticated,
   },
   admin: {
-    group: 'System Settings',
+    group: 'Settings',
     description: 'Configure cloud storage integration settings for video uploads',
   },
   fields: [
@@ -34,14 +34,6 @@ const CloudIntegrations: GlobalConfig = {
       },
     },
     {
-      name: 'googleApiKey',
-      label: 'Google API Key',
-      type: 'text',
-      admin: {
-        description: 'API key for Google Drive integration. Create in the Google Cloud Console.',
-      },
-    },
-    {
       name: 'googleClientId',
       label: 'Google Client ID',
       type: 'text',
@@ -51,12 +43,11 @@ const CloudIntegrations: GlobalConfig = {
       },
     },
     {
-      name: 'onedriveClientId',
-      label: 'OneDrive Client ID',
+      name: 'googleApiKey',
+      label: 'Google API Key',
       type: 'text',
       admin: {
-        description:
-          'Application (client) ID for OneDrive integration. Create in the Microsoft Azure Portal.',
+        description: 'API key for Google Drive Picker. Enable the Picker API in the GCP Console.',
       },
     },
   ],

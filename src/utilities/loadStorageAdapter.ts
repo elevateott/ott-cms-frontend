@@ -1,23 +1,22 @@
 // src/utilities/loadStorageAdapter.ts
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from '@/payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 
-// Import storage adapters
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
-import { s3Storage } from '@payloadcms/storage-s3'
-import { azureStorage } from '@payloadcms/storage-azure'
-import { gcsStorage } from '@payloadcms/storage-gcs'
-import { uploadthingStorage } from '@payloadcms/storage-uploadthing'
+// This is a server-only module
+export const loadStorageAdapter = async () => {
+  // Only run on the server
+  if (typeof window !== 'undefined') {
+    logger.warn(
+      { context: 'loadStorageAdapter' },
+      'loadStorageAdapter called in browser environment, returning undefined',
+    )
+    return undefined
+  }
 
-/**
- * Dynamically loads the appropriate storage adapter based on the cloud storage settings
- * @returns The configured storage adapter or undefined for local storage
- */
-export async function loadStorageAdapter() {
   try {
     // Get payload instance
-    const payload = await getPayloadHMR({ config: configPromise })
+    const payload = await getPayload({ config: configPromise })
 
     // Get cloud storage settings
     const settings = await payload
@@ -42,6 +41,7 @@ export async function loadStorageAdapter() {
     switch (provider) {
       case 'vercel-blob': {
         const config = settings.vercelBlob || {}
+        const { vercelBlobStorage } = await import('@payloadcms/storage-vercel-blob')
         return vercelBlobStorage({
           token: config.token,
           addRandomSuffix: config.addRandomSuffix,
@@ -51,6 +51,7 @@ export async function loadStorageAdapter() {
 
       case 's3': {
         const config = settings.s3 || {}
+        const { s3Storage } = await import('@payloadcms/storage-s3')
         return s3Storage({
           config: {
             credentials: {
@@ -67,6 +68,7 @@ export async function loadStorageAdapter() {
 
       case 'azure': {
         const config = settings.azure || {}
+        const { azureStorage } = await import('@payloadcms/storage-azure')
         return azureStorage({
           connectionString: config.connectionString,
           containerName: config.containerName,
@@ -100,11 +102,13 @@ export async function loadStorageAdapter() {
           }
         }
 
+        const { gcsStorage } = await import('@payloadcms/storage-gcs')
         return gcsStorage(adapterConfig)
       }
 
       case 'uploadthing': {
         const config = settings.uploadthing || {}
+        const { uploadthingStorage } = await import('@payloadcms/storage-uploadthing')
         return uploadthingStorage({
           apiKey: config.apiKey,
           secretKey: config.secretKey,

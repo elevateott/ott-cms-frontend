@@ -36,6 +36,14 @@ class EventBus {
       clientLogger.debug(`Created new event array for: ${event}`, 'EventBus')
     }
 
+    // Check if we're approaching too many listeners
+    if (this.events[event].length >= 9) {
+      clientLogger.warn(
+        `Event ${event} has ${this.events[event].length} listeners, approaching limit`,
+        'EventBus'
+      )
+    }
+
     this.events[event].push(callback as EventCallback)
     clientLogger.debug(
       `Added callback to event: ${event}, total listeners: ${this.events[event].length}`,
