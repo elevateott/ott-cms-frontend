@@ -62,6 +62,20 @@ const CloudIntegrationInstructionsField: CustomComponent<UIFieldProps> = (_props
                   </span>
                   <CopyButton text="https://console.cloud.google.com/" />
                 </li>
+                <li className="flex items-center">
+                  <span>
+                    Go to{' '}
+                    <a
+                      href="https://developers.google.com/workspace/drive/picker/guides/overview"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      The Google Picker API
+                    </a>
+                  </span>
+                  <CopyButton text="https://console.cloud.google.com/" />
+                </li>
                 <li>Create a new project and enable the Drive API.</li>
                 <li>Configure an OAuth Consent Screen (External user type).</li>
                 <li>

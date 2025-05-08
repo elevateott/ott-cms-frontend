@@ -9,6 +9,7 @@ import configPromise from '@payload-config'
 export interface CloudIntegrationSettings {
   dropboxAppKey?: string
   googleClientId?: string
+  googleApiKey?: string
 }
 
 /**
@@ -31,6 +32,7 @@ export async function getCloudIntegrations(): Promise<CloudIntegrationSettings> 
         context: 'getCloudIntegrations',
         hasDropboxAppKey: !!global?.dropboxAppKey,
         hasGoogleClientId: !!global?.googleClientId,
+        hasGoogleApiKey: !!global?.googleApiKey,
       },
       'Cloud integration settings retrieved successfully',
     )
@@ -38,6 +40,7 @@ export async function getCloudIntegrations(): Promise<CloudIntegrationSettings> 
     return {
       dropboxAppKey: global.dropboxAppKey || undefined,
       googleClientId: global.googleClientId || undefined,
+      googleApiKey: global.googleApiKey || undefined,
     }
   } catch (err) {
     logger.error(
@@ -52,6 +55,7 @@ export async function getCloudIntegrations(): Promise<CloudIntegrationSettings> 
     return {
       dropboxAppKey: undefined,
       googleClientId: undefined,
+      googleApiKey: undefined,
     }
   }
 }

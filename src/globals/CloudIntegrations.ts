@@ -33,7 +33,6 @@ const CloudIntegrations: GlobalConfig = {
           'API key for Dropbox integration. Create an app in the Dropbox Developer Console.',
       },
     },
-
     {
       name: 'googleClientId',
       label: 'Google Client ID',
@@ -41,6 +40,14 @@ const CloudIntegrations: GlobalConfig = {
       admin: {
         description:
           'OAuth client ID for Google Drive integration. Create in the Google Cloud Console.',
+      },
+    },
+    {
+      name: 'googleApiKey',
+      label: 'Google API Key',
+      type: 'text',
+      admin: {
+        description: 'API key for Google Drive Picker. Enable the Picker API in the GCP Console.',
       },
     },
   ],

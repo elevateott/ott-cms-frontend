@@ -15,6 +15,7 @@ interface CloudProviderButtonsProps {
 interface CloudIntegrationsResponse {
   dropboxAppKey?: string
   googleClientId?: string
+  googleApiKey?: string
   error?: string
   details?: string
 }
@@ -25,6 +26,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
 }) => {
   const [dropboxAppKey, setDropboxAppKey] = useState<string | null>(null)
   const [googleClientId, setGoogleClientId] = useState<string | null>(null)
+  const [googleApiKey, setGoogleApiKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [responseData, setResponseData] = useState<CloudIntegrationsResponse | null>(null)
@@ -133,6 +135,18 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
           setGoogleClientId(null)
           clientLogger.warn(
             'Google Drive credentials not found in cloud-integrations global',
+            'CloudProviderButtons',
+          )
+        }
+
+        // Set Google API Key if available
+        if (data.googleApiKey) {
+          setGoogleApiKey(data.googleApiKey)
+          clientLogger.info('Google API Key is configured and available', 'CloudProviderButtons')
+        } else {
+          setGoogleApiKey(null)
+          clientLogger.warn(
+            'Google API Key not found in cloud-integrations global',
             'CloudProviderButtons',
           )
         }
@@ -246,6 +260,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
   console.log('- isLoading:', isLoading)
   console.log('- dropboxAppKey:', dropboxAppKey)
   console.log('- googleClientId:', googleClientId)
+  console.log('- googleApiKey:', googleApiKey)
   console.log('- error:', error)
   console.log('- responseData:', responseData)
   console.log('- errorMessage:', errorMessage ? 'Error message exists' : 'No error message')
@@ -260,6 +275,7 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
         <div>isLoading: {isLoading ? 'true' : 'false'}</div>
         <div>dropboxAppKey: {dropboxAppKey ? 'set' : 'null'}</div>
         <div>googleClientId: {googleClientId ? 'set' : 'null'}</div>
+        <div>googleApiKey: {googleApiKey ? 'set' : 'null'}</div>
         <div>error: {error ? 'set' : 'null'}</div>
         <div>responseData: {responseData ? 'set' : 'null'}</div>
         {responseData?.details && <div>details: {responseData.details}</div>}
@@ -287,8 +303,9 @@ const CloudProviderButtons: React.FC<CloudProviderButtonsProps> = ({
             {googleClientId && (
               <GoogleDriveButton
                 clientId={googleClientId}
+                apiKey={googleApiKey || ''}
                 onFileSelected={onFileSelected}
-                disabled={disabled}
+                disabled={disabled || !googleApiKey}
               />
             )}
 

@@ -25,8 +25,10 @@ export async function GET() {
         !!cloudIntegrations?.dropboxAppKey && cloudIntegrations.dropboxAppKey !== ''
       const hasGoogleClientId =
         !!cloudIntegrations?.googleClientId && cloudIntegrations.googleClientId !== ''
+      const hasGoogleApiKey =
+        !!cloudIntegrations?.googleApiKey && cloudIntegrations.googleApiKey !== ''
 
-      if (!hasDropboxKey && !hasGoogleClientId) {
+      if (!hasDropboxKey && !hasGoogleClientId && !hasGoogleApiKey) {
         logger.warn(
           { context: 'cloudIntegrationsAPI' },
           'Cloud integration settings exist but no API keys are configured',
@@ -36,6 +38,7 @@ export async function GET() {
           {
             dropboxAppKey: null,
             googleClientId: null,
+            googleApiKey: null,
             error: 'Cloud integration settings are not configured',
             details:
               'Please go to the Admin Dashboard > Settings > Cloud Integrations and add your API keys',
@@ -63,6 +66,7 @@ export async function GET() {
         {
           dropboxAppKey: null,
           googleClientId: null,
+          googleApiKey: null,
           error: 'Cloud integration settings are not configured',
           details:
             'Please ensure the cloud-integrations global exists in Payload CMS and add your API keys',
@@ -87,6 +91,7 @@ export async function GET() {
       {
         dropboxAppKey: null,
         googleClientId: null,
+        googleApiKey: null,
         error: `Failed to fetch cloud integration settings: ${errorMessage}`,
         details: 'Please ensure the cloud-integrations global exists in Payload CMS',
       },

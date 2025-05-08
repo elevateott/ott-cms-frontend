@@ -453,6 +453,66 @@ export class MuxService implements IMuxService {
   }
 
   /**
+   * Get asset by upload ID
+   * @param uploadId Mux upload ID
+   */
+  async getAssetByUploadId(uploadId: string): Promise<MuxAsset | null> {
+    try {
+      logger.info({ context: 'muxService' }, `Fetching Mux asset by upload ID ${uploadId}`)
+
+      // Apply rate limiting
+      const now = Date.now()
+      const timeSinceLastRequest = now - MuxService.lastRequestTime
+      if (timeSinceLastRequest < MuxService.MIN_REQUEST_INTERVAL) {
+        const delay = MuxService.MIN_REQUEST_INTERVAL - timeSinceLastRequest
+        logger.info(
+          { context: 'muxService' },
+          `Rate limiting: Waiting ${delay}ms before fetching Mux asset by upload ID`,
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+      MuxService.lastRequestTime = Date.now()
+
+      // Get assets with the specified upload ID
+      const response = await this.video._client.get('/video/v1/assets', {
+        params: {
+          upload_id: uploadId,
+        },
+      })
+
+      if (
+        !response ||
+        !response.data ||
+        !Array.isArray(response.data) ||
+        response.data.length === 0
+      ) {
+        logger.info({ context: 'muxService' }, `No asset found for upload ID ${uploadId}`)
+        return null
+      }
+
+      // Get the first asset with matching upload ID
+      const asset = response.data[0]
+
+      // Transform the response into our MuxAsset type
+      return {
+        id: asset.id,
+        playbackIds: asset.playback_ids,
+        status: asset.status,
+        duration: asset.duration,
+        aspectRatio: asset.aspect_ratio,
+        maxResolution: asset.max_resolution,
+        maxStoredResolution: asset.max_stored_resolution,
+        uploadId: asset.upload_id,
+        createdAt: asset.created_at,
+        tracks: asset.tracks,
+      } as MuxAsset
+    } catch (error) {
+      logError(error, 'MuxService.getAssetByUploadId')
+      return null
+    }
+  }
+
+  /**
    * Get a limited number of assets for deletion
    * @param limit Maximum number of assets to return
    */

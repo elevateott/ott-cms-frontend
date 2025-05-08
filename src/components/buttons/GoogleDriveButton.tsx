@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { clientLogger } from '@/utils/clientLogger'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, FileBox } from 'lucide-react'
-import Script from 'next/script'
 
 // Define interfaces for Google Drive
 export interface GoogleDriveFile {
@@ -21,28 +20,35 @@ declare global {
     gapi?: {
       load: (api: string, callback: () => void) => void
       client: {
-        init: (options: any) => Promise<void>
+        init: (options: Record<string, unknown>) => Promise<void>
         load: (api: string, version: string, callback: () => void) => void
-        picker: {
-          create: (options: any) => any
-        }
-      }
-      auth: {
-        getToken: () => { access_token: string }
       }
     }
     google?: {
       accounts: {
         oauth2: {
-          initTokenClient: (config: any) => any
+          initTokenClient: (config: Record<string, unknown>) => {
+            requestAccessToken: (options?: { prompt?: string }) => void
+          }
         }
       }
-      picker: {
-        View: any
-        ViewId: any
-        Feature: any
-        Action: any
-        PickerBuilder: new () => any
+      picker?: {
+        View: new (viewId: string) => {
+          setMimeTypes: (mimeTypes: string) => void
+        }
+        ViewId: Record<string, string>
+        Feature: Record<string, string>
+        Action: Record<string, string>
+        PickerBuilder: new () => {
+          enableFeature: (feature: string) => any
+          setAppId: (appId: string) => any
+          setOAuthToken: (token: string) => any
+          setDeveloperKey: (key: string) => any
+          addView: (view: any) => any
+          setCallback: (callback: (data: Record<string, any>) => void) => any
+          build: () => any
+          setVisible: (visible: boolean) => void
+        }
       }
     }
   }
@@ -52,84 +58,93 @@ interface GoogleDriveButtonProps {
   onFileSelected: (file: File) => void
   disabled?: boolean
   clientId: string
+  apiKey?: string
 }
 
 export const GoogleDriveButton: React.FC<GoogleDriveButtonProps> = ({
   onFileSelected,
   disabled = false,
   clientId,
+  apiKey = '',
 }) => {
   const [uploading, setUploading] = useState(false)
-  const [sdkLoaded, setSdkLoaded] = useState(false)
+  const [gapiLoaded, setGapiLoaded] = useState(false)
+  const [gisLoaded, setGisLoaded] = useState(false)
   const { toast } = useToast()
 
   // Determine if the button should be disabled
-  const buttonDisabled = disabled || !clientId || uploading || !sdkLoaded
+  const isDisabled = disabled || !clientId || !apiKey || uploading || !gapiLoaded || !gisLoaded
 
   // Load Google API SDK
   useEffect(() => {
-    if (!clientId) {
-      console.log('No clientId provided, skipping Google API SDK loading')
+    if (!clientId || !apiKey) {
+      console.log('No clientId or apiKey provided, skipping Google API SDK loading')
       return
     }
 
-    console.log('Loading Google API SDK with clientId:', clientId)
-
-    // Function to load the Google Picker API
-    const loadGooglePickerAPI = () => {
-      // Load the Google Picker API
-      if (window.gapi) {
-        console.log('Loading Google Picker API')
-        window.gapi.load('picker', {
-          callback: () => {
-            console.log('Google Picker API loaded successfully')
-            setSdkLoaded(true)
-          },
-          onerror: () => {
-            console.error('Failed to load Google Picker API')
-          },
+    // Load the Google API script
+    const loadGoogleAPI = () => {
+      // Check if script already exists
+      const existingApiScript = document.getElementById('google-api-sdk')
+      if (!existingApiScript) {
+        const script = document.createElement('script')
+        script.id = 'google-api-sdk'
+        script.src = 'https://apis.google.com/js/api.js'
+        script.onload = () => {
+          console.log('Google API SDK loaded successfully')
+          if (window.gapi) {
+            window.gapi.load('picker', () => {
+              console.log('Google Picker API loaded successfully')
+              setGapiLoaded(true)
+            })
+          }
+        }
+        script.onerror = (error) => {
+          console.error('Failed to load Google API SDK', error)
+          clientLogger.error('Failed to load Google API SDK', 'GoogleDriveButton')
+        }
+        document.body.appendChild(script)
+      } else if (window.gapi) {
+        window.gapi.load('picker', () => {
+          console.log('Google Picker API loaded successfully')
+          setGapiLoaded(true)
         })
-      } else {
-        console.error('Google API not available')
       }
     }
 
-    // Check if script already exists
-    const existingScript = document.getElementById('google-api-sdk')
-    if (existingScript) {
-      console.log('Google API SDK script already exists')
-      // If script exists, check if Google API is loaded
-      if (window.gapi) {
-        console.log('window.gapi is available, loading Picker API')
-        loadGooglePickerAPI()
+    // Load the Google Identity Services script
+    const loadGoogleIdentityServices = () => {
+      // Check if script already exists
+      const existingGisScript = document.getElementById('google-identity-services')
+      if (!existingGisScript) {
+        const script = document.createElement('script')
+        script.id = 'google-identity-services'
+        script.src = 'https://accounts.google.com/gsi/client'
+        script.onload = () => {
+          console.log('Google Identity Services loaded successfully')
+          setGisLoaded(true)
+        }
+        script.onerror = (error) => {
+          console.error('Failed to load Google Identity Services', error)
+          clientLogger.error('Failed to load Google Identity Services', 'GoogleDriveButton')
+        }
+        document.body.appendChild(script)
       } else {
-        console.log('window.gapi is not available yet')
+        setGisLoaded(true)
       }
-      return
     }
 
-    // Create a new script element
-    console.log('Creating Google API SDK script element')
-    const script = document.createElement('script')
-    script.id = 'google-api-sdk'
-    script.src = 'https://apis.google.com/js/api.js'
-    script.onload = () => {
-      console.log('Google API SDK script loaded successfully')
-      loadGooglePickerAPI()
-    }
-    script.onerror = (error) => {
-      console.error('Failed to load Google API SDK', error)
-      clientLogger.error('Failed to load Google API SDK', 'GoogleDriveButton')
-    }
-    document.body.appendChild(script)
+    // Load both scripts
+    loadGoogleAPI()
+    loadGoogleIdentityServices()
 
     return () => {
       // Cleanup if needed
     }
-  }, [clientId])
+  }, [clientId, apiKey])
 
   const handleGoogleDriveClick = async () => {
-    if (!clientId || uploading || !sdkLoaded) return
+    if (isDisabled) return
 
     setUploading(true)
 
@@ -141,218 +156,204 @@ export const GoogleDriveButton: React.FC<GoogleDriveButtonProps> = ({
         throw new Error('Google Picker API not loaded')
       }
 
-      const picker = window.google.picker
-      const view = new picker.View(picker.ViewId.DOCS_VIDEOS)
-      view.setMimeTypes('video/mp4,video/quicktime,video/webm,video/x-matroska')
+      // Get the project number from the Google Cloud Console
+      const APP_ID = '226170616436' // Replace with your actual project number
 
-      // Create the picker
-      console.log('Creating Google Picker instance')
-      const pickerInstance = new picker.PickerBuilder()
-        .addView(view)
-        .enableFeature(picker.Feature.NAV_HIDDEN)
-        .enableFeature(picker.Feature.MULTISELECT_ENABLED)
-        .setCallback((data: any) => {
-          if (data.action === picker.Action.PICKED) {
-            const file = data.docs[0]
-            clientLogger.info('File selected from Google Drive', 'GoogleDriveButton', {
-              fileName: file.name,
-            })
+      // Initialize the OAuth token client
+      if (!window.google?.accounts?.oauth2) {
+        throw new Error('Google Identity Services not loaded')
+      }
 
-            // Show toast for upload start
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
+        callback: (tokenResponse: any) => {
+          if (tokenResponse.error) {
+            clientLogger.error('OAuth error', 'GoogleDriveButton', { error: tokenResponse.error })
             toast({
-              title: 'Uploading to Mux...',
-              description: file.name,
+              title: 'Authentication failed',
+              description: 'Failed to authenticate with Google Drive',
+              variant: 'destructive',
             })
+            setUploading(false)
+            return
+          }
 
-            // For public files, we can use the downloadUrl directly
-            if (file.downloadUrl) {
-              downloadFileFromUrl(file.downloadUrl, file.name, false)
-                .then((fileObj) => {
-                  // Call our API endpoint to create a Mux asset from the URL
-                  return createMuxAssetFromFile(fileObj, file.name)
-                })
-                .then((result) => {
-                  // Create a File object to maintain compatibility with the existing code
-                  const fileObj = new File(
-                    [new Blob([''], { type: 'application/octet-stream' })],
-                    file.name,
-                    { type: 'video/mp4' },
-                  )
+          try {
+            const oauthToken = tokenResponse.access_token
 
-                  // Add custom properties to the file object
-                  Object.defineProperties(fileObj, {
-                    muxAssetId: { value: result.data.asset.id, writable: true },
-                    muxPlaybackId: { value: result.data.asset.playbackId, writable: true },
-                    muxStatus: { value: result.data.asset.status, writable: true },
-                    fromUrl: { value: true, writable: true },
-                  })
-
-                  // Pass the file to the parent component
-                  onFileSelected(fileObj)
-
-                  // Show success toast
-                  toast({
-                    title: 'Upload successful',
-                    description: file.name,
-                  })
-                })
-                .catch((error) => {
-                  const errMsg = error instanceof Error ? error.message : 'Unknown error'
-
-                  // Show error toast
-                  toast({
-                    title: 'Upload failed',
-                    description: `${file.name}: ${errMsg}`,
-                    variant: 'destructive',
-                  })
-
-                  clientLogger.error(
-                    'Error processing file from Google Drive',
-                    'GoogleDriveButton',
-                    {
-                      error: errMsg,
-                      fileName: file.name,
-                    },
-                  )
-                })
-                .finally(() => {
-                  setUploading(false)
-                })
-            } else {
-              // For private files, we would need OAuth, but for now just show an error
-              clientLogger.error('File does not have a direct download URL', 'GoogleDriveButton')
-              toast({
-                title: 'Upload failed',
-                description:
-                  'This file cannot be downloaded directly. Please make sure the file is public or use another upload method.',
-                variant: 'destructive',
-              })
-              setUploading(false)
+            if (!window.google?.picker) {
+              throw new Error('Google Picker API not loaded')
             }
-          } else if (data.action === picker.Action.CANCEL) {
-            clientLogger.info('Google Drive selection cancelled', 'GoogleDriveButton')
+
+            const picker = window.google.picker
+            const view = new picker.View(picker.ViewId.DOCS_VIDEOS)
+            view.setMimeTypes('video/mp4,video/webm')
+
+            // Create the picker
+            const pickerInstance = new picker.PickerBuilder()
+              .enableFeature(picker.Feature.MULTISELECT_ENABLED)
+              .setAppId(APP_ID)
+              .setOAuthToken(oauthToken)
+              .setDeveloperKey(apiKey)
+              .addView(view)
+              .setCallback((data: any) => {
+                if (data.action === picker.Action.PICKED && data.docs && data.docs.length > 0) {
+                  clientLogger.info('Files selected from Google Drive', 'GoogleDriveButton', {
+                    fileCount: data.docs.length,
+                  })
+
+                  // Process each selected file
+                  processSelectedFiles(data.docs, oauthToken)
+                } else if (data.action === picker.Action.CANCEL) {
+                  clientLogger.info('Google Drive selection cancelled', 'GoogleDriveButton')
+                  setUploading(false)
+                }
+              })
+              .build()
+
+            pickerInstance.setVisible(true)
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+            clientLogger.error('Error in Google Drive picker', 'GoogleDriveButton', {
+              error: errorMsg,
+            })
+            toast({
+              title: 'Error',
+              description: errorMsg,
+              variant: 'destructive',
+            })
             setUploading(false)
           }
-        })
-        .build()
+        },
+      })
 
-      pickerInstance.setVisible(true)
+      // Request the OAuth token
+      tokenClient.requestAccessToken({ prompt: 'consent' })
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
       clientLogger.error('Error in Google Drive upload process', 'GoogleDriveButton', {
         error: errorMsg,
-        stack: error instanceof Error ? error.stack : 'No stack trace',
       })
-
       toast({
         title: 'Error',
         description: errorMsg,
         variant: 'destructive',
       })
-
       setUploading(false)
     }
   }
 
-  // Helper function to download a file from a URL
-  const downloadFileFromUrl = async (
-    url: string,
-    fileName: string,
-    requiresAuth: boolean = false,
-  ): Promise<File> => {
-    try {
-      clientLogger.info('Downloading file from URL', 'GoogleDriveButton', { url, fileName })
+  // Process selected files from Google Drive
+  const processSelectedFiles = async (files: any[], oauthToken: string) => {
+    for (const file of files) {
+      try {
+        // Show toast for upload start
+        toast({
+          title: 'Uploading to Mux...',
+          description: file.name,
+        })
 
-      const fetchOptions: RequestInit = {
-        method: 'GET',
-      }
+        // Get the download URL
+        const downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`
 
-      // Add authorization header if required
-      if (requiresAuth && window.gapi?.auth.getToken()?.access_token) {
-        fetchOptions.headers = {
-          Authorization: `Bearer ${window.gapi.auth.getToken().access_token}`,
+        // Download the file
+        const response = await fetch(downloadUrl, {
+          headers: {
+            Authorization: `Bearer ${oauthToken}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to download file: ${response.status} ${response.statusText}`)
         }
-      }
 
-      const response = await fetch(url, fetchOptions)
+        const blob = await response.blob()
+        const mimeType = file.mimeType || 'video/mp4'
+        const fileObj = new File([blob], file.name, { type: mimeType })
 
-      if (!response.ok) {
-        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`)
-      }
+        // Upload to Mux
+        const formData = new FormData()
+        formData.append('file', fileObj)
+        formData.append('filename', file.name)
 
-      const blob = await response.blob()
+        const muxRes = await fetch('/api/mux/create', {
+          method: 'POST',
+          body: formData,
+        })
 
-      // Determine MIME type based on file extension
-      let mimeType = 'video/mp4' // Default
-      if (fileName.endsWith('.mov')) mimeType = 'video/quicktime'
-      else if (fileName.endsWith('.webm')) mimeType = 'video/webm'
-      else if (fileName.endsWith('.avi')) mimeType = 'video/x-msvideo'
-      else if (fileName.endsWith('.mkv')) mimeType = 'video/x-matroska'
-
-      // Create a File object from the blob
-      return new File([blob], fileName, { type: mimeType })
-    } catch (error) {
-      clientLogger.error('Error downloading file', 'GoogleDriveButton', { error })
-      throw error
-    }
-  }
-
-  // Helper function to create a Mux asset from a file
-  const createMuxAssetFromFile = async (file: File, fileName: string) => {
-    try {
-      clientLogger.info('Creating Mux asset from file', 'GoogleDriveButton', {
-        fileName: fileName,
-      })
-
-      // Create a FormData object to send the file
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('filename', fileName)
-
-      // Call our API endpoint to create a Mux asset
-      const response = await fetch('/api/mux/create', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        let errorMessage = response.statusText
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || response.statusText
-        } catch (_parseError) {
-          clientLogger.error('Error parsing error response', 'GoogleDriveButton', {
-            status: response.status,
-            statusText: response.statusText,
-          })
+        if (!muxRes.ok) {
+          let errorMessage = muxRes.statusText
+          try {
+            const errorData = await muxRes.json()
+            errorMessage = errorData.error || muxRes.statusText
+          } catch (_parseError) {
+            clientLogger.error('Error parsing error response', 'GoogleDriveButton', {
+              status: muxRes.status,
+              statusText: muxRes.statusText,
+            })
+          }
+          throw new Error(`Failed to create Mux asset: ${errorMessage}`)
         }
-        throw new Error(`Failed to create Mux asset: ${errorMessage}`)
-      }
 
-      return await response.json()
-    } catch (error) {
-      clientLogger.error('Error creating Mux asset', 'GoogleDriveButton', { error })
-      throw error
+        const result = await muxRes.json()
+
+        // Create a File object to maintain compatibility with the existing code
+        const resultFileObj = new File(
+          [new Blob([''], { type: 'application/octet-stream' })],
+          file.name,
+          { type: mimeType },
+        )
+
+        // Add custom properties to the file object
+        Object.defineProperties(resultFileObj, {
+          muxAssetId: { value: result.data.asset.id, writable: true },
+          muxPlaybackId: { value: result.data.asset.playbackId, writable: true },
+          muxStatus: { value: result.data.asset.status, writable: true },
+          fromUrl: { value: true, writable: true },
+        })
+
+        // Pass the file to the parent component
+        onFileSelected(resultFileObj)
+
+        // Show success toast
+        toast({
+          title: 'Upload successful',
+          description: file.name,
+        })
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : 'Unknown error'
+        toast({
+          title: 'Upload failed',
+          description: `${file.name}: ${errMsg}`,
+          variant: 'destructive',
+        })
+        clientLogger.error('Error processing file from Google Drive', 'GoogleDriveButton', {
+          error: errMsg,
+          fileName: file.name,
+        })
+      }
     }
+    setUploading(false)
   }
 
   return (
     <Button
       onClick={handleGoogleDriveClick}
       id="google-drive-button"
-      disabled={buttonDisabled}
+      disabled={isDisabled}
       variant="outline"
       title={
-        !clientId
-          ? 'Google Drive integration is not configured'
-          : !sdkLoaded
+        !clientId || !apiKey
+          ? 'Google Drive integration is not fully configured'
+          : !gapiLoaded || !gisLoaded
             ? 'Google Drive SDK is loading...'
             : 'Choose video files from Google Drive'
       }
     >
       {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       <FileBox className={uploading ? 'hidden' : 'mr-2 h-4 w-4'} />
-      Choose from Google Drive
+      Choose from Google Drive (Multi)
     </Button>
   )
 }

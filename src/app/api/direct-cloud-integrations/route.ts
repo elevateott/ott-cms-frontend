@@ -24,7 +24,7 @@ export async function GET() {
       { context: 'directCloudIntegrationsAPI' },
       'Returning direct cloud integration settings',
     )
-    
+
     return NextResponse.json(cloudIntegrations)
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

@@ -70,6 +70,35 @@ export class MockMuxService implements IMuxService {
   }
 
   /**
+   * Get asset by upload ID
+   */
+  async getAssetByUploadId(uploadId: string): Promise<MuxAsset | null> {
+    try {
+      // Generate a mock asset ID from the upload ID
+      const assetId = `mock-asset-from-upload-${uploadId}`
+
+      // Return a mock asset
+      return {
+        id: assetId,
+        playback_ids: [
+          {
+            id: `mock-playback-${assetId}`,
+            policy: 'public',
+          },
+        ],
+        status: 'ready',
+        duration: 120,
+        aspect_ratio: '16:9',
+        created_at: new Date().toISOString(),
+        upload_id: uploadId,
+      } as unknown as MuxAsset
+    } catch (error) {
+      logError(error, 'MockMuxService.getAssetByUploadId')
+      return null
+    }
+  }
+
+  /**
    * Clear the cache for a specific asset or all assets
    */
   clearAssetCache(assetId?: string): void {
