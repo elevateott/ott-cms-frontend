@@ -10,6 +10,7 @@ import { updateSubtitleTracks } from '@/hooks/videoAssets/updateSubtitleTracks'
 
 export const VideoAssets: CollectionConfig = {
   slug: 'videoassets',
+  dbName: 'video_assets',
   versions: {
     drafts: {
       autosave: {
@@ -175,6 +176,7 @@ export const VideoAssets: CollectionConfig = {
         {
           name: 'status',
           type: 'select',
+          dbName: 'mux_status',
           options: [
             { label: 'Uploading', value: 'uploading' },
             { label: 'Processing', value: 'processing' },
@@ -206,6 +208,7 @@ export const VideoAssets: CollectionConfig = {
           name: 'videoQuality',
           type: 'select',
           label: 'Video Quality',
+          dbName: 'video_quality',
           options: [
             { label: 'Basic', value: 'basic' },
             { label: 'Plus', value: 'plus' },
@@ -220,6 +223,7 @@ export const VideoAssets: CollectionConfig = {
           name: 'maxResolution',
           type: 'select',
           label: 'Max Resolution',
+          dbName: 'max_resolution',
           options: [{ label: '1080p', value: '1080p' }],
           defaultValue: '1080p',
           admin: {
@@ -230,6 +234,7 @@ export const VideoAssets: CollectionConfig = {
           name: 'playbackPolicy',
           type: 'select',
           label: 'Playback Policy',
+          dbName: 'playback_policy',
           options: [
             { label: 'Public', value: 'public' },
             { label: 'Signed', value: 'signed' },
@@ -298,6 +303,7 @@ export const VideoAssets: CollectionConfig = {
             {
               name: 'kind',
               type: 'select',
+              dbName: 'subtitle_kind',
               options: [
                 { label: 'Subtitles', value: 'subtitles' },
                 { label: 'Captions', value: 'captions' },

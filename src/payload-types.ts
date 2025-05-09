@@ -545,6 +545,7 @@ export interface Content {
   };
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -664,6 +665,7 @@ export interface Videoasset {
   muxThumbnailUrl?: string | null;
   createdAt: string;
   updatedAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2805,6 +2807,7 @@ export interface VideoassetsSelect<T extends boolean = true> {
   muxThumbnailUrl?: T;
   createdAt?: T;
   updatedAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2856,6 +2859,7 @@ export interface ContentSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3645,7 +3649,7 @@ export interface StreamingSetting {
      */
     autoGenerateThumbnails?: boolean | null;
     /**
-     * Default playback policy for new Mux videos
+     * Default playback policy for new Mux videos. Note: Selecting "Signed" requires both Signing Key ID and Signing Key Private Key to be configured.
      */
     defaultPlaybackPolicy?: ('public' | 'signed') | null;
     /**
@@ -3665,11 +3669,11 @@ export interface StreamingSetting {
        */
       webhookSecret?: string | null;
       /**
-       * Mux Signing Key ID (for signed playback)
+       * Mux Signing Key ID (required for signed playback)
        */
       signingKeyId?: string | null;
       /**
-       * Private key used for signing playback URLs (in PEM format)
+       * Private key used for signing playback URLs (in PEM format, required for signed playback)
        */
       signingKeyPrivateKey?: string | null;
       /**
@@ -3782,17 +3786,13 @@ export interface CloudIntegration {
    */
   dropboxAppKey?: string | null;
   /**
-   * API key for Google Drive integration. Create in the Google Cloud Console.
-   */
-  googleApiKey?: string | null;
-  /**
    * OAuth client ID for Google Drive integration. Create in the Google Cloud Console.
    */
   googleClientId?: string | null;
   /**
-   * Application (client) ID for OneDrive integration. Create in the Microsoft Azure Portal.
+   * API key for Google Drive Picker. Enable the Picker API in the GCP Console.
    */
-  onedriveClientId?: string | null;
+  googleApiKey?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -4159,9 +4159,8 @@ export interface OttSettingsSelect<T extends boolean = true> {
  */
 export interface CloudIntegrationsSelect<T extends boolean = true> {
   dropboxAppKey?: T;
-  googleApiKey?: T;
   googleClientId?: T;
-  onedriveClientId?: T;
+  googleApiKey?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -4315,6 +4314,14 @@ export interface TaskSchedulePublish {
       | ({
           relationTo: 'posts';
           value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'videoassets';
+          value: number | Videoasset;
+        } | null)
+      | ({
+          relationTo: 'content';
+          value: number | Content;
         } | null);
     global?: string | null;
     user?: (number | null) | User;
