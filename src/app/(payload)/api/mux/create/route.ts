@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { logger } from '@/utils/logger'
-import { getPayload } from '@/utilities/payload'
-import { configPromise } from '@/payload.config'
+import { getPayload } from 'payload'
+import configPromise from '@payload-config'
 import { getMuxSettings } from '@/utilities/getMuxSettings'
 import { createMuxService } from '@/services/mux'
 
@@ -18,10 +18,7 @@ export async function POST(request: Request) {
     // Add request timeout handling
     const controller = new AbortController()
     const timeoutId = setTimeout(() => {
-      logger.warn(
-        { context: 'create/route' },
-        'Request timeout triggered after 60 seconds',
-      )
+      logger.warn({ context: 'create/route' }, 'Request timeout triggered after 60 seconds')
       controller.abort()
     }, 60000) // 60 second timeout
 
@@ -96,17 +93,18 @@ export async function POST(request: Request) {
         },
       }
 
-      logger.info({ context: 'create/route' }, 'Creating direct upload with options:', uploadOptions)
+      logger.info(
+        { context: 'create/route' },
+        'Creating direct upload with options:',
+        uploadOptions,
+      )
 
       // Create the upload with a timeout
       const upload = (await Promise.race([
         muxService.createDirectUpload(uploadOptions),
         new Promise((_, reject) => {
           setTimeout(() => {
-            logger.warn(
-              { context: 'create/route' },
-              'Mux API request timed out after 45 seconds',
-            )
+            logger.warn({ context: 'create/route' }, 'Mux API request timed out after 45 seconds')
             reject(
               new Error(
                 'Mux API request timed out after 45 seconds. This could be due to rate limiting or high server load.',
@@ -133,7 +131,9 @@ export async function POST(request: Request) {
       })
 
       if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload file to Mux: ${uploadResponse.status} ${uploadResponse.statusText}`)
+        throw new Error(
+          `Failed to upload file to Mux: ${uploadResponse.status} ${uploadResponse.statusText}`,
+        )
       }
 
       logger.info({ context: 'create/route' }, 'File uploaded to Mux successfully')
@@ -195,10 +195,7 @@ export async function POST(request: Request) {
         })
 
         // Log the successful creation
-        logger.info(
-          { context: 'create/route' },
-          'Successfully created VideoAsset and Mux asset',
-        )
+        logger.info({ context: 'create/route' }, 'Successfully created VideoAsset and Mux asset')
 
         // Return the response with the asset and videoAsset data
         return NextResponse.json({
@@ -216,11 +213,7 @@ export async function POST(request: Request) {
           },
         })
       } catch (payloadError) {
-        logger.error(
-          { context: 'create/route' },
-          'Error creating VideoAsset:',
-          payloadError,
-        )
+        logger.error({ context: 'create/route' }, 'Error creating VideoAsset:', payloadError)
 
         // Return the Mux asset data even if creating the VideoAsset failed
         return NextResponse.json({

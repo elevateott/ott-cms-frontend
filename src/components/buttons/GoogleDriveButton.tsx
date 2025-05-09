@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { clientLogger } from '@/utils/clientLogger'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, FileBox } from 'lucide-react'
+import GoogleDriveIcon from '@/components/icons/GoogleDriveIcon'
 
 // Define interfaces for Google Drive
 export interface GoogleDriveFile {
@@ -352,8 +353,8 @@ export const GoogleDriveButton: React.FC<GoogleDriveButtonProps> = ({
       }
     >
       {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      <FileBox className={uploading ? 'hidden' : 'mr-2 h-4 w-4'} />
-      Choose from Google Drive (Multi)
+      <GoogleDriveIcon className={uploading ? 'hidden' : 'mr-2 h-4 w-4'} />
+      Choose from Google Drive
     </Button>
   )
 }
