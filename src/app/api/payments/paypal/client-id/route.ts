@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
 
 export async function GET(req: Request) {
   try {
-    const payload = await getPayloadHMR({ config: configPromise })
+    const payload = await getPayload({ config: configPromise })
 
     // Get payment settings
     const settings = await getPaymentSettings()

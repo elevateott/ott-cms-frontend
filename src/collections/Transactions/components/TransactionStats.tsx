@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { useAuth } from 'payload/components/utilities'
+import { useAuth } from '@payloadcms/ui'
 
 interface TransactionStats {
   total: number
@@ -52,52 +52,58 @@ const TransactionStats: React.FC = () => {
     const fetchStats = async () => {
       try {
         setLoading(true)
-        
+
         // Fetch total transactions
         const totalRes = await fetch('/api/transactions?limit=0')
         const totalData = await totalRes.json()
-        
+
         // Fetch subscription transactions
-        const subscriptionRes = await fetch('/api/transactions?where[type][equals]=subscription&limit=0')
+        const subscriptionRes = await fetch(
+          '/api/transactions?where[type][equals]=subscription&limit=0',
+        )
         const subscriptionData = await subscriptionRes.json()
-        
+
         // Fetch PPV transactions
         const ppvRes = await fetch('/api/transactions?where[type][equals]=ppv&limit=0')
         const ppvData = await ppvRes.json()
-        
+
         // Fetch rental transactions
         const rentalRes = await fetch('/api/transactions?where[type][equals]=rental&limit=0')
         const rentalData = await rentalRes.json()
-        
+
         // Fetch transactions from the last 30 days
         const thirtyDaysAgo = new Date()
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-        const last30DaysRes = await fetch(`/api/transactions?where[createdAt][greater_than]=${thirtyDaysAgo.toISOString()}&limit=0`)
+        const last30DaysRes = await fetch(
+          `/api/transactions?where[createdAt][greater_than]=${thirtyDaysAgo.toISOString()}&limit=0`,
+        )
         const last30DaysData = await last30DaysRes.json()
-        
+
         // Calculate revenue
         const calculateRevenue = async (docs) => {
           return docs.reduce((total, transaction) => total + (transaction.amount || 0), 0) / 100 // Convert cents to dollars
         }
-        
+
         // Fetch all transactions to calculate revenue
         const allTransactionsRes = await fetch('/api/transactions?limit=999')
         const allTransactionsData = await allTransactionsRes.json()
-        
-        const subscriptionTransactions = allTransactionsData.docs.filter(t => t.type === 'subscription')
-        const ppvTransactions = allTransactionsData.docs.filter(t => t.type === 'ppv')
-        const rentalTransactions = allTransactionsData.docs.filter(t => t.type === 'rental')
-        const last30DaysTransactions = allTransactionsData.docs.filter(t => {
+
+        const subscriptionTransactions = allTransactionsData.docs.filter(
+          (t) => t.type === 'subscription',
+        )
+        const ppvTransactions = allTransactionsData.docs.filter((t) => t.type === 'ppv')
+        const rentalTransactions = allTransactionsData.docs.filter((t) => t.type === 'rental')
+        const last30DaysTransactions = allTransactionsData.docs.filter((t) => {
           const createdAt = new Date(t.createdAt)
           return createdAt >= thirtyDaysAgo
         })
-        
+
         const totalRevenue = await calculateRevenue(allTransactionsData.docs)
         const subscriptionRevenue = await calculateRevenue(subscriptionTransactions)
         const ppvRevenue = await calculateRevenue(ppvTransactions)
         const rentalRevenue = await calculateRevenue(rentalTransactions)
         const last30DaysRevenue = await calculateRevenue(last30DaysTransactions)
-        
+
         setStats({
           total: totalData.totalDocs,
           totalRevenue,
@@ -124,7 +130,7 @@ const TransactionStats: React.FC = () => {
         setLoading(false)
       }
     }
-    
+
     if (user) {
       fetchStats()
     }
@@ -132,13 +138,15 @@ const TransactionStats: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        padding: '20px',
-        backgroundColor: '#f9fafb',
-        borderRadius: '8px',
-        marginBottom: '20px',
-        textAlign: 'center',
-      }}>
+      <div
+        style={{
+          padding: '20px',
+          backgroundColor: '#f9fafb',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          textAlign: 'center',
+        }}
+      >
         Loading transaction statistics...
       </div>
     )
@@ -153,32 +161,40 @@ const TransactionStats: React.FC = () => {
   }
 
   return (
-    <div style={{ 
-      padding: '20px',
-      backgroundColor: '#f9fafb',
-      borderRadius: '8px',
-      marginBottom: '20px',
-    }}>
-      <h2 style={{ 
-        fontSize: '1.25rem',
-        fontWeight: 'bold',
-        marginBottom: '16px',
-      }}>
+    <div
+      style={{
+        padding: '20px',
+        backgroundColor: '#f9fafb',
+        borderRadius: '8px',
+        marginBottom: '20px',
+      }}
+    >
+      <h2
+        style={{
+          fontSize: '1.25rem',
+          fontWeight: 'bold',
+          marginBottom: '16px',
+        }}
+      >
         Transaction Statistics
       </h2>
-      
-      <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-        marginBottom: '20px',
-      }}>
-        <div style={{ 
-          padding: '16px',
-          backgroundColor: '#e0f2fe',
-          borderRadius: '8px',
-          textAlign: 'center',
-        }}>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px',
+          marginBottom: '20px',
+        }}
+      >
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#e0f2fe',
+            borderRadius: '8px',
+            textAlign: 'center',
+          }}
+        >
           <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0369a1' }}>
             {stats.total}
           </div>
@@ -188,13 +204,15 @@ const TransactionStats: React.FC = () => {
           </div>
           <div style={{ color: '#0369a1' }}>Total Revenue</div>
         </div>
-        
-        <div style={{ 
-          padding: '16px',
-          backgroundColor: '#dcfce7',
-          borderRadius: '8px',
-          textAlign: 'center',
-        }}>
+
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#dcfce7',
+            borderRadius: '8px',
+            textAlign: 'center',
+          }}
+        >
           <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#166534' }}>
             {stats.subscription.count}
           </div>
@@ -204,13 +222,15 @@ const TransactionStats: React.FC = () => {
           </div>
           <div style={{ color: '#166534' }}>Subscription Revenue</div>
         </div>
-        
-        <div style={{ 
-          padding: '16px',
-          backgroundColor: '#fef3c7',
-          borderRadius: '8px',
-          textAlign: 'center',
-        }}>
+
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#fef3c7',
+            borderRadius: '8px',
+            textAlign: 'center',
+          }}
+        >
           <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#92400e' }}>
             {stats.ppv.count}
           </div>
@@ -220,13 +240,15 @@ const TransactionStats: React.FC = () => {
           </div>
           <div style={{ color: '#92400e' }}>PPV Revenue</div>
         </div>
-        
-        <div style={{ 
-          padding: '16px',
-          backgroundColor: '#dbeafe',
-          borderRadius: '8px',
-          textAlign: 'center',
-        }}>
+
+        <div
+          style={{
+            padding: '16px',
+            backgroundColor: '#dbeafe',
+            borderRadius: '8px',
+            textAlign: 'center',
+          }}
+        >
           <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e40af' }}>
             {stats.rental.count}
           </div>
@@ -237,26 +259,32 @@ const TransactionStats: React.FC = () => {
           <div style={{ color: '#1e40af' }}>Rental Revenue</div>
         </div>
       </div>
-      
-      <div style={{ 
-        padding: '16px',
-        backgroundColor: '#f0f9ff',
-        borderRadius: '8px',
-        textAlign: 'center',
-        marginTop: '16px',
-      }}>
-        <h3 style={{ 
-          fontSize: '1rem',
-          fontWeight: 'bold',
-          marginBottom: '8px',
-          color: '#0c4a6e',
-        }}>
+
+      <div
+        style={{
+          padding: '16px',
+          backgroundColor: '#f0f9ff',
+          borderRadius: '8px',
+          textAlign: 'center',
+          marginTop: '16px',
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            marginBottom: '8px',
+            color: '#0c4a6e',
+          }}
+        >
           Last 30 Days
         </h3>
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'space-around',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+          }}
+        >
           <div>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#0c4a6e' }}>
               {stats.last30Days.count}

@@ -82,6 +82,13 @@ export interface Config {
     'live-events': LiveEvent;
     recordings: Recording;
     'live-event-registrations': LiveEventRegistration;
+    notifications: Notification;
+    subscribers: Subscriber;
+    'subscription-plans': SubscriptionPlan;
+    'discount-codes': DiscountCode;
+    transactions: Transaction;
+    'digital-products': DigitalProduct;
+    addons: Addon;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -108,6 +115,13 @@ export interface Config {
     'live-events': LiveEventsSelect<false> | LiveEventsSelect<true>;
     recordings: RecordingsSelect<false> | RecordingsSelect<true>;
     'live-event-registrations': LiveEventRegistrationsSelect<false> | LiveEventRegistrationsSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    'subscription-plans': SubscriptionPlansSelect<false> | SubscriptionPlansSelect<true>;
+    'discount-codes': DiscountCodesSelect<false> | DiscountCodesSelect<true>;
+    transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    'digital-products': DigitalProductsSelect<false> | DigitalProductsSelect<true>;
+    addons: AddonsSelect<false> | AddonsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -118,7 +132,7 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   globals: {
     header: Header;
@@ -126,8 +140,10 @@ export interface Config {
     'streaming-settings': StreamingSetting;
     'ott-settings': OttSetting;
     'cloud-integrations': CloudIntegration;
+    'cloud-storage-settings': CloudStorageSetting;
     'site-settings': SiteSetting;
     'email-settings': EmailSetting;
+    'payment-settings': PaymentSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
@@ -135,8 +151,10 @@ export interface Config {
     'streaming-settings': StreamingSettingsSelect<false> | StreamingSettingsSelect<true>;
     'ott-settings': OttSettingsSelect<false> | OttSettingsSelect<true>;
     'cloud-integrations': CloudIntegrationsSelect<false> | CloudIntegrationsSelect<true>;
+    'cloud-storage-settings': CloudStorageSettingsSelect<false> | CloudStorageSettingsSelect<true>;
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'email-settings': EmailSettingsSelect<false> | EmailSettingsSelect<true>;
+    'payment-settings': PaymentSettingsSelect<false> | PaymentSettingsSelect<true>;
   };
   locale: null;
   user: User & {
@@ -144,6 +162,8 @@ export interface Config {
   };
   jobs: {
     tasks: {
+      sendEventReminders: TaskSendEventReminders;
+      monitorDisconnectedStreams: TaskMonitorDisconnectedStreams;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -176,7 +196,7 @@ export interface UserAuthOperations {
  * via the `definition` "pages".
  */
 export interface Page {
-  id: string;
+  id: number;
   title: string;
   hero: {
     type: 'none' | 'highImpact' | 'mediumImpact' | 'lowImpact';
@@ -203,11 +223,11 @@ export interface Page {
             reference?:
               | ({
                   relationTo: 'pages';
-                  value: string | Page;
+                  value: number | Page;
                 } | null)
               | ({
                   relationTo: 'posts';
-                  value: string | Post;
+                  value: number | Post;
                 } | null);
             url?: string | null;
             label: string;
@@ -219,7 +239,7 @@ export interface Page {
           id?: string | null;
         }[]
       | null;
-    media?: (string | null) | Media;
+    media?: (number | null) | Media;
   };
   layout: (CallToActionBlock | ContentBlock | MediaBlock | ArchiveBlock | FormBlock)[];
   meta?: {
@@ -228,7 +248,7 @@ export interface Page {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (string | null) | Media;
+    image?: (number | null) | Media;
     /**
      * Social media specific settings
      */
@@ -255,9 +275,9 @@ export interface Page {
  * via the `definition` "posts".
  */
 export interface Post {
-  id: string;
+  id: number;
   title: string;
-  heroImage?: (string | null) | Media;
+  heroImage?: (number | null) | Media;
   content: {
     root: {
       type: string;
@@ -273,15 +293,15 @@ export interface Post {
     };
     [k: string]: unknown;
   };
-  relatedPosts?: (string | Post)[] | null;
-  categories?: (string | Category)[] | null;
+  relatedPosts?: (number | Post)[] | null;
+  categories?: (number | Category)[] | null;
   meta?: {
     title?: string | null;
     description?: string | null;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (string | null) | Media;
+    image?: (number | null) | Media;
     /**
      * Social media specific settings
      */
@@ -297,7 +317,7 @@ export interface Post {
     };
   };
   publishedAt?: string | null;
-  authors?: (string | User)[] | null;
+  authors?: (number | User)[] | null;
   populatedAuthors?:
     | {
         id?: string | null;
@@ -315,7 +335,7 @@ export interface Post {
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
+  id: number;
   alt?: string | null;
   caption?: {
     root: {
@@ -343,71 +363,13 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    square?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    xlarge?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    og?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
-  id: string;
+  id: number;
   /**
    * The name of the category displayed to users
    */
@@ -424,7 +386,7 @@ export interface Category {
   /**
    * Shown as a preview image or banner on catalog pages
    */
-  featuredImage?: (string | null) | Media;
+  featuredImage?: (number | null) | Media;
   /**
    * If checked, this category is featured on the homepage or catalog
    */
@@ -436,7 +398,7 @@ export interface Category {
   /**
    * Content linked to this category
    */
-  content?: (string | Content)[] | null;
+  content?: (number | Content)[] | null;
   /**
    * Used for manual sorting in menus or grids
    */
@@ -444,15 +406,15 @@ export interface Category {
   /**
    * Optional parent category for hierarchical organization
    */
-  parentCategory?: (string | null) | Category;
+  parentCategory?: (number | null) | Category;
   /**
    * Control where this category is featured
    */
   featuredOn?: ('none' | 'home' | 'nav' | 'both') | null;
-  parent?: (string | null) | Category;
+  parent?: (number | null) | Category;
   breadcrumbs?:
     | {
-        doc?: (string | null) | Category;
+        doc?: (number | null) | Category;
         url?: string | null;
         label?: string | null;
         id?: string | null;
@@ -464,7 +426,7 @@ export interface Category {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (string | null) | Media;
+    image?: (number | null) | Media;
     /**
      * Social media specific settings
      */
@@ -487,7 +449,7 @@ export interface Category {
  * via the `definition` "content".
  */
 export interface Content {
-  id: string;
+  id: number;
   title: string;
   description?: string | null;
   slug?: string | null;
@@ -495,7 +457,7 @@ export interface Content {
   /**
    * Main poster image for this content
    */
-  posterImage: string | Media;
+  posterImage: number | Media;
   /**
    * When this content was or will be released
    */
@@ -503,11 +465,11 @@ export interface Content {
   /**
    * The main video for this content
    */
-  mainVideo: string | Videoasset;
+  mainVideo: number | Videoasset;
   /**
    * Optional trailer video for this content
    */
-  trailerVideo?: (string | null) | Videoasset;
+  trailerVideo?: (number | null) | Videoasset;
   /**
    * Additional bonus videos for this content
    */
@@ -515,18 +477,18 @@ export interface Content {
     | {
         title: string;
         description?: string | null;
-        video: string | Videoasset;
+        video: number | Videoasset;
         id?: string | null;
       }[]
     | null;
   /**
    * Categories this content belongs to
    */
-  categories?: (string | Category)[] | null;
+  categories?: (number | Category)[] | null;
   /**
    * Creators associated with this content
    */
-  creators?: (string | Creator)[] | null;
+  creators?: (number | Creator)[] | null;
   /**
    * Add relevant keywords for filtering and discovery
    */
@@ -545,6 +507,14 @@ export interface Content {
    */
   isPublished?: boolean | null;
   /**
+   * Make this content available to all users without subscription.
+   */
+  isFree?: boolean | null;
+  /**
+   * Only users subscribed to these plan(s) can access. Leave blank = open to all subscribers.
+   */
+  requiredPlans?: (number | SubscriptionPlan)[] | null;
+  /**
    * Schedule when this content should go live.
    */
   publishAt?: string | null;
@@ -558,7 +528,7 @@ export interface Content {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (string | null) | Media;
+    image?: (number | null) | Media;
     /**
      * Social media specific settings
      */
@@ -581,7 +551,7 @@ export interface Content {
  * via the `definition` "videoassets".
  */
 export interface Videoasset {
-  id: string;
+  id: number;
   title: string;
   slug?: string | null;
   slugLock?: boolean | null;
@@ -690,7 +660,7 @@ export interface Videoasset {
   /**
    * Custom thumbnail image (optional, overrides the auto-generated Mux thumbnail)
    */
-  thumbnail?: (string | null) | Media;
+  thumbnail?: (number | null) | Media;
   muxThumbnailUrl?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -700,7 +670,7 @@ export interface Videoasset {
  * via the `definition` "creators".
  */
 export interface Creator {
-  id: string;
+  id: number;
   name: string;
   /**
    * Displayed on the creator's public profile.
@@ -711,7 +681,7 @@ export interface Creator {
   /**
    * Profile image for this creator
    */
-  avatar?: (string | null) | Media;
+  avatar?: (number | null) | Media;
   /**
    * Controls whether this creator is visible on the public site
    */
@@ -731,11 +701,116 @@ export interface Creator {
   updatedAt: string;
 }
 /**
+ * Subscription plans available for purchase
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-plans".
+ */
+export interface SubscriptionPlan {
+  id: number;
+  /**
+   * The name of the subscription plan
+   */
+  name: string;
+  /**
+   * A detailed description of what this plan includes
+   */
+  description?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  /**
+   * Define prices for each supported currency
+   */
+  pricesByCurrency: {
+    currency: 'usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy';
+    /**
+     * Price in cents (e.g., 1000 = $10.00)
+     */
+    amount: number;
+    /**
+     * Stripe Price ID (automatically generated)
+     */
+    stripePriceId?: string | null;
+    id?: string | null;
+  }[];
+  /**
+   * Legacy price field (USD) - maintained for backward compatibility
+   */
+  price?: number | null;
+  /**
+   * Billing interval for this subscription
+   */
+  interval: 'month' | 'quarter' | 'semi-annual' | 'year';
+  /**
+   * Free Trial (Days) - 0 = no trial. Up to 30 days allowed.
+   */
+  trialPeriodDays?: number | null;
+  /**
+   * Setup Fee (Paid Trial) - Optional one-time fee charged before trial starts, in cents (e.g., 500 = $5.00)
+   */
+  setupFeeAmount?: number | null;
+  /**
+   * Whether this plan is currently available for purchase
+   */
+  isActive?: boolean | null;
+  /**
+   * Plan version number
+   */
+  version?: number | null;
+  /**
+   * Whether this is the default plan (highlighted in UI)
+   */
+  isDefault?: boolean | null;
+  /**
+   * Display order (lower numbers appear first)
+   */
+  order?: number | null;
+  /**
+   * List of features included in this plan
+   */
+  features?:
+    | {
+        feature: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Maximum number of devices allowed for this plan (overrides global default)
+   */
+  maxDevices?: number | null;
+  /**
+   * Stripe Product ID (automatically generated)
+   */
+  stripeProductId?: string | null;
+  /**
+   * Default Stripe Price ID (USD) - maintained for backward compatibility
+   */
+  stripePriceId?: string | null;
+  /**
+   * Stripe Setup Fee Price ID (automatically generated)
+   */
+  stripeSetupFeeId?: string | null;
+  /**
+   * PayPal Product ID (automatically generated)
+   */
+  paypalProductId?: string | null;
+  /**
+   * PayPal Plan ID (automatically generated)
+   */
+  paypalPlanId?: string | null;
+  /**
+   * Which payment provider(s) this plan is available through
+   */
+  paymentProvider?: ('all' | 'stripe' | 'paypal') | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
   name?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -776,11 +851,11 @@ export interface CallToActionBlock {
           reference?:
             | ({
                 relationTo: 'pages';
-                value: string | Page;
+                value: number | Page;
               } | null)
             | ({
                 relationTo: 'posts';
-                value: string | Post;
+                value: number | Post;
               } | null);
           url?: string | null;
           label: string;
@@ -826,11 +901,11 @@ export interface ContentBlock {
           reference?:
             | ({
                 relationTo: 'pages';
-                value: string | Page;
+                value: number | Page;
               } | null)
             | ({
                 relationTo: 'posts';
-                value: string | Post;
+                value: number | Post;
               } | null);
           url?: string | null;
           label: string;
@@ -851,7 +926,7 @@ export interface ContentBlock {
  * via the `definition` "MediaBlock".
  */
 export interface MediaBlock {
-  media: string | Media;
+  media: number | Media;
   id?: string | null;
   blockName?: string | null;
   blockType: 'mediaBlock';
@@ -878,12 +953,12 @@ export interface ArchiveBlock {
   } | null;
   populateBy?: ('collection' | 'selection') | null;
   relationTo?: 'posts' | null;
-  categories?: (string | Category)[] | null;
+  categories?: (number | Category)[] | null;
   limit?: number | null;
   selectedDocs?:
     | {
         relationTo: 'posts';
-        value: string | Post;
+        value: number | Post;
       }[]
     | null;
   id?: string | null;
@@ -895,7 +970,7 @@ export interface ArchiveBlock {
  * via the `definition` "FormBlock".
  */
 export interface FormBlock {
-  form: string | Form;
+  form: number | Form;
   enableIntro?: boolean | null;
   introContent?: {
     root: {
@@ -921,7 +996,7 @@ export interface FormBlock {
  * via the `definition` "forms".
  */
 export interface Form {
-  id: string;
+  id: number;
   title: string;
   fields?:
     | (
@@ -1095,7 +1170,7 @@ export interface Form {
  * via the `definition` "mux-webhook-jobs".
  */
 export interface MuxWebhookJob {
-  id: string;
+  id: number;
   videoId: string;
   assetId: string;
   status: 'pending' | 'complete' | 'failed';
@@ -1110,7 +1185,7 @@ export interface MuxWebhookJob {
  * via the `definition` "series".
  */
 export interface Series {
-  id: string;
+  id: number;
   title: string;
   description?: string | null;
   slug?: string | null;
@@ -1118,23 +1193,23 @@ export interface Series {
   /**
    * Main thumbnail image for this series
    */
-  thumbnail: string | Media;
+  thumbnail: number | Media;
   /**
    * Optional video trailer shown before watching the full series
    */
-  trailer?: (string | null) | Videoasset;
+  trailer?: (number | null) | Videoasset;
   /**
    * Episodes or videos that are part of this series (custom order will be preserved)
    */
-  content?: (string | Content)[] | null;
+  content?: (number | Content)[] | null;
   /**
    * Creators associated with this series
    */
-  creators?: (string | Creator)[] | null;
+  creators?: (number | Creator)[] | null;
   /**
    * Categories this series belongs to
    */
-  categories?: (string | Category)[] | null;
+  categories?: (number | Category)[] | null;
   /**
    * Add relevant keywords for filtering and discovery
    */
@@ -1179,7 +1254,7 @@ export interface Series {
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
-    image?: (string | null) | Media;
+    image?: (number | null) | Media;
     /**
      * Social media specific settings
      */
@@ -1201,7 +1276,7 @@ export interface Series {
  * via the `definition` "filters".
  */
 export interface Filter {
-  id: string;
+  id: number;
   /**
    * Display name for this filter
    */
@@ -1238,7 +1313,7 @@ export interface Filter {
  * via the `definition` "carousels".
  */
 export interface Carousel {
-  id: string;
+  id: number;
   /**
    * The title displayed above the carousel (e.g., "Latest Releases", "Top Picks")
    */
@@ -1264,11 +1339,11 @@ export interface Carousel {
         item?:
           | ({
               relationTo: 'content';
-              value: string | Content;
+              value: number | Content;
             } | null)
           | ({
               relationTo: 'series';
-              value: string | Series;
+              value: number | Series;
             } | null);
         /**
          * Position in the carousel (1 = first, 2 = second, etc.)
@@ -1342,7 +1417,7 @@ export interface Carousel {
  * via the `definition` "live-events".
  */
 export interface LiveEvent {
-  id: string;
+  id: number;
   title: string;
   description?: string | null;
   slug?: string | null;
@@ -1350,11 +1425,23 @@ export interface LiveEvent {
   /**
    * Thumbnail image for this live event
    */
-  thumbnail?: (string | null) | Media;
+  thumbnail?: (number | null) | Media;
   /**
    * Enable this to use an external HLS stream URL instead of Mux
    */
   useExternalHlsUrl?: boolean | null;
+  /**
+   * Schedule a pre-recorded video to stream as if it were live
+   */
+  isSimulatedLive?: boolean | null;
+  /**
+   * Select a recording to use for this simulated live event
+   */
+  simulatedLiveAssetId?: (number | null) | Recording;
+  /**
+   * When this simulated live event should start streaming
+   */
+  simulatedLiveStartTime?: string | null;
   /**
    * Enter a valid HLS URL (must end with .m3u8) if using an external live streaming provider
    */
@@ -1364,9 +1451,31 @@ export interface LiveEvent {
    */
   isRecordingEnabled?: boolean | null;
   /**
+   * Enable advanced multi-camera setup guidance and templates
+   */
+  multiCamEnabled?: boolean | null;
+  /**
+   * Optional custom instructions for this multi-camera event
+   */
+  multiCamInstructions?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
    * Recordings of this live event
    */
-  recordings?: (string | Recording)[] | null;
+  recordings?: (number | Recording)[] | null;
   /**
    * Time allowed to reconnect after a disconnect (in seconds, max 300)
    */
@@ -1391,15 +1500,89 @@ export interface LiveEvent {
   /**
    * Users who have registered for this event
    */
-  registrations?: (string | LiveEventRegistration)[] | null;
+  registrations?: (number | LiveEventRegistration)[] | null;
   /**
    * Control who can access this live event
    */
   accessType: 'free' | 'subscription' | 'paid_ticket';
   /**
+   * Only users subscribed to these plan(s) can access. Leave blank = open to all subscribers.
+   */
+  requiredPlans?: (number | SubscriptionPlan)[] | null;
+  /**
    * Price for a one-time ticket to this event (in cents, e.g. 1000 = $10.00)
    */
   ticketPrice?: number | null;
+  /**
+   * Enable pay-per-view access for this event
+   */
+  ppvEnabled?: boolean | null;
+  /**
+   * Define PPV prices for each supported currency
+   */
+  ppvPricesByCurrency?:
+    | {
+        currency: 'usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy';
+        /**
+         * Price in cents (e.g., 499 = $4.99)
+         */
+        amount: number;
+        /**
+         * Stripe Price ID (automatically generated)
+         */
+        stripePriceId?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Legacy price field - maintained for backward compatibility
+   */
+  ppvPrice?: number | null;
+  /**
+   * Stripe Product ID for PPV (automatically populated)
+   */
+  ppvStripeProductId?: string | null;
+  /**
+   * Stripe Price ID for PPV (automatically populated)
+   */
+  ppvStripePriceId?: string | null;
+  /**
+   * Enable rental access for this event
+   */
+  rentalEnabled?: boolean | null;
+  /**
+   * Define rental prices for each supported currency
+   */
+  rentalPricesByCurrency?:
+    | {
+        currency: 'usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy';
+        /**
+         * Price in cents (e.g., 499 = $4.99)
+         */
+        amount: number;
+        /**
+         * Stripe Price ID (automatically generated)
+         */
+        stripePriceId?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Legacy price field - maintained for backward compatibility
+   */
+  rentalPrice?: number | null;
+  /**
+   * Common values: 48 = 2 days, 168 = 7 days
+   */
+  rentalDurationHours?: number | null;
+  /**
+   * Stripe Product ID for Rental (automatically populated)
+   */
+  rentalStripeProductId?: string | null;
+  /**
+   * Stripe Price ID for Rental (automatically populated)
+   */
+  rentalStripePriceId?: string | null;
   /**
    * How many minutes before the event to send reminder emails
    */
@@ -1435,6 +1618,14 @@ export interface LiveEvent {
    */
   recordingAssetId?: string | null;
   /**
+   * Mux Simulated Live Stream ID (automatically populated)
+   */
+  simulatedLiveStreamId?: string | null;
+  /**
+   * Mux Simulated Live Playback ID (automatically populated)
+   */
+  simulatedLivePlaybackId?: string | null;
+  /**
    * Optional targets to simulcast this live stream to (RTMP destinations)
    */
   simulcastTargets?:
@@ -1459,6 +1650,10 @@ export interface LiveEvent {
       }[]
     | null;
   /**
+   * When the live stream was last disconnected
+   */
+  disconnectedAt?: string | null;
+  /**
    * When the live stream was completed
    */
   endedAt?: string | null;
@@ -1470,7 +1665,7 @@ export interface LiveEvent {
  * via the `definition` "recordings".
  */
 export interface Recording {
-  id: string;
+  id: number;
   title: string;
   description?: string | null;
   slug?: string | null;
@@ -1478,7 +1673,7 @@ export interface Recording {
   /**
    * The live event this recording is from
    */
-  liveEvent: string | LiveEvent;
+  liveEvent: number | LiveEvent;
   /**
    * HLS playback URL for this recording
    */
@@ -1519,14 +1714,14 @@ export interface Recording {
  * via the `definition` "live-event-registrations".
  */
 export interface LiveEventRegistration {
-  id: string;
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
   /**
    * The live event this registration is for
    */
-  liveEvent: string | LiveEvent;
+  liveEvent: number | LiveEvent;
   /**
    * Whether the registration has been confirmed via email
    */
@@ -1543,11 +1738,438 @@ export interface LiveEventRegistration {
   updatedAt: string;
 }
 /**
+ * System notifications for administrators
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: number;
+  /**
+   * Short title for the notification
+   */
+  title: string;
+  /**
+   * Detailed notification message
+   */
+  message: string;
+  /**
+   * Type of notification
+   */
+  type: 'info' | 'success' | 'warning' | 'error';
+  /**
+   * Whether this notification has been read
+   */
+  read?: boolean | null;
+  /**
+   * Related live event (if applicable)
+   */
+  relatedLiveEvent?: (number | null) | LiveEvent;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * Manage customer subscriptions, rentals, and purchases. Subscribers can be created manually for migration, testing, or VIP access.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers".
+ */
+export interface Subscriber {
+  id: number;
+  activePlansCount?: string | null;
+  purchasedRentalsCount?: string | null;
+  purchasedPPVCount?: string | null;
+  purchasedProductsCount?: string | null;
+  purchasedAddOnsCount?: string | null;
+  fullName: string;
+  email: string;
+  /**
+   * The payment provider used by this subscriber
+   */
+  paymentProvider?: ('stripe' | 'paypal' | 'unknown') | null;
+  /**
+   * Stripe Customer ID or PayPal Payer ID
+   */
+  paymentProviderCustomerId?: string | null;
+  /**
+   * Set manually or via Stripe/PayPal webhook. For imported subscribers, set to "active" if they should have immediate access.
+   */
+  subscriptionStatus?: ('active' | 'trialing' | 'past_due' | 'canceled' | 'none') | null;
+  /**
+   * Date when the current subscription expires
+   */
+  subscriptionExpiresAt?: string | null;
+  /**
+   * Active subscription plans. Add plan(s) manually for imported subscribers or VIP access.
+   */
+  activePlans?: (number | SubscriptionPlan)[] | null;
+  /**
+   * Content items rented by this subscriber
+   */
+  purchasedRentals?: (number | Content)[] | null;
+  /**
+   * Expiration dates for rented content
+   */
+  rentalExpirations?:
+    | {
+        contentId: number | Content;
+        expiresAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Pay-per-view live events purchased by this subscriber. Add manually for imported subscribers or to grant PPV access without payment.
+   */
+  purchasedPPV?: (number | LiveEvent)[] | null;
+  /**
+   * Live events rented by this subscriber. Add manually for imported subscribers or to grant rental access without payment.
+   */
+  purchasedEventRentals?: (number | LiveEvent)[] | null;
+  /**
+   * Expiration dates for rented live events
+   */
+  eventRentalExpirations?:
+    | {
+        eventId: number | LiveEvent;
+        purchasedAt: string;
+        expiresAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * One-time digital products purchased by this subscriber
+   */
+  purchasedProducts?: (number | DigitalProduct)[] | null;
+  /**
+   * One-time add-ons purchased by this subscriber
+   */
+  purchasedAddOns?: (number | Addon)[] | null;
+  /**
+   * Recurring add-ons that this subscriber has active subscriptions for
+   */
+  activeRecurringAddOns?:
+    | {
+        addon: number | Addon;
+        /**
+         * Stripe Subscription ID for this add-on
+         */
+        stripeSubscriptionId?: string | null;
+        status?: ('active' | 'trialing' | 'past_due' | 'canceled') | null;
+        startedAt: string;
+        /**
+         * When the current billing period ends
+         */
+        currentPeriodEnd?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Grants full subscription access without external billing. Use for imported subscribers, team members, or VIPs.
+   */
+  hasManualSubscription?: boolean | null;
+  /**
+   * These events are unlocked for this user without purchase
+   */
+  manuallyGrantedPPV?: (number | LiveEvent)[] | null;
+  /**
+   * Live events with temporary access granted manually
+   */
+  manuallyGrantedRentals?:
+    | {
+        event: number | LiveEvent;
+        grantedAt: string;
+        /**
+         * When this manual rental access expires
+         */
+        expiresAt: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Currently active login sessions for this subscriber
+   */
+  activeSessions?:
+    | {
+        deviceId: string;
+        ip?: string | null;
+        userAgent?: string | null;
+        lastActive?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Associated user account (if authenticated)
+   */
+  user?: (number | null) | User;
+  /**
+   * Administrative notes about this subscriber
+   */
+  notes?: string | null;
+  /**
+   * Authentication token for this subscriber
+   */
+  subscriberToken?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * One-time digital products like eBooks, downloads, and courses
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "digital-products".
+ */
+export interface DigitalProduct {
+  id: number;
+  name: string;
+  description?: string | null;
+  /**
+   * Define prices for each supported currency
+   */
+  pricesByCurrency: {
+    currency: 'usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy';
+    /**
+     * Price in cents (e.g., 999 = $9.99)
+     */
+    amount: number;
+    /**
+     * Stripe Price ID (automatically generated)
+     */
+    stripePriceId?: string | null;
+    id?: string | null;
+  }[];
+  /**
+   * Legacy price field in USD cents - maintained for backward compatibility
+   */
+  price?: number | null;
+  /**
+   * URL where the product can be downloaded or accessed
+   */
+  downloadLink: string;
+  /**
+   * Product thumbnail image
+   */
+  thumbnail?: (number | null) | Media;
+  /**
+   * Stripe Product ID (automatically generated)
+   */
+  stripeProductId?: string | null;
+  /**
+   * Stripe Price ID (automatically generated)
+   */
+  stripePriceId?: string | null;
+  /**
+   * Number of times this product has been purchased
+   */
+  purchaseCount?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * Optional add-ons that subscribers can purchase in addition to their subscription
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addons".
+ */
+export interface Addon {
+  id: number;
+  title: string;
+  description?: string | null;
+  /**
+   * Whether this is a one-time purchase or a recurring monthly charge
+   */
+  type: 'one-time' | 'recurring';
+  /**
+   * Define prices for each supported currency
+   */
+  pricesByCurrency: {
+    currency: 'usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy';
+    /**
+     * Price in cents (e.g., 499 = $4.99)
+     */
+    amount: number;
+    /**
+     * Stripe Price ID (automatically generated)
+     */
+    stripePriceId?: string | null;
+    id?: string | null;
+  }[];
+  /**
+   * Legacy price field in USD cents - maintained for backward compatibility
+   */
+  price?: number | null;
+  /**
+   * Whether this add-on is currently available for purchase
+   */
+  isActive?: boolean | null;
+  /**
+   * Display order (lower numbers appear first)
+   */
+  order?: number | null;
+  /**
+   * Number of times this add-on has been purchased
+   */
+  purchaseCount?: number | null;
+  /**
+   * Stripe Product ID (automatically generated)
+   */
+  stripeProductId?: string | null;
+  /**
+   * Default Stripe Price ID (USD) - maintained for backward compatibility
+   */
+  stripePriceId?: string | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * Promotional discount codes for subscriptions, rentals, and PPV purchases
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "discount-codes".
+ */
+export interface DiscountCode {
+  id: number;
+  /**
+   * The code customers will enter at checkout (e.g., SUMMER20, WELCOME10)
+   */
+  code: string;
+  /**
+   * Internal description of this discount code
+   */
+  description?: string | null;
+  /**
+   * Type of discount to apply
+   */
+  type: 'percent_off' | 'amount_off';
+  /**
+   * For percentage: 1-100 (e.g., 20 = 20% off). For amount: value in cents (e.g., 1000 = $10.00 off)
+   */
+  value: number;
+  /**
+   * Whether this discount code is currently active
+   */
+  isActive?: boolean | null;
+  /**
+   * When this discount code becomes valid (leave blank for immediately)
+   */
+  validFrom?: string | null;
+  /**
+   * When this discount code expires (leave blank for no expiration)
+   */
+  validUntil?: string | null;
+  /**
+   * Maximum number of times this code can be used (0 = unlimited)
+   */
+  maxUses?: number | null;
+  /**
+   * Number of times this code has been used
+   */
+  usageCount?: number | null;
+  /**
+   * Limit this discount code to specific purchase types (leave empty to apply to all)
+   */
+  limitTo?: ('subscriptions' | 'ppv' | 'rentals' | 'products' | 'addons')[] | null;
+  /**
+   * Stripe Coupon ID (automatically generated)
+   */
+  stripeCouponId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
+ * Track all financial transactions in the system
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions".
+ */
+export interface Transaction {
+  id: number;
+  /**
+   * Email address of the customer
+   */
+  email: string;
+  /**
+   * Type of transaction
+   */
+  type: 'subscription' | 'ppv' | 'rental' | 'product';
+  /**
+   * Amount charged in the transaction (in cents)
+   */
+  amount: number;
+  /**
+   * Currency code (e.g., USD)
+   */
+  currency?: string | null;
+  /**
+   * Payment provider used for the transaction
+   */
+  paymentProvider: 'stripe' | 'paypal' | 'manual';
+  /**
+   * Current status of the transaction
+   */
+  status: 'completed' | 'pending' | 'failed' | 'refunded';
+  /**
+   * Related subscriber record
+   */
+  subscriber?: (number | null) | Subscriber;
+  /**
+   * Related live event (for PPV or rental)
+   */
+  event?: (number | null) | LiveEvent;
+  /**
+   * Related content (for rental)
+   */
+  content?: (number | null) | Content;
+  /**
+   * Related subscription plan
+   */
+  plan?: (number | null) | SubscriptionPlan;
+  /**
+   * Related digital product
+   */
+  product?: (number | null) | DigitalProduct;
+  /**
+   * External transaction ID from payment provider
+   */
+  transactionId?: string | null;
+  /**
+   * Payment method used (e.g., credit card, PayPal)
+   */
+  paymentMethod?: string | null;
+  /**
+   * Additional metadata from the payment provider
+   */
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Duration of rental in hours
+   */
+  rentalDuration?: number | null;
+  /**
+   * When the rental expires
+   */
+  expiresAt?: string | null;
+  /**
+   * Administrative notes about this transaction
+   */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
-  id: string;
+  id: number;
   /**
    * You will need to rebuild the website when changing this field.
    */
@@ -1557,11 +2179,11 @@ export interface Redirect {
     reference?:
       | ({
           relationTo: 'pages';
-          value: string | Page;
+          value: number | Page;
         } | null)
       | ({
           relationTo: 'posts';
-          value: string | Post;
+          value: number | Post;
         } | null);
     url?: string | null;
   };
@@ -1573,8 +2195,8 @@ export interface Redirect {
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
-  id: string;
-  form: string | Form;
+  id: number;
+  form: number | Form;
   submissionData?:
     | {
         field: string;
@@ -1592,18 +2214,18 @@ export interface FormSubmission {
  * via the `definition` "search".
  */
 export interface Search {
-  id: string;
+  id: number;
   title?: string | null;
   priority?: number | null;
   doc: {
     relationTo: 'posts';
-    value: string | Post;
+    value: number | Post;
   };
   slug?: string | null;
   meta?: {
     title?: string | null;
     description?: string | null;
-    image?: (string | null) | Media;
+    image?: (number | null) | Media;
   };
   categories?:
     | {
@@ -1620,7 +2242,7 @@ export interface Search {
  * via the `definition` "payload-jobs".
  */
 export interface PayloadJob {
-  id: string;
+  id: number;
   /**
    * Input data provided to the job
    */
@@ -1667,7 +2289,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
+        taskSlug: 'inline' | 'sendEventReminders' | 'monitorDisconnectedStreams' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -1700,7 +2322,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
+  taskSlug?: ('inline' | 'sendEventReminders' | 'monitorDisconnectedStreams' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1712,92 +2334,120 @@ export interface PayloadJob {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'pages';
-        value: string | Page;
+        value: number | Page;
       } | null)
     | ({
         relationTo: 'posts';
-        value: string | Post;
+        value: number | Post;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
       } | null)
     | ({
         relationTo: 'categories';
-        value: string | Category;
+        value: number | Category;
       } | null)
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'mux-webhook-jobs';
-        value: string | MuxWebhookJob;
+        value: number | MuxWebhookJob;
       } | null)
     | ({
         relationTo: 'videoassets';
-        value: string | Videoasset;
+        value: number | Videoasset;
       } | null)
     | ({
         relationTo: 'content';
-        value: string | Content;
+        value: number | Content;
       } | null)
     | ({
         relationTo: 'creators';
-        value: string | Creator;
+        value: number | Creator;
       } | null)
     | ({
         relationTo: 'series';
-        value: string | Series;
+        value: number | Series;
       } | null)
     | ({
         relationTo: 'filters';
-        value: string | Filter;
+        value: number | Filter;
       } | null)
     | ({
         relationTo: 'carousels';
-        value: string | Carousel;
+        value: number | Carousel;
       } | null)
     | ({
         relationTo: 'live-events';
-        value: string | LiveEvent;
+        value: number | LiveEvent;
       } | null)
     | ({
         relationTo: 'recordings';
-        value: string | Recording;
+        value: number | Recording;
       } | null)
     | ({
         relationTo: 'live-event-registrations';
-        value: string | LiveEventRegistration;
+        value: number | LiveEventRegistration;
+      } | null)
+    | ({
+        relationTo: 'notifications';
+        value: number | Notification;
+      } | null)
+    | ({
+        relationTo: 'subscribers';
+        value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'subscription-plans';
+        value: number | SubscriptionPlan;
+      } | null)
+    | ({
+        relationTo: 'discount-codes';
+        value: number | DiscountCode;
+      } | null)
+    | ({
+        relationTo: 'transactions';
+        value: number | Transaction;
+      } | null)
+    | ({
+        relationTo: 'digital-products';
+        value: number | DigitalProduct;
+      } | null)
+    | ({
+        relationTo: 'addons';
+        value: number | Addon;
       } | null)
     | ({
         relationTo: 'redirects';
-        value: string | Redirect;
+        value: number | Redirect;
       } | null)
     | ({
         relationTo: 'forms';
-        value: string | Form;
+        value: number | Form;
       } | null)
     | ({
         relationTo: 'form-submissions';
-        value: string | FormSubmission;
+        value: number | FormSubmission;
       } | null)
     | ({
         relationTo: 'search';
-        value: string | Search;
+        value: number | Search;
       } | null)
     | ({
         relationTo: 'payload-jobs';
-        value: string | PayloadJob;
+        value: number | PayloadJob;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -1807,10 +2457,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -1830,7 +2480,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -2032,80 +2682,6 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        square?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        xlarge?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        og?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2261,6 +2837,8 @@ export interface ContentSelect<T extends boolean = true> {
       };
   status?: T;
   isPublished?: T;
+  isFree?: T;
+  requiredPlans?: T;
   publishAt?: T;
   unpublishAt?: T;
   meta?:
@@ -2407,8 +2985,13 @@ export interface LiveEventsSelect<T extends boolean = true> {
   slugLock?: T;
   thumbnail?: T;
   useExternalHlsUrl?: T;
+  isSimulatedLive?: T;
+  simulatedLiveAssetId?: T;
+  simulatedLiveStartTime?: T;
   externalHlsUrl?: T;
   isRecordingEnabled?: T;
+  multiCamEnabled?: T;
+  multiCamInstructions?: T;
   recordings?: T;
   reconnectWindow?: T;
   playbackPolicy?: T;
@@ -2418,7 +3001,33 @@ export interface LiveEventsSelect<T extends boolean = true> {
   preregistrationEnabled?: T;
   registrations?: T;
   accessType?: T;
+  requiredPlans?: T;
   ticketPrice?: T;
+  ppvEnabled?: T;
+  ppvPricesByCurrency?:
+    | T
+    | {
+        currency?: T;
+        amount?: T;
+        stripePriceId?: T;
+        id?: T;
+      };
+  ppvPrice?: T;
+  ppvStripeProductId?: T;
+  ppvStripePriceId?: T;
+  rentalEnabled?: T;
+  rentalPricesByCurrency?:
+    | T
+    | {
+        currency?: T;
+        amount?: T;
+        stripePriceId?: T;
+        id?: T;
+      };
+  rentalPrice?: T;
+  rentalDurationHours?: T;
+  rentalStripeProductId?: T;
+  rentalStripePriceId?: T;
   reminderMinutesBefore?: T;
   muxLiveStreamId?: T;
   muxStreamKey?: T;
@@ -2432,6 +3041,8 @@ export interface LiveEventsSelect<T extends boolean = true> {
   muxStatus?: T;
   muxCreatedAt?: T;
   recordingAssetId?: T;
+  simulatedLiveStreamId?: T;
+  simulatedLivePlaybackId?: T;
   simulcastTargets?:
     | T
     | {
@@ -2441,6 +3052,7 @@ export interface LiveEventsSelect<T extends boolean = true> {
         streamKey?: T;
         status?: T;
       };
+  disconnectedAt?: T;
   endedAt?: T;
   createdAt?: T;
   updatedAt?: T;
@@ -2478,6 +3090,227 @@ export interface LiveEventRegistrationsSelect<T extends boolean = true> {
   confirmed?: T;
   confirmationToken?: T;
   reminderSent?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  title?: T;
+  message?: T;
+  type?: T;
+  read?: T;
+  relatedLiveEvent?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers_select".
+ */
+export interface SubscribersSelect<T extends boolean = true> {
+  activePlansCount?: T;
+  purchasedRentalsCount?: T;
+  purchasedPPVCount?: T;
+  purchasedProductsCount?: T;
+  purchasedAddOnsCount?: T;
+  fullName?: T;
+  email?: T;
+  paymentProvider?: T;
+  paymentProviderCustomerId?: T;
+  subscriptionStatus?: T;
+  subscriptionExpiresAt?: T;
+  activePlans?: T;
+  purchasedRentals?: T;
+  rentalExpirations?:
+    | T
+    | {
+        contentId?: T;
+        expiresAt?: T;
+        id?: T;
+      };
+  purchasedPPV?: T;
+  purchasedEventRentals?: T;
+  eventRentalExpirations?:
+    | T
+    | {
+        eventId?: T;
+        purchasedAt?: T;
+        expiresAt?: T;
+        id?: T;
+      };
+  purchasedProducts?: T;
+  purchasedAddOns?: T;
+  activeRecurringAddOns?:
+    | T
+    | {
+        addon?: T;
+        stripeSubscriptionId?: T;
+        status?: T;
+        startedAt?: T;
+        currentPeriodEnd?: T;
+        id?: T;
+      };
+  hasManualSubscription?: T;
+  manuallyGrantedPPV?: T;
+  manuallyGrantedRentals?:
+    | T
+    | {
+        event?: T;
+        grantedAt?: T;
+        expiresAt?: T;
+        id?: T;
+      };
+  activeSessions?:
+    | T
+    | {
+        deviceId?: T;
+        ip?: T;
+        userAgent?: T;
+        lastActive?: T;
+        id?: T;
+      };
+  user?: T;
+  notes?: T;
+  subscriberToken?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-plans_select".
+ */
+export interface SubscriptionPlansSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  slug?: T;
+  slugLock?: T;
+  pricesByCurrency?:
+    | T
+    | {
+        currency?: T;
+        amount?: T;
+        stripePriceId?: T;
+        id?: T;
+      };
+  price?: T;
+  interval?: T;
+  trialPeriodDays?: T;
+  setupFeeAmount?: T;
+  isActive?: T;
+  version?: T;
+  isDefault?: T;
+  order?: T;
+  features?:
+    | T
+    | {
+        feature?: T;
+        id?: T;
+      };
+  maxDevices?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  stripeSetupFeeId?: T;
+  paypalProductId?: T;
+  paypalPlanId?: T;
+  paymentProvider?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "discount-codes_select".
+ */
+export interface DiscountCodesSelect<T extends boolean = true> {
+  code?: T;
+  description?: T;
+  type?: T;
+  value?: T;
+  isActive?: T;
+  validFrom?: T;
+  validUntil?: T;
+  maxUses?: T;
+  usageCount?: T;
+  limitTo?: T;
+  stripeCouponId?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transactions_select".
+ */
+export interface TransactionsSelect<T extends boolean = true> {
+  email?: T;
+  type?: T;
+  amount?: T;
+  currency?: T;
+  paymentProvider?: T;
+  status?: T;
+  subscriber?: T;
+  event?: T;
+  content?: T;
+  plan?: T;
+  product?: T;
+  transactionId?: T;
+  paymentMethod?: T;
+  metadata?: T;
+  rentalDuration?: T;
+  expiresAt?: T;
+  notes?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "digital-products_select".
+ */
+export interface DigitalProductsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  pricesByCurrency?:
+    | T
+    | {
+        currency?: T;
+        amount?: T;
+        stripePriceId?: T;
+        id?: T;
+      };
+  price?: T;
+  downloadLink?: T;
+  thumbnail?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  purchaseCount?: T;
+  createdAt?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addons_select".
+ */
+export interface AddonsSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  type?: T;
+  pricesByCurrency?:
+    | T
+    | {
+        currency?: T;
+        amount?: T;
+        stripePriceId?: T;
+        id?: T;
+      };
+  price?: T;
+  isActive?: T;
+  order?: T;
+  purchaseCount?: T;
+  stripeProductId?: T;
+  stripePriceId?: T;
+  slug?: T;
+  slugLock?: T;
   createdAt?: T;
   updatedAt?: T;
 }
@@ -2740,7 +3573,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
  * via the `definition` "header".
  */
 export interface Header {
-  id: string;
+  id: number;
   navItems?:
     | {
         link: {
@@ -2749,11 +3582,11 @@ export interface Header {
           reference?:
             | ({
                 relationTo: 'pages';
-                value: string | Page;
+                value: number | Page;
               } | null)
             | ({
                 relationTo: 'posts';
-                value: string | Post;
+                value: number | Post;
               } | null);
           url?: string | null;
           label: string;
@@ -2769,7 +3602,7 @@ export interface Header {
  * via the `definition` "footer".
  */
 export interface Footer {
-  id: string;
+  id: number;
   navItems?:
     | {
         link: {
@@ -2778,11 +3611,11 @@ export interface Footer {
           reference?:
             | ({
                 relationTo: 'pages';
-                value: string | Page;
+                value: number | Page;
               } | null)
             | ({
                 relationTo: 'posts';
-                value: string | Post;
+                value: number | Post;
               } | null);
           url?: string | null;
           label: string;
@@ -2798,7 +3631,7 @@ export interface Footer {
  * via the `definition` "streaming-settings".
  */
 export interface StreamingSetting {
-  id: string;
+  id: number;
   /**
    * Control which video source types are allowed in the system
    */
@@ -2857,12 +3690,12 @@ export interface StreamingSetting {
  * via the `definition` "ott-settings".
  */
 export interface OttSetting {
-  id: string;
+  id: number;
   general: {
     siteName: string;
     siteDescription?: string | null;
-    logo?: (string | null) | Media;
-    favicon?: (string | null) | Media;
+    logo?: (number | null) | Media;
+    favicon?: (number | null) | Media;
   };
   features?: {
     /**
@@ -2881,6 +3714,14 @@ export interface OttSetting {
      * Allow users to rate videos
      */
     enableRatings?: boolean | null;
+    /**
+     * Limit the number of devices that can be logged in simultaneously per subscriber
+     */
+    enableDeviceLimiting?: boolean | null;
+    /**
+     * Default maximum number of devices allowed per subscriber (can be overridden by subscription plan)
+     */
+    defaultMaxDevices?: number | null;
   };
   player?: {
     /**
@@ -2935,7 +3776,7 @@ export interface OttSetting {
  * via the `definition` "cloud-integrations".
  */
 export interface CloudIntegration {
-  id: string;
+  id: number;
   /**
    * API key for Dropbox integration. Create an app in the Dropbox Developer Console.
    */
@@ -2956,11 +3797,90 @@ export interface CloudIntegration {
   createdAt?: string | null;
 }
 /**
+ * Configure cloud storage provider for media uploads (excluding videos)
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cloud-storage-settings".
+ */
+export interface CloudStorageSetting {
+  id: number;
+  /**
+   * When enabled, media uploads will use the selected cloud storage provider instead of local storage
+   */
+  enabled?: boolean | null;
+  /**
+   * Select which cloud storage provider to use for media uploads
+   */
+  provider?: ('vercel-blob' | 's3' | 'azure' | 'gcs' | 'uploadthing') | null;
+  vercelBlob?: {
+    /**
+     * Vercel Blob storage read/write token
+     */
+    token: string;
+    /**
+     * Add a random suffix to the uploaded file name in Vercel Blob storage
+     */
+    addRandomSuffix?: boolean | null;
+    /**
+     * Cache-Control max-age in seconds (default: 1 year)
+     */
+    cacheControlMaxAge?: number | null;
+  };
+  s3?: {
+    accessKeyId: string;
+    secretAccessKey: string;
+    /**
+     * AWS region (e.g., us-east-1)
+     */
+    region: string;
+    bucket: string;
+    /**
+     * Optional custom endpoint for S3-compatible services like DigitalOcean Spaces
+     */
+    endpoint?: string | null;
+    /**
+     * Use path-style URLs for S3 objects (required for some S3-compatible services)
+     */
+    forcePathStyle?: boolean | null;
+  };
+  azure?: {
+    connectionString: string;
+    containerName: string;
+    /**
+     * Allow the container to be created if it does not exist
+     */
+    allowContainerCreate?: boolean | null;
+    /**
+     * Optional base URL for the Azure Blob storage account
+     */
+    baseURL?: string | null;
+  };
+  gcs?: {
+    projectId: string;
+    /**
+     * Path to the JSON key file for service account authentication
+     */
+    keyFilename?: string | null;
+    bucket: string;
+    /**
+     * JSON credentials for service account (alternative to key file)
+     */
+    credentials?: string | null;
+  };
+  uploadthing?: {
+    apiKey: string;
+    secretKey: string;
+    appId: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
  */
 export interface SiteSetting {
-  id: string;
+  id: number;
   siteName?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -2972,7 +3892,7 @@ export interface SiteSetting {
  * via the `definition` "email-settings".
  */
 export interface EmailSetting {
-  id: string;
+  id: number;
   /**
    * Enable Resend as the email service provider
    */
@@ -2989,6 +3909,116 @@ export interface EmailSetting {
    * The name that will appear as the sender
    */
   resendFromName?: string | null;
+  /**
+   * Comma-separated list of email addresses to receive system notifications
+   */
+  adminNotificationEmails?: string | null;
+  /**
+   * Send email notifications when a stream becomes active
+   */
+  notifyOnStreamActive?: boolean | null;
+  /**
+   * Send email notifications when a stream disconnects
+   */
+  notifyOnStreamDisconnected?: boolean | null;
+  /**
+   * Send email notifications when a recording is ready
+   */
+  notifyOnRecordingReady?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Configure payment gateway settings for Stripe and PayPal integration
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payment-settings".
+ */
+export interface PaymentSetting {
+  id: number;
+  /**
+   * Setup instructions for payment gateways
+   */
+  instructions?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  stripe?: {
+    enabled?: boolean | null;
+    /**
+     * When enabled, all transactions will use the Stripe test environment
+     */
+    testMode?: boolean | null;
+    /**
+     * Enter your Stripe Account ID
+     */
+    accountId?: string | null;
+    connected?: boolean | null;
+    /**
+     * Enter your Stripe API Key (starts with sk_)
+     */
+    apiKey?: string | null;
+    /**
+     * Enter your Stripe Live API Key (starts with sk_live_)
+     */
+    liveApiKey?: string | null;
+    /**
+     * Enter your Stripe Publishable Key (starts with pk_)
+     */
+    publishableKey?: string | null;
+  };
+  paypal?: {
+    enabled?: boolean | null;
+    /**
+     * When enabled, all transactions will use the PayPal sandbox environment
+     */
+    testMode?: boolean | null;
+    /**
+     * Select the PayPal environment to use
+     */
+    environment?: ('sandbox' | 'live') | null;
+    /**
+     * Enter your PayPal Client ID from the PayPal Developer Dashboard
+     */
+    clientId?: string | null;
+    /**
+     * Enter your PayPal Client Secret from the PayPal Developer Dashboard
+     */
+    clientSecret?: string | null;
+    connected?: boolean | null;
+  };
+  /**
+   * Select which payment methods to offer at checkout
+   */
+  activePaymentMethods?: ('stripe' | 'paypal')[] | null;
+  /**
+   * Configure currency settings for your platform
+   */
+  currency: {
+    /**
+     * The default currency to use when no specific currency is selected
+     */
+    defaultCurrency: 'usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy';
+    /**
+     * Currencies that your platform supports for pricing
+     */
+    supportedCurrencies: ('usd' | 'eur' | 'gbp' | 'cad' | 'aud' | 'jpy')[];
+    /**
+     * Automatically detect and use the user's local currency when possible
+     */
+    detectUserCurrency?: boolean | null;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -3085,6 +4115,8 @@ export interface OttSettingsSelect<T extends boolean = true> {
         enableDownloads?: T;
         enableComments?: T;
         enableRatings?: T;
+        enableDeviceLimiting?: T;
+        defaultMaxDevices?: T;
       };
   player?:
     | T
@@ -3136,6 +4168,57 @@ export interface CloudIntegrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "cloud-storage-settings_select".
+ */
+export interface CloudStorageSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  provider?: T;
+  vercelBlob?:
+    | T
+    | {
+        token?: T;
+        addRandomSuffix?: T;
+        cacheControlMaxAge?: T;
+      };
+  s3?:
+    | T
+    | {
+        accessKeyId?: T;
+        secretAccessKey?: T;
+        region?: T;
+        bucket?: T;
+        endpoint?: T;
+        forcePathStyle?: T;
+      };
+  azure?:
+    | T
+    | {
+        connectionString?: T;
+        containerName?: T;
+        allowContainerCreate?: T;
+        baseURL?: T;
+      };
+  gcs?:
+    | T
+    | {
+        projectId?: T;
+        keyFilename?: T;
+        bucket?: T;
+        credentials?: T;
+      };
+  uploadthing?:
+    | T
+    | {
+        apiKey?: T;
+        secretKey?: T;
+        appId?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
 export interface SiteSettingsSelect<T extends boolean = true> {
@@ -3153,9 +4236,68 @@ export interface EmailSettingsSelect<T extends boolean = true> {
   resendApiKey?: T;
   resendFromAddress?: T;
   resendFromName?: T;
+  adminNotificationEmails?: T;
+  notifyOnStreamActive?: T;
+  notifyOnStreamDisconnected?: T;
+  notifyOnRecordingReady?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payment-settings_select".
+ */
+export interface PaymentSettingsSelect<T extends boolean = true> {
+  instructions?: T;
+  stripe?:
+    | T
+    | {
+        enabled?: T;
+        testMode?: T;
+        accountId?: T;
+        connected?: T;
+        apiKey?: T;
+        liveApiKey?: T;
+        publishableKey?: T;
+      };
+  paypal?:
+    | T
+    | {
+        enabled?: T;
+        testMode?: T;
+        environment?: T;
+        clientId?: T;
+        clientSecret?: T;
+        connected?: T;
+      };
+  activePaymentMethods?: T;
+  currency?:
+    | T
+    | {
+        defaultCurrency?: T;
+        supportedCurrencies?: T;
+        detectUserCurrency?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSendEventReminders".
+ */
+export interface TaskSendEventReminders {
+  input?: unknown;
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskMonitorDisconnectedStreams".
+ */
+export interface TaskMonitorDisconnectedStreams {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3168,14 +4310,14 @@ export interface TaskSchedulePublish {
     doc?:
       | ({
           relationTo: 'pages';
-          value: string | Page;
+          value: number | Page;
         } | null)
       | ({
           relationTo: 'posts';
-          value: string | Post;
+          value: number | Post;
         } | null);
     global?: string | null;
-    user?: (string | null) | User;
+    user?: (number | null) | User;
   };
   output?: unknown;
 }

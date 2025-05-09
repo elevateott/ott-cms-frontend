@@ -7,11 +7,11 @@ import { eventService } from '@/services/eventService'
 
 /**
  * Monitor disconnected streams and auto-disable them if they've been disconnected for too long
- * 
+ *
  * This job checks for live events that have been in the 'disconnected' state for longer than
  * their configured reconnect window (default 60 seconds) and automatically disables them.
  */
-export async function monitorDisconnectedStreams(): Promise<void> {
+const monitorDisconnectedStreams = async (): Promise<string> => {
   try {
     logger.info(
       { context: 'monitorDisconnectedStreams' },
@@ -55,24 +55,24 @@ export async function monitorDisconnectedStreams(): Promise<void> {
 
         // Get the reconnect window from the live event (default to 60 seconds)
         const reconnectWindow = liveEvent.reconnectWindow || 60
-        
+
         // Calculate how long the stream has been disconnected
         const disconnectedAt = new Date(liveEvent.disconnectedAt)
         const now = new Date()
         const disconnectedSeconds = Math.floor((now.getTime() - disconnectedAt.getTime()) / 1000)
-        
+
         logger.info(
           { context: 'monitorDisconnectedStreams' },
           `🔍 Live event ${liveEvent.id} (${liveEvent.title}) has been disconnected for ${disconnectedSeconds} seconds (reconnect window: ${reconnectWindow} seconds)`
         )
-        
+
         // If the stream has been disconnected for longer than the reconnect window, disable it
         if (disconnectedSeconds > reconnectWindow) {
           logger.info(
             { context: 'monitorDisconnectedStreams' },
             `🔍 Auto-disabling live event ${liveEvent.id} (${liveEvent.title}) after ${disconnectedSeconds} seconds of disconnection`
           )
-          
+
           // Update the live event status to disabled
           await payload.update({
             collection: 'live-events',
@@ -82,7 +82,7 @@ export async function monitorDisconnectedStreams(): Promise<void> {
               // Keep the disconnectedAt timestamp for reference
             },
           })
-          
+
           // Emit event to notify clients
           await eventService.emit(EVENTS.LIVE_STREAM_STATUS_UPDATED, {
             id: liveEvent.id,
@@ -93,7 +93,7 @@ export async function monitorDisconnectedStreams(): Promise<void> {
             reconnectWindow,
             timestamp: Date.now(),
           })
-          
+
           logger.info(
             { context: 'monitorDisconnectedStreams' },
             `✅ Successfully auto-disabled live event ${liveEvent.id}`
@@ -106,7 +106,7 @@ export async function monitorDisconnectedStreams(): Promise<void> {
         )
       }
     }
-    
+
     logger.info(
       { context: 'monitorDisconnectedStreams' },
       '✅ Completed checking for disconnected streams'
@@ -117,4 +117,8 @@ export async function monitorDisconnectedStreams(): Promise<void> {
       'Error monitoring disconnected streams'
     )
   }
-}
+
+  return 'Disconnected streams monitored'
+};
+
+export default monitorDisconnectedStreams

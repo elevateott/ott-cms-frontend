@@ -20,7 +20,6 @@ export const recordTransaction = async (
     paymentProvider: 'stripe' | 'paypal' | 'manual'
     status?: 'completed' | 'pending' | 'failed' | 'refunded'
     subscriber?: string
-    subscriberId?: string
     event?: string
     content?: string
     plan?: string
@@ -44,7 +43,6 @@ export const recordTransaction = async (
       paymentProvider,
       status = 'completed',
       subscriber,
-      subscriberId,
       event,
       content,
       plan,
@@ -67,7 +65,6 @@ export const recordTransaction = async (
         paymentProvider,
         status,
         subscriber,
-        subscriberId,
         event,
         content,
         plan,

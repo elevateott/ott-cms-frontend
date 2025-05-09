@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
@@ -22,7 +22,7 @@ import { getUserCurrency } from '@/utilities/currency'
  */
 export async function POST(req: Request) {
   try {
-    const payload = await getPayloadHMR({ config: configPromise })
+    const payload = await getPayload({ config: configPromise })
 
     // Get request body
     const body = await req.json()
@@ -91,26 +91,26 @@ export async function POST(req: Request) {
 
     // Determine which currency to use
     let userCurrency = requestCurrency || settings.currency.defaultCurrency
-    
+
     // Find the appropriate price ID for the selected currency
     let priceId = addon.stripePriceId // Default to legacy price ID (USD)
-    
+
     if (addon.pricesByCurrency && addon.pricesByCurrency.length > 0) {
       // Find price for the requested currency
-      const priceForCurrency = addon.pricesByCurrency.find(p => p.currency === userCurrency)
-      
+      const priceForCurrency = addon.pricesByCurrency.find((p) => p.currency === userCurrency)
+
       if (priceForCurrency && priceForCurrency.stripePriceId) {
         priceId = priceForCurrency.stripePriceId
       } else {
         // If requested currency not found, fall back to USD
-        const usdPrice = addon.pricesByCurrency.find(p => p.currency === 'usd')
+        const usdPrice = addon.pricesByCurrency.find((p) => p.currency === 'usd')
         if (usdPrice && usdPrice.stripePriceId) {
           priceId = usdPrice.stripePriceId
           userCurrency = 'usd'
         }
       }
     }
-    
+
     // Check if we have a valid price ID
     if (!priceId) {
       return NextResponse.json(

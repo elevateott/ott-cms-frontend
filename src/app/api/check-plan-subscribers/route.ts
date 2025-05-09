@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from '@/payload'
 import { hasPlanSubscribers } from '@/services/subscription/hasPlanSubscribers'
 import { logger } from '@/utils/logger'
-import { configPromise } from '@/payload.config'
+import configPromise from '@payload-config'
 
 /**
  * API endpoint to check if a subscription plan has subscribers
@@ -15,10 +15,7 @@ export async function GET(req: NextRequest) {
     const planId = url.searchParams.get('planId')
 
     if (!planId) {
-      return NextResponse.json(
-        { error: 'Missing planId parameter' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing planId parameter' }, { status: 400 })
     }
 
     // Initialize Payload
@@ -34,12 +31,9 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     logger.error(
       { error, context: 'check-plan-subscribers' },
-      'Error checking if plan has subscribers'
+      'Error checking if plan has subscribers',
     )
-    
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -7,16 +7,16 @@ import { getServerSideURL } from '@/utilities/getURL'
 /**
  * Job to send reminder emails to registrants before live events start
  */
-export const sendEventReminders = async () => {
+const sendEventReminders = async (): Promise<string> => {
   try {
     logger.info({ context: 'sendEventReminders' }, 'Starting event reminder job')
-    
+
     // Initialize Payload
     const payload = await getPayload({ config: configPromise })
-    
+
     // Get current time
     const now = new Date()
-    
+
     // Find upcoming events that are scheduled to start soon
     const upcomingEvents = await payload.find({
       collection: 'live-events',
@@ -40,32 +40,34 @@ export const sendEventReminders = async () => {
         ],
       },
     })
-    
+
     logger.info(
       { context: 'sendEventReminders' },
-      `Found ${upcomingEvents.docs.length} upcoming events with preregistration enabled`
+      `Found ${upcomingEvents.docs.length} upcoming events with preregistration enabled`,
     )
-    
+
     // Process each upcoming event
     for (const event of upcomingEvents.docs) {
       try {
         // Calculate when reminders should be sent
         const startTime = new Date(event.scheduledStartTime)
-        const reminderTime = new Date(startTime.getTime() - (event.reminderMinutesBefore || 30) * 60 * 1000)
-        
+        const reminderTime = new Date(
+          startTime.getTime() - (event.reminderMinutesBefore || 30) * 60 * 1000,
+        )
+
         // Check if it's time to send reminders (within the last 5 minutes)
         const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000)
-        
+
         if (reminderTime > now || reminderTime < fiveMinutesAgo) {
           // Not time to send reminders for this event yet
           continue
         }
-        
+
         logger.info(
           { context: 'sendEventReminders' },
-          `Sending reminders for event: ${event.title} (${event.id})`
+          `Sending reminders for event: ${event.title} (${event.id})`,
         )
-        
+
         // Find confirmed registrations that haven't received a reminder yet
         const registrations = await payload.find({
           collection: 'live-event-registrations',
@@ -90,16 +92,16 @@ export const sendEventReminders = async () => {
           },
           limit: 100, // Process in batches
         })
-        
+
         logger.info(
           { context: 'sendEventReminders' },
-          `Found ${registrations.docs.length} registrations to send reminders for event ${event.id}`
+          `Found ${registrations.docs.length} registrations to send reminders for event ${event.id}`,
         )
-        
+
         // Generate the event URL
         const baseUrl = getServerSideURL()
         const eventUrl = `${baseUrl}/events/${event.slug}`
-        
+
         // Send reminder emails to each registrant
         for (const registration of registrations.docs) {
           try {
@@ -120,7 +122,7 @@ export const sendEventReminders = async () => {
                 <p>Thank you,<br>The ${event.title} Team</p>
               `,
             })
-            
+
             // Mark the reminder as sent
             await payload.update({
               collection: 'live-event-registrations',
@@ -129,17 +131,17 @@ export const sendEventReminders = async () => {
                 reminderSent: true,
               },
             })
-            
+
             logger.info(
               { context: 'sendEventReminders' },
-              `Sent reminder email to ${registration.email} for event ${event.id}`
+              `Sent reminder email to ${registration.email} for event ${event.id}`,
             )
           } catch (error) {
             logger.error(
               { context: 'sendEventReminders' },
               `Error sending reminder to ${registration.email}: ${
                 error instanceof Error ? error.message : String(error)
-              }`
+              }`,
             )
           }
         }
@@ -148,16 +150,20 @@ export const sendEventReminders = async () => {
           { context: 'sendEventReminders' },
           `Error processing event ${event.id}: ${
             eventError instanceof Error ? eventError.message : String(eventError)
-          }`
+          }`,
         )
       }
     }
-    
+
     logger.info({ context: 'sendEventReminders' }, 'Completed event reminder job')
   } catch (error) {
     logger.error(
       { context: 'sendEventReminders' },
-      `Error in event reminder job: ${error instanceof Error ? error.message : String(error)}`
+      `Error in event reminder job: ${error instanceof Error ? error.message : String(error)}`,
     )
   }
+
+  return 'Event reminders sent'
 }
+
+export default sendEventReminders

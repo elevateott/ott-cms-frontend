@@ -9,7 +9,7 @@
  * - Manually granted PPV access
  * - Manually granted rental access
  */
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 
@@ -33,7 +33,7 @@ export async function checkAccessForEvent({
 
   try {
     // Get Payload instance
-    const payload = await getPayloadHMR({ config: configPromise })
+    const payload = await getPayload({ config: configPromise })
 
     // Fetch subscriber and event data in parallel
     const [subscriberResult, event] = await Promise.all([

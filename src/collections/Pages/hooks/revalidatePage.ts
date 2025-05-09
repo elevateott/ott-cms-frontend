@@ -1,8 +1,21 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-import { revalidatePath, revalidateTag } from 'next/cache'
-
 import type { Page } from '../../../payload-types'
+
+// Helper function to call revalidation API
+const callRevalidationAPI = (payload: any, path?: string, tag?: string) => {
+  try {
+    let url = '/api/revalidate?'
+    if (path) url += `path=${encodeURIComponent(path)}&`
+    if (tag) url += `tag=${encodeURIComponent(tag)}`
+
+    fetch(url, { method: 'POST' }).catch((err) =>
+      payload.logger.error(`Error calling revalidation API: ${err.message}`),
+    )
+  } catch (error) {
+    payload.logger.error(`Error calling revalidation API: ${error}`)
+  }
+}
 
 export const revalidatePage: CollectionAfterChangeHook<Page> = ({
   doc,
@@ -15,8 +28,8 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
 
       payload.logger.info(`Revalidating page at path: ${path}`)
 
-      revalidatePath(path)
-      revalidateTag('pages-sitemap')
+      // Call revalidation API instead of direct revalidatePath/revalidateTag
+      callRevalidationAPI(payload, path, 'pages-sitemap')
     }
 
     // If the page was previously published, we need to revalidate the old path
@@ -25,18 +38,22 @@ export const revalidatePage: CollectionAfterChangeHook<Page> = ({
 
       payload.logger.info(`Revalidating old page at path: ${oldPath}`)
 
-      revalidatePath(oldPath)
-      revalidateTag('pages-sitemap')
+      // Call revalidation API instead of direct revalidatePath/revalidateTag
+      callRevalidationAPI(payload, oldPath, 'pages-sitemap')
     }
   }
   return doc
 }
 
-export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({ doc, req: { context } }) => {
+export const revalidateDelete: CollectionAfterDeleteHook<Page> = ({
+  doc,
+  req: { payload, context },
+}) => {
   if (!context.disableRevalidate) {
     const path = doc?.slug === 'home' ? '/' : `/${doc?.slug}`
-    revalidatePath(path)
-    revalidateTag('pages-sitemap')
+
+    // Call revalidation API instead of direct revalidatePath/revalidateTag
+    callRevalidationAPI(payload, path, 'pages-sitemap')
   }
 
   return doc

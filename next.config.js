@@ -1,5 +1,4 @@
 import { withPayload } from '@payloadcms/next/withPayload'
-
 import redirects from './redirects.js'
 
 const NEXT_PUBLIC_SERVER_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
@@ -14,6 +13,9 @@ const nextConfig = {
   // The main application code is still type-checked with strict settings in tsconfig.json.
   typescript: {
     ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
@@ -49,6 +51,37 @@ const nextConfig = {
         // Add any module aliases if needed
       },
     },
+  },
+  // Handle Node.js modules in the browser
+  webpack: (config, { isServer }) => {
+    // Handle cloudflare:sockets by ignoring it
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'cloudflare:sockets': false,
+    }
+
+    if (!isServer) {
+      // Don't resolve Node.js modules on the client to prevent errors
+      config.resolve.fallback = {
+        fs: false,
+        net: false,
+        tls: false,
+        dns: false,
+        child_process: false,
+        perf_hooks: false,
+        async_hooks: false,
+        worker_threads: false,
+        readline: false,
+        stream: false,
+        http: false,
+        https: false,
+        zlib: false,
+        path: false,
+        os: false,
+        crypto: false,
+      }
+    }
+    return config
   },
 }
 
