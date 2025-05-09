@@ -92,14 +92,14 @@ export const AddOns: CollectionConfig = {
         if (!value || value.length === 0) {
           return 'At least one price is required'
         }
-        
+
         // Check for duplicate currencies
-        const currencies = value.map(price => price.currency)
+        const currencies = value.map((price) => price.currency)
         const uniqueCurrencies = [...new Set(currencies)]
         if (currencies.length !== uniqueCurrencies.length) {
           return 'Duplicate currencies are not allowed'
         }
-        
+
         return true
       },
     },
@@ -115,7 +115,7 @@ export const AddOns: CollectionConfig = {
           ({ value, data }) => {
             // Set the price field based on the USD price in pricesByCurrency
             if (data.pricesByCurrency && data.pricesByCurrency.length > 0) {
-              const usdPrice = data.pricesByCurrency.find(p => p.currency === 'usd')
+              const usdPrice = data.pricesByCurrency.find((p) => p.currency === 'usd')
               if (usdPrice) {
                 return usdPrice.amount
               }
@@ -175,7 +175,7 @@ export const AddOns: CollectionConfig = {
           ({ value, data }) => {
             // If we have pricesByCurrency, use the USD price ID
             if (data.pricesByCurrency && data.pricesByCurrency.length > 0) {
-              const usdPrice = data.pricesByCurrency.find(p => p.currency === 'usd')
+              const usdPrice = data.pricesByCurrency.find((p) => p.currency === 'usd')
               if (usdPrice && usdPrice.stripePriceId) {
                 return usdPrice.stripePriceId
               }
