@@ -25,11 +25,11 @@ async function initPayload() {
     console.log('Running payload command to initialize the database...')
 
     // Use the payload CLI to initialize the database
-    await payload.init({
-      secret: process.env.PAYLOAD_SECRET,
-      mongoURL: process.env.DATABASE_URI,
-      local: true,
-    })
+    // await payload.init({
+    //   secret: process.env.PAYLOAD_SECRET,
+    //   mongoURL: process.env.DATABASE_URI,
+    //   local: true,
+    // })
 
     console.log('Payload initialized successfully')
 

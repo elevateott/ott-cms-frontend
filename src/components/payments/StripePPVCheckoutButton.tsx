@@ -109,4 +109,5 @@ const StripePPVCheckoutButton: React.FC<StripePPVCheckoutButtonProps> = ({
   )
 }
 
+export { StripePPVCheckoutButton }
 export default StripePPVCheckoutButton

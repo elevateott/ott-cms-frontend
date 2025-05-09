@@ -1,7 +1,7 @@
 /**
  * Utilities for tracking subscriber sessions and devices
  */
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 import { getOTTSettings } from '@/utils/getOTTSettings'
@@ -18,14 +18,16 @@ export function generateDeviceId(userAgent?: string): string {
     const hash = crypto.createHash('sha256')
     hash.update(userAgent)
     const userAgentHash = hash.digest('hex').substring(0, 8)
-    
+
     // Combine with a random component for uniqueness
     const randomComponent = crypto.randomBytes(4).toString('hex')
     return `${userAgentHash}-${randomComponent}`
   }
-  
+
   // Fallback to a completely random UUID
-  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${crypto.randomBytes(16).toString('hex')}`
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${crypto.randomBytes(16).toString('hex')}`
 }
 
 /**
@@ -34,44 +36,47 @@ export function generateDeviceId(userAgent?: string): string {
  * @param subscriberId Subscriber ID
  * @returns Maximum number of devices allowed
  */
-export async function getMaxDevicesForSubscriber(payload: any, subscriberId: string): Promise<number> {
+export async function getMaxDevicesForSubscriber(
+  payload: any,
+  subscriberId: string,
+): Promise<number> {
   try {
     // Get global settings
     const ottSettings = await getOTTSettings()
     const defaultMaxDevices = ottSettings?.features?.defaultMaxDevices || 2
     const deviceLimitingEnabled = ottSettings?.features?.enableDeviceLimiting || false
-    
+
     // If device limiting is disabled, return a high number
     if (!deviceLimitingEnabled) {
       return 999 // Effectively unlimited
     }
-    
+
     // Get the subscriber with their active plans
     const subscriber = await payload.findByID({
       collection: 'subscribers',
       id: subscriberId,
       depth: 1, // Load related plans
     })
-    
+
     if (!subscriber || !subscriber.activePlans || subscriber.activePlans.length === 0) {
       // No active plans, use default
       return defaultMaxDevices
     }
-    
+
     // Find the plan with the highest device limit
     let maxDevices = defaultMaxDevices
-    
+
     for (const plan of subscriber.activePlans) {
       if (plan.maxDevices && plan.maxDevices > maxDevices) {
         maxDevices = plan.maxDevices
       }
     }
-    
+
     return maxDevices
   } catch (error) {
     logger.error(
       { error, context: 'getMaxDevicesForSubscriber' },
-      'Error getting max devices for subscriber'
+      'Error getting max devices for subscriber',
     )
     return 2 // Default fallback
   }
@@ -94,29 +99,29 @@ export async function trackSubscriberSession({
   userAgent?: string
 }): Promise<any> {
   try {
-    const payload = await getPayloadHMR({ config: configPromise })
-    
+    const payload = await getPayload({ config: configPromise })
+
     // Find the subscriber by email
     const subRes = await payload.find({
       collection: 'subscribers',
       where: { email: { equals: email } },
     })
-    
+
     const subscriber = subRes.docs[0]
     if (!subscriber) {
       logger.warn(
         { context: 'trackSubscriberSession', email },
-        'Attempted to track session for non-existent subscriber'
+        'Attempted to track session for non-existent subscriber',
       )
       return null
     }
-    
+
     // Get the maximum number of devices allowed for this subscriber
     const maxSessions = await getMaxDevicesForSubscriber(payload, subscriber.id)
-    
+
     // Get existing sessions or initialize empty array
     const existing = subscriber.activeSessions || []
-    
+
     // Create the new session object
     const newSession = {
       deviceId,
@@ -124,24 +129,24 @@ export async function trackSubscriberSession({
       userAgent: userAgent || null,
       lastActive: new Date().toISOString(),
     }
-    
+
     // Remove any existing session with the same device ID
     const deduped = existing.filter((s: any) => s.deviceId !== deviceId)
-    
+
     // Add the new session
     let updatedSessions = [...deduped, newSession]
-    
+
     // If we're over the limit, remove the oldest sessions
     if (updatedSessions.length > maxSessions) {
       // Sort by lastActive (oldest first)
       updatedSessions.sort((a: any, b: any) => {
         return new Date(a.lastActive).getTime() - new Date(b.lastActive).getTime()
       })
-      
+
       // Keep only the newest sessions up to the limit
       updatedSessions = updatedSessions.slice(-maxSessions)
     }
-    
+
     // Update the subscriber
     const updatedSubscriber = await payload.update({
       collection: 'subscribers',
@@ -150,13 +155,10 @@ export async function trackSubscriberSession({
         activeSessions: updatedSessions,
       },
     })
-    
+
     return updatedSubscriber
   } catch (error) {
-    logger.error(
-      { error, context: 'trackSubscriberSession' },
-      'Error tracking subscriber session'
-    )
+    logger.error({ error, context: 'trackSubscriberSession' }, 'Error tracking subscriber session')
     throw error
   }
 }
@@ -174,24 +176,21 @@ export async function hasReachedDeviceLimit(payload: any, subscriberId: string):
       collection: 'subscribers',
       id: subscriberId,
     })
-    
+
     if (!subscriber) {
       return false
     }
-    
+
     // Get the maximum number of devices allowed
     const maxDevices = await getMaxDevicesForSubscriber(payload, subscriberId)
-    
+
     // Get the current number of active sessions
     const activeSessions = subscriber.activeSessions || []
-    
+
     // Check if we've reached the limit
     return activeSessions.length >= maxDevices
   } catch (error) {
-    logger.error(
-      { error, context: 'hasReachedDeviceLimit' },
-      'Error checking device limit'
-    )
+    logger.error({ error, context: 'hasReachedDeviceLimit' }, 'Error checking device limit')
     return false // Default to allowing access on error
   }
 }
@@ -206,7 +205,7 @@ export async function hasReachedDeviceLimit(payload: any, subscriberId: string):
 export async function removeSubscriberSession(
   payload: any,
   subscriberId: string,
-  deviceId: string
+  deviceId: string,
 ): Promise<any> {
   try {
     // Get the subscriber
@@ -214,17 +213,17 @@ export async function removeSubscriberSession(
       collection: 'subscribers',
       id: subscriberId,
     })
-    
+
     if (!subscriber) {
       return null
     }
-    
+
     // Get existing sessions
     const existing = subscriber.activeSessions || []
-    
+
     // Remove the session with the matching device ID
     const updatedSessions = existing.filter((s: any) => s.deviceId !== deviceId)
-    
+
     // Update the subscriber
     const updatedSubscriber = await payload.update({
       collection: 'subscribers',
@@ -233,13 +232,10 @@ export async function removeSubscriberSession(
         activeSessions: updatedSessions,
       },
     })
-    
+
     return updatedSubscriber
   } catch (error) {
-    logger.error(
-      { error, context: 'removeSubscriberSession' },
-      'Error removing subscriber session'
-    )
+    logger.error({ error, context: 'removeSubscriberSession' }, 'Error removing subscriber session')
     throw error
   }
 }

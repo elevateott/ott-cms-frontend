@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react'
 
-interface UsePayloadAPIOptions {
+interface PayloadAPIOptions {
   limit?: number
   page?: number
   sort?: string
   where?: Record<string, any>
   depth?: number
-  [key: string]: any
 }
 
-interface PayloadResponse<T> {
+interface PayloadAPIResponse<T> {
   docs: T[]
   totalDocs: number
   limit: number
@@ -24,64 +23,69 @@ interface PayloadResponse<T> {
   nextPage: number | null
 }
 
+/**
+ * Hook for fetching data from Payload CMS API
+ *
+ * @param endpoint The API endpoint to fetch from (collection or global)
+ * @param options Query options including limit, page, sort, where, depth
+ * @returns Object containing data, loading state, error state, and refetch function
+ */
 export function usePayloadAPI<T = any>(
   endpoint: string,
-  options: UsePayloadAPIOptions = {}
+  options: PayloadAPIOptions = {}
 ) {
-  const [data, setData] = useState<PayloadResponse<T> | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isError, setIsError] = useState(false)
+  const [data, setData] = useState<PayloadAPIResponse<T> | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isError, setIsError] = useState<boolean>(false)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true)
-      setIsError(false)
-      setError(null)
+  const fetchData = async () => {
+    setIsLoading(true)
+    setIsError(false)
+    setError(null)
 
-      try {
-        // Build query string from options
-        const queryParams = new URLSearchParams()
-        
-        if (options.limit) queryParams.append('limit', options.limit.toString())
-        if (options.page) queryParams.append('page', options.page.toString())
-        if (options.sort) queryParams.append('sort', options.sort)
-        if (options.depth) queryParams.append('depth', options.depth.toString())
-        
-        // Handle 'where' conditions
-        if (options.where) {
-          queryParams.append('where', JSON.stringify(options.where))
-        }
-        
-        // Add any other options as query parameters
-        Object.entries(options).forEach(([key, value]) => {
-          if (!['limit', 'page', 'sort', 'where', 'depth'].includes(key)) {
-            queryParams.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value))
-          }
-        })
+    try {
+      // Build query string from options
+      const queryParams = new URLSearchParams()
 
-        const queryString = queryParams.toString()
-        const url = `/api/${endpoint}${queryString ? `?${queryString}` : ''}`
-        
-        const response = await fetch(url)
-        
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`)
-        }
-        
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        setIsError(true)
-        setError(err instanceof Error ? err : new Error(String(err)))
-        console.error(`Error fetching from ${endpoint}:`, err)
-      } finally {
-        setIsLoading(false)
+      if (options.limit) queryParams.append('limit', options.limit.toString())
+      if (options.page) queryParams.append('page', options.page.toString())
+      if (options.sort) queryParams.append('sort', options.sort)
+      if (options.depth) queryParams.append('depth', options.depth.toString())
+
+      if (options.where) {
+        queryParams.append('where', JSON.stringify(options.where))
       }
-    }
 
+      const queryString = queryParams.toString()
+      const url = `/api/${endpoint}${queryString ? `?${queryString}` : ''}`
+
+      const response = await fetch(url)
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`)
+      }
+
+      const result = await response.json()
+      setData(result)
+    } catch (err) {
+      console.error('Error fetching data from Payload API:', err)
+      setIsError(true)
+      setError(err instanceof Error ? err : new Error(String(err)))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchData()
   }, [endpoint, JSON.stringify(options)])
 
-  return { data, isLoading, isError, error }
+  return {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch: fetchData
+  }
 }

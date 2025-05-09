@@ -110,4 +110,5 @@ const StripeCheckoutButton: React.FC<StripeCheckoutButtonProps> = ({
   )
 }
 
+export { StripeCheckoutButton }
 export default StripeCheckoutButton

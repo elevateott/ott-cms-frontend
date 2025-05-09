@@ -1,10 +1,10 @@
-import { getPayload } from '@/payload'
-import { configPromise } from '@/payload.config'
+import payload from 'payload'
 
 /**
- * Get a Payload client instance
- * This is a convenience function for getting a Payload client without having to pass the config
+ * Get a singleton Payload client instance
+ *
+ * @returns Payload client instance
  */
 export const getPayloadClient = async () => {
-  return getPayload({ config: configPromise })
+  return payload
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 import { getPaymentSettings } from '@/utilities/getPaymentSettings'
@@ -21,7 +21,7 @@ import { getUserCurrency } from '@/utilities/currency'
  */
 export async function POST(req: Request) {
   try {
-    const payload = await getPayloadHMR({ config: configPromise })
+    const payload = await getPayload({ config: configPromise })
 
     // Get request body
     const body = await req.json()

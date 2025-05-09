@@ -2,28 +2,18 @@ import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'paylo
 
 import type { Post } from '../../../payload-types'
 
-// Helper function to revalidate via API
-const revalidateViaAPI = (payload: any, path?: string, tag?: string) => {
-  const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
-  const url = new URL(`${baseUrl}/api/revalidate`)
-
-  if (path) url.searchParams.append('path', path)
-  if (tag) url.searchParams.append('tag', tag)
-
+// Helper function to call revalidation API
+const callRevalidationAPI = (payload: any, path?: string, tag?: string) => {
   try {
-    fetch(url.toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        revalidateSecret: process.env.REVALIDATION_SECRET || 'default-secret',
-      }),
-    }).catch((err) => {
-      payload.logger.error(`Error revalidating: ${err.message}`)
-    })
+    let url = '/api/revalidate?'
+    if (path) url += `path=${encodeURIComponent(path)}&`
+    if (tag) url += `tag=${encodeURIComponent(tag)}`
+
+    fetch(url, { method: 'POST' }).catch((err) =>
+      payload.logger.error(`Error calling revalidation API: ${err.message}`),
+    )
   } catch (error) {
-    payload.logger.error(`Error revalidating: ${error}`)
+    payload.logger.error(`Error calling revalidation API: ${error}`)
   }
 }
 
@@ -38,8 +28,8 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
 
       payload.logger.info(`Revalidating post at path: ${path}`)
 
-      revalidateViaAPI(payload, path)
-      revalidateViaAPI(payload, undefined, 'posts-sitemap')
+      // Call revalidation API instead of direct revalidatePath/revalidateTag
+      callRevalidationAPI(payload, path, 'posts-sitemap')
     }
 
     // If the post was previously published, we need to revalidate the old path
@@ -48,8 +38,8 @@ export const revalidatePost: CollectionAfterChangeHook<Post> = ({
 
       payload.logger.info(`Revalidating old post at path: ${oldPath}`)
 
-      revalidateViaAPI(payload, oldPath)
-      revalidateViaAPI(payload, undefined, 'posts-sitemap')
+      // Call revalidation API instead of direct revalidatePath/revalidateTag
+      callRevalidationAPI(payload, oldPath, 'posts-sitemap')
     }
   }
   return doc
@@ -62,10 +52,8 @@ export const revalidateDelete: CollectionAfterDeleteHook<Post> = ({
   if (!context.disableRevalidate) {
     const path = `/posts/${doc?.slug}`
 
-    payload.logger.info(`Revalidating deleted post at path: ${path}`)
-
-    revalidateViaAPI(payload, path)
-    revalidateViaAPI(payload, undefined, 'posts-sitemap')
+    // Call revalidation API instead of direct revalidatePath/revalidateTag
+    callRevalidationAPI(payload, path, 'posts-sitemap')
   }
 
   return doc

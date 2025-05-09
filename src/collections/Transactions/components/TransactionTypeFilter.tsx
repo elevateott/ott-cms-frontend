@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useCallback } from 'react'
-import { useFilter } from 'payload/components/utilities'
-import { Where } from 'payload/types'
+import { useFilter } from '@payloadcms/ui'
+import type { Where } from 'payload'
 
 const TransactionTypeFilter: React.FC = () => {
   const { filter, modifySearchQuery, getResults } = useFilter({
@@ -26,7 +26,7 @@ const TransactionTypeFilter: React.FC = () => {
 
       getResults()
     },
-    [filter, modifySearchQuery, getResults]
+    [filter, modifySearchQuery, getResults],
   )
 
   const types = [
@@ -39,23 +39,27 @@ const TransactionTypeFilter: React.FC = () => {
 
   return (
     <div style={{ marginBottom: '20px' }}>
-      <h3 style={{ 
-        fontSize: '0.875rem',
-        fontWeight: 'bold',
-        marginBottom: '8px',
-      }}>
+      <h3
+        style={{
+          fontSize: '0.875rem',
+          fontWeight: 'bold',
+          marginBottom: '8px',
+        }}
+      >
         Filter by Transaction Type
       </h3>
-      <div style={{ 
-        display: 'flex',
-        gap: '8px',
-        flexWrap: 'wrap',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          flexWrap: 'wrap',
+        }}
+      >
         {types.map((type) => (
           <button
             key={type.value}
             onClick={() => handleChange(type.value)}
-            style={{ 
+            style={{
               padding: '6px 12px',
               borderRadius: '16px',
               border: '1px solid',
@@ -73,7 +77,7 @@ const TransactionTypeFilter: React.FC = () => {
         {activeType && (
           <button
             onClick={() => handleChange('')}
-            style={{ 
+            style={{
               padding: '6px 12px',
               borderRadius: '16px',
               border: '1px solid #e5e7eb',

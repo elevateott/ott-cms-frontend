@@ -6,17 +6,10 @@ export const revalidateFooter: GlobalAfterChangeHook = ({ doc, req: { payload, c
 
     // Use fetch to call a revalidation API endpoint instead of direct revalidateTag
     try {
-      fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/revalidate?tag=global_footer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          revalidateSecret: process.env.REVALIDATION_SECRET || 'default-secret',
-        }),
-      }).catch((err) => {
-        payload.logger.error(`Error revalidating footer: ${err.message}`)
-      })
+      // This should be replaced with an actual API endpoint that performs the revalidation
+      fetch('/api/revalidate?tag=global_footer', { method: 'POST' }).catch((err) =>
+        payload.logger.error(`Error revalidating footer: ${err.message}`),
+      )
     } catch (error) {
       payload.logger.error(`Error revalidating footer: ${error}`)
     }

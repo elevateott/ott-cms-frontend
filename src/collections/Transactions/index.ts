@@ -22,33 +22,37 @@ export const Transactions: CollectionConfig = {
     group: 'Monetization',
     description: 'Track all financial transactions in the system',
     components: {
-      views: {
-        List: '@/collections/Transactions/components/TransactionsList',
-      },
+      // Temporarily comment out the custom list view until we fix the component
+      // views: {
+      //   list: {
+      //     Component: () => null,
+      //   },
+      // },
     },
     // Add custom filters
-    filters: [
-      {
-        field: 'type',
-        label: 'Transaction Type',
-        type: 'select',
-        options: ['subscription', 'ppv', 'rental', 'product'],
-      },
-      {
-        field: 'paymentProvider',
-        label: 'Payment Provider',
-        type: 'select',
-        options: ['stripe', 'paypal', 'manual'],
-      },
-      {
-        field: 'status',
-        label: 'Status',
-        type: 'select',
-        options: ['completed', 'pending', 'failed', 'refunded'],
-      },
-    ],
+    // Temporarily comment out filters until we fix the type issues
+    // filters: [
+    //   {
+    //     field: 'type',
+    //     label: 'Transaction Type',
+    //     type: 'select',
+    //     options: ['subscription', 'ppv', 'rental', 'product'],
+    //   },
+    //   {
+    //     field: 'paymentProvider',
+    //     label: 'Payment Provider',
+    //     type: 'select',
+    //     options: ['stripe', 'paypal', 'manual'],
+    //   },
+    //   {
+    //     field: 'status',
+    //     label: 'Status',
+    //     type: 'select',
+    //     options: ['completed', 'pending', 'failed', 'refunded'],
+    //   },
+    // ],
     // Enable search by email and transaction ID
-    listSearchableFields: ['email', 'transactionId', 'subscriberId'],
+    listSearchableFields: ['email', 'transactionId', 'subscriber'],
   },
   fields: [
     // Basic information
@@ -137,14 +141,7 @@ export const Transactions: CollectionConfig = {
         description: 'Related subscriber record',
       },
     },
-    {
-      name: 'subscriberId',
-      type: 'text',
-      admin: {
-        description: 'ID of the subscriber (for filtering)',
-        position: 'sidebar',
-      },
-    },
+
     {
       name: 'event',
       type: 'relationship',

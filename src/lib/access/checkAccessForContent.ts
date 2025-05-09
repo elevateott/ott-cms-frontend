@@ -6,7 +6,7 @@
  * - Valid (non-expired) rental
  * - Manual subscription override
  */
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import configPromise from '@payload-config'
 import { logger } from '@/utils/logger'
 
@@ -30,7 +30,7 @@ export async function checkAccessForContent({
 
   try {
     // Get Payload instance
-    const payload = await getPayloadHMR({ config: configPromise })
+    const payload = await getPayload({ config: configPromise })
 
     // Fetch subscriber and content data in parallel
     const [subscriberResult, content] = await Promise.all([
