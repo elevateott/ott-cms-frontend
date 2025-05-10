@@ -66,6 +66,7 @@ import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloa
 import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
 import { RowLabel as RowLabel_1f6ff6ff633e3695d348f4f3c58f1466 } from '@/Footer/RowLabel'
+import { SignedPolicyNotice as SignedPolicyNotice_05b320bd916a474c2a432ea0c3980af2 } from '@/components/notices/SignedPolicyNotice'
 import { default as default_f99053d138b768035dd05a1db69cd2c5 } from '@/components/fields/SecureTextareaField'
 import { default as default_2d6c7f865f802140ae1911af4290a497 } from '@/components/admin/CloudIntegrationInstructions/CloudIntegrationInstructionsField'
 import { default as default_304f8f0a6ba3de327e5dc75715c6372d } from '@/components/admin/CloudStorageInstructions/CloudStorageInstructionsField'
@@ -85,10 +86,6 @@ import { InlineCodeFeatureClient as InlineCodeFeatureClient_e70f5e05f09f93e00b99
 import { SuperscriptFeatureClient as SuperscriptFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { SubscriptFeatureClient as SubscriptFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { default as default_d40c52f6e4cbe0c1b27508346bdd1b7f } from '@/components/admin/NotificationsPanel'
-import { default as default_1a7510af427896d367a49dbf838d2de6 } from '@/components/BeforeDashboard'
-import { default as default_8a7ab0eb7ab5c511aba12e68480bfe5e } from '@/components/BeforeLogin'
-import { default as default_92cc6a8d33f59a285855c77eabcae45d } from '@/components/AdminEventProvider'
 
 export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -159,6 +156,7 @@ export const importMap = {
   "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,
   "@/Footer/RowLabel#RowLabel": RowLabel_1f6ff6ff633e3695d348f4f3c58f1466,
+  "@/components/notices/SignedPolicyNotice#SignedPolicyNotice": SignedPolicyNotice_05b320bd916a474c2a432ea0c3980af2,
   "@/components/fields/SecureTextareaField#default": default_f99053d138b768035dd05a1db69cd2c5,
   "@/components/admin/CloudIntegrationInstructions/CloudIntegrationInstructionsField#default": default_2d6c7f865f802140ae1911af4290a497,
   "@/components/admin/CloudStorageInstructions/CloudStorageInstructionsField#default": default_304f8f0a6ba3de327e5dc75715c6372d,
@@ -177,9 +175,5 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#InlineCodeFeatureClient": InlineCodeFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#SuperscriptFeatureClient": SuperscriptFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#SubscriptFeatureClient": SubscriptFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/richtext-lexical/client#StrikethroughFeatureClient": StrikethroughFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@/components/admin/NotificationsPanel#default": default_d40c52f6e4cbe0c1b27508346bdd1b7f,
-  "@/components/BeforeDashboard#default": default_1a7510af427896d367a49dbf838d2de6,
-  "@/components/BeforeLogin#default": default_8a7ab0eb7ab5c511aba12e68480bfe5e,
-  "@/components/AdminEventProvider#default": default_92cc6a8d33f59a285855c77eabcae45d
+  "@payloadcms/richtext-lexical/client#StrikethroughFeatureClient": StrikethroughFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 }

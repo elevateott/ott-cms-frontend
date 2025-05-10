@@ -83,14 +83,9 @@ const StreamingSettings: GlobalConfig = {
               'Default playback policy for new Mux videos. Note: Selecting "Signed" requires both Signing Key ID and Signing Key Private Key to be configured.',
             components: {
               afterInput: [
-                () => {
-                  return (
-                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                      <strong>Important:</strong> When using Signed Playback Policy, you must
-                      provide both Signing Key ID and Signing Key Private Key below. These are
-                      required for signed playback to work properly.
-                    </div>
-                  )
+                {
+                  path: '@/components/notices/SignedPolicyNotice',
+                  exportName: 'SignedPolicyNotice',
                 },
               ],
             },
@@ -148,18 +143,6 @@ const StreamingSettings: GlobalConfig = {
                 description: 'Mux Signing Key ID (required for signed playback)',
                 components: {
                   Field: '@/components/fields/SecureTextField',
-                  afterInput: [
-                    (({ value, data }) => {
-                      if (data?.muxSettings?.defaultPlaybackPolicy === 'signed' && !value) {
-                        return (
-                          <div className="mt-1 text-red-500 text-xs">
-                            Required when using Signed Playback Policy
-                          </div>
-                        )
-                      }
-                      return null
-                    }) as any,
-                  ],
                 },
               },
             },
@@ -173,18 +156,6 @@ const StreamingSettings: GlobalConfig = {
                   'Private key used for signing playback URLs (in PEM format, required for signed playback)',
                 components: {
                   Field: '@/components/fields/SecureTextareaField',
-                  afterInput: [
-                    ({ value, data }) => {
-                      if (data?.muxSettings?.defaultPlaybackPolicy === 'signed' && !value) {
-                        return (
-                          <div className="mt-1 text-red-500 text-xs">
-                            Required when using Signed Playback Policy
-                          </div>
-                        )
-                      }
-                      return null
-                    },
-                  ],
                 },
               },
             },

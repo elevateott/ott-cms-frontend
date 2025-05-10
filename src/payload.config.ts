@@ -111,10 +111,30 @@ export default buildConfig({
       openGraph: { images: [{ url: '/og-image.png' }] },
     },
     components: {
-      beforeLogin: ['@/components/BeforeLogin'],
-      beforeDashboard: ['@/components/BeforeDashboard'],
-      providers: ['@/components/AdminEventProvider'],
-      afterNavLinks: ['@/components/admin/NotificationsPanel'],
+      //   beforeLogin: [
+      //     {
+      //       path: '@/components/BeforeLogin',
+      //       exportName: 'default',
+      //     },
+      //   ],
+      //   beforeDashboard: [
+      //     {
+      //       path: '@/components/BeforeDashboard',
+      //       exportName: 'default',
+      //     },
+      //   ],
+      //   providers: [
+      //     {
+      //       path: '@/components/AdminEventProvider',
+      //       exportName: 'default',
+      //     },
+      //   ],
+      //   afterNavLinks: [
+      //     {
+      //       path: '@/components/admin/NotificationsPanel',
+      //       exportName: 'default',
+      //     },
+      //   ],
     },
     importMap: {
       baseDir: path.resolve(dirname),
