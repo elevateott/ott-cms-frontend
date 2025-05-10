@@ -1,4 +1,4 @@
-﻿legacy-peer-deps=true
+legacy-peer-deps=false
 enable-pre-post-scripts=true
 shamefully-hoist=true
 node-linker=hoisted
